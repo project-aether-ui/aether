@@ -1,0 +1,27 @@
+name = "spektr/virtual"
+version = "0.0.1"
+description = "Deciding which subset of a large collection you pay for — independent of its size"
+authors = ["es9_dev"]
+license = "MIT"
+includes = ["src/**", "pesde.toml"]
+
+[target]
+environment = "roblox"
+lib = "src/init.luau"
+build_files = ["src"]
+
+# ZERO DEPENDENCIES, AND THAT IS THE POINT.
+#
+# `spektr/scrollbar` is FOUNDATIONAL: its manifest says so, and it carried exactly
+# one workspace dependency (Surface) in its whole life, justified in a comment. This
+# is its second, so it has to clear the same bar.
+#
+# It clears it structurally rather than by argument: a package with no dependencies
+# cannot drag an input runtime — or anything else — in behind it. Adding one here is
+# not a routine edit; it changes what every consumer of scrollbar inherits.
+#
+# No vide, no Roblox types, no reactive library. See src/init.luau for why that
+# constraint is load-bearing rather than tidy.
+
+[indices]
+default = "https://github.com/pesde-pkg/index"
