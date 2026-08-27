@@ -1,0 +1,79 @@
+name = "spektr/aether"
+version = "0.0.1"
+description = "Aether Headless UI Framework — Runtime, Engine, Primitives"
+authors = ["es9_dev"]
+license = "MIT"
+includes = ["src/**", "pesde.toml", "README.md", "LICENSE"]
+
+# Top-level, and it MUST stay above `[target]`: a bare key written after a table
+# header belongs to that table, so `workspace_members` under `[target]` silently
+# became `target.workspace_members` and every member vanished — reported as
+# "no workspace member found with name spektr/virtual and target roblox".
+workspace_members = ["src/Icon", "packages/virtual", "hosts/zune"]
+
+# THE VERSION IS 0.0.1, AND THAT IS A CLAIM ABOUT MATURITY, NOT A RESOLUTION KEY.
+#
+# Aether left spektr/essentials at 0.1.0-alpha.5, a number it inherited from a
+# workspace-wide lockstep bump rather than earned. `0.1.0` in this project's own
+# tier table means "walking skeleton — first working end-to-end boot", and the
+# framework has not shipped that. 0.0.1 is the honest pre-alpha floor.
+#
+# It is also nearly free to be honest here: consumers reach this package by GIT
+# COMMIT, and pesde synthesises `0.0.0-<sha>` for a git source — the SHA is the
+# identity. The number below is read by humans deciding whether to depend on
+# this, which is the only job it should have had.
+
+# ONE MANIFEST, ONE TARGET, AND `roblox` IS THE RIGHT ONE.
+#
+# A second `[target]` is not expressible: pesde allows one per manifest, and a
+# second manifest under a subdirectory (`{ repo, path = "targets/luau" }`) copies
+# ONLY that subdirectory — a `lib` reaching upward with `../../src` resolves to a
+# path that is not there. Verified, not assumed.
+#
+# It costs an off-engine consumer nothing. A `luau`-target consumer CAN depend on
+# this: pesde copies the whole source tree and writes a plain redirect, it simply
+# lands in `roblox_packages/` rather than `luau_packages/`. The redirect is an
+# ordinary Luau file — `require("./.pesde/spektr+aether/<ver>/aether/src")` — so
+# any runtime that resolves requires by string reads it. Deps.luau then takes the
+# headless branch on its own, because `typeof(script) == "Instance"` is false
+# everywhere but Roblox.
+[target]
+environment = "roblox"
+lib = "src/init.luau"
+build_files = ["src"]
+
+[dependencies]
+Virtual = { workspace = "spektr/virtual" }
+vide = { wally = "centau/vide", version = "^0.4.0" }
+
+[indices]
+default = "https://github.com/pesde-pkg/index"
+
+[wally_indices]
+default = "https://github.com/UpliftGames/wally-index"
+
+[scripts]
+test = "tests/run.luau"
+
+# NO pesde DEPENDENCY ON testkit, WHICH IS ALSO HOW THE MONOREPO DOES IT.
+#
+# testkit is reached through `.luaurc` aliases, not through this manifest, and the
+# monorepo's root declares no testkit member either — `pkgs/testkit/*` is absent
+# from its `workspace_members` list. Declaring it here as a path dependency fails
+# for that exact reason: `testkit_env` carries `testkit_core = { workspace = ... }`,
+# pesde walks up from the package to the nearest manifest declaring members, and
+# testkit is not among them. "workspace package spektr/testkit_core luau not found
+# in package" is that walk, not a missing package.
+#
+# THE INTENDED END STATE is a git pin, which pesde resolves — a git source with a
+# `path` reaching a subdirectory manifest was verified working. Two things about
+# the monorepo stop it TODAY, both fixable there rather than here:
+#
+#   1. `SpektrLabs/rbx-essentials` is PRIVATE. An unauthenticated fetch 404s, and
+#      pesde reports it as `no entry found at path pkgs/testkit/core`, which reads
+#      like a missing directory and is not one.
+#   2. It is 254 COMMITS AHEAD of its own origin/main. Even with auth, `rev = "main"`
+#      resolves to a tree where this framework is still called CoreUI —
+#      `pkgs/ui/framework/Aether` does not exist on the remote at all.
+#
+# See .artifacts/graduation_followups.md.
