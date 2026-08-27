@@ -60,7 +60,7 @@ lune run tests/gates/all_gates.luau --run    # structural gates
 
 Aether was developed inside the `spektr/essentials` monorepo as
 `pkgs/ui/framework/Aether` and graduated to its own repository once it had
-consumers that did not belong there. See `.artifacts/graduation_followups.md` for
+consumers that did not belong there. See `docs/graduation_followups.md` for
 what the split left unfinished.
 
 ## License

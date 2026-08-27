@@ -76,4 +76,4 @@ test = "tests/run.luau"
 #      resolves to a tree where this framework is still called CoreUI —
 #      `pkgs/ui/framework/Aether` does not exist on the remote at all.
 #
-# See .artifacts/graduation_followups.md.
+# See docs/graduation_followups.md.
