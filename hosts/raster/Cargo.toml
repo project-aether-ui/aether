@@ -1,0 +1,47 @@
+[package]
+name = "aether_raster"
+version = "0.0.1"
+edition = "2021"
+description = "Aether's rasterizer: a C ABI over tiny-skia, consumed by zune.ffi"
+
+[lib]
+name = "aether_raster"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+bytemuck = { version = "1.25.2", optional = true }
+pollster = { version = "1.0.1", optional = true }
+raw-window-handle = { version = "0.6", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"] }
+skrifa = "0.44"
+tiny-skia = "0.11"
+vello_cpu = "0.2.0"
+vello_hybrid = { version = "0.2.0", optional = true }
+wgpu = { version = "29", optional = true }
+
+[features]
+# The GPU experiment, OFF by default.
+#
+# `vello_hybrid` drags in wgpu -- a 2000-line lock file, a minutes-long first
+# build, and a GPU driver at runtime. Measuring it was worth doing once; paying
+# for it on every clone is not, especially while the answer is that the headless
+# form does not pay for itself.
+#
+# Kept behind a flag rather than deleted so the measurement stays reproducible:
+#     cargo test --release --features gpu_probe -- --nocapture hybrid_headless_cost
+# Deliberate sabotage, for proving the GATES can fail. OFF by default and absent
+# from a release build entirely: `ar_poison` does not exist as a symbol unless
+# this is enabled, so a shipped library cannot be talked into drawing nothing.
+#
+#     cargo build --release --features poison
+#     lune run scripts/poison_matrix.luau
+poison = []
+
+gpu = ["dep:vello_hybrid", "dep:wgpu", "dep:pollster", "dep:bytemuck", "dep:raw-window-handle"]
+# The old name for the same set, kept so the recorded probe command still works.
+gpu_probe = ["gpu"]
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"

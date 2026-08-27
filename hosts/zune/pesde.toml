@@ -1,0 +1,18 @@
+name = "spektr/zune_host"
+version = "0.0.1"
+description = "Runs a Spektr UI on the zune runtime — the third host, and the one that proved the value vocabulary was not abstracted"
+authors = ["es9_dev"]
+license = "MIT"
+includes = ["src/**", "pesde.toml"]
+
+# ms-52 M6: there is no `zune` environment in pesde, and this is not a Lune
+# program either — it is a program for a third runtime that pesde does not model.
+# `luau` is the honest declaration: pure Luau, host supplied by whoever runs it.
+#
+# Nothing here is published or consumed as a dependency; it is a program that
+# RUNS a UI. It reaches App and Page by relative path for the same mechanical
+# reason spektr/web_host does — see that package's manifest.
+[target]
+environment = "luau"
+
+[dependencies]

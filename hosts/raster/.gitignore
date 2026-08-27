@@ -1,0 +1,3 @@
+# Build output. The .dll is a per-platform artifact rebuilt by `cargo build
+# --release`; committing it would put a binary in a Luau repo and pin one OS.
+target/
