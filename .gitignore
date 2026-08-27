@@ -1,0 +1,23 @@
+# pesde / wally generated trees
+roblox_packages/
+luau_packages/
+lune_packages/
+.pesde/
+
+# devlink local state — machine layout never reaches a commit
+.devlink-root
+.devlink-linked
+
+# Rust
+target/
+
+# build output
+*.rbxl
+*.rbxlx
+*.rbxm
+!tests/*.rbxl
+
+# editor / os
+.DS_Store
+Thumbs.db
+.vscode/

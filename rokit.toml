@@ -1,0 +1,17 @@
+# Toolchain for the Aether repository, managed by Rokit.
+#
+# Versions are PINNED, not floated, and the reason travels with the repo: a lune
+# bump once moved JSON from @lune/net to @lune/serde partway through a milestone
+# and broke a transport, so floating a version means a green suite can go red
+# with no commit behind it. CI pins the same versions — CI matching local is the
+# whole point.
+
+[tools]
+lune = "lune-org/lune@0.10.4"
+rojo = "rojo-rbx/rojo@7.6.1"
+run-in-roblox = "rojo-rbx/run-in-roblox@0.3.0"
+
+# The zune host's runtime. `zune.ffi` is what reaches aether_raster without a
+# Rust build step, and `zune.net.http` serves the frame transport for the web
+# host. Its API is a `zune` GLOBAL, not requires, and its aliases are its own.
+zune = "Scythe-Technology/zune@0.5.8"
