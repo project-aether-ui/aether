@@ -1,0 +1,28 @@
+# ONE WORKSPACE, ONE `target/`.
+#
+# The four crates were built independently and each grew its own target
+# directory: 1.4 GB for the runtime, 241 MB for the CLI, and so on, for
+# dependency trees that are largely the SAME dependency tree — mlua, wgpu, vello
+# and tiny-skia compiled once per crate that mentions them. That filled a 465 GB
+# disk to zero and stopped the build with `os error 112`, which reads as a
+# machine problem and was a layout problem.
+#
+# A workspace also pins one resolved version per dependency across all four, so
+# the CLI cannot quietly link a different `windows` crate than the window layer
+# it drives.
+[workspace]
+resolver = "2"
+members = [
+    "hosts/raster",
+    "hosts/runtime",
+    "hosts/window",
+    "hosts/cli",
+]
+
+# WORKSPACE-LEVEL, because cargo ignores `[profile]` in a member and says so.
+# These are the rasteriser's settings, which is the crate whose release
+# performance is load-bearing.
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"

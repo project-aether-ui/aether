@@ -19,8 +19,8 @@
 //! and never hand out.
 
 use crate::{Surface, ar_begin, ar_clip_pop, ar_clip_push, ar_fill_gradient, ar_fill_rect,
-            ar_fill_text, ar_font_load, ar_png, ar_stroke_rect, ar_surface_new_backend,
-            ar_surface_free, ar_text_ascent, ar_text_width};
+            ar_bgra, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
+            ar_surface_new_backend, ar_surface_free, ar_text_ascent, ar_text_width};
 
 /// Which rasteriser paints.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -163,6 +163,28 @@ impl Canvas {
 
     pub fn clip_pop(&mut self) {
         ar_clip_pop(self.ptr);
+    }
+
+    /// The finished frame as BGRA, ready for a Windows DIB.
+    ///
+    /// THE WHOLE BUFFER IS ALWAYS VALID, even though only the damaged rows are
+    /// re-swizzled per frame: the rows outside the damage rect still hold the
+    /// bytes from the frame that last painted them. So a caller blits the entire
+    /// slice and is correct; it does not have to track damage to stay right, only
+    /// to go faster.
+    ///
+    /// Borrows `&mut self` because it rasterises on demand — a vello frame that
+    /// was recorded but never read has produced no pixels yet.
+    pub fn bgra(&mut self) -> Option<&[u8]> {
+        let ptr = ar_bgra(self.ptr);
+        if ptr.is_null() {
+            return None;
+        }
+        let len = self.width as usize * self.height as usize * 4;
+        // SAFETY: `ar_bgra` returns the surface's own scratch buffer, sized
+        // width*height*4 and valid until the next call on this surface. `&mut
+        // self` is what makes "until the next call" enforceable.
+        Some(unsafe { std::slice::from_raw_parts(ptr, len) })
     }
 
     /// Write the surface out as a PNG. `Ok(())` or the ABI's status code.

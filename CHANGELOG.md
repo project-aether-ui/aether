@@ -80,3 +80,21 @@ The first version of Aether as a standalone repository.
   module scope: a module body runs at require time, and off-engine the host
   installs `UDim2`/`Color3` during startup. This works on Roblox and fails
   everywhere else, which is the worst way for it to fail.
+
+### Added (the shells)
+
+- `aether_window` — a Win32 window, message pump and BGRA blit, knowing nothing
+  about Aether or Luau. Shared by the CLI's preview and, later, by Dew.
+  Deliberately opaque: transparency needs DirectComposition and becomes another
+  surface beside this one, not a rewrite of it.
+- `aether-cli`, binary `aether` — `snapshot` renders a component to a PNG with no
+  display; `preview` opens a window and runs the same `Driver` loop Dew will.
+- A Cargo workspace. Four independent `target/` directories were compiling the
+  same dependency trees separately and filled the disk.
+
+### Fixed
+
+- The window title was built from a `Vec` dropped before `CreateWindowExW` read
+  it — a window created from freed memory.
+- `aether --help` was parsed as a command needing an entry module, so it reported
+  an error the user had not made before printing the usage.
