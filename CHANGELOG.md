@@ -63,3 +63,20 @@ The first version of Aether as a standalone repository.
 - The painter added a font ascent on top of `ar_fill_text`, which already
   converts a top-left to a baseline internally. Every run landed about a line
   low. The ABI's own comment warns against exactly this.
+
+### Added (the shared example)
+
+- `examples/counter/` — one component, two entry points, and a Rojo project.
+  `src/Counter.luau` is host-agnostic; `entry/roblox.client.luau` and
+  `entry/desktop.luau` are the only files that differ.
+- `aether_runtime::Driver` — the frame loop both native shells run.
+- `aether_runtime::font` — system face resolution, with no rasteriser dependency.
+- `Application::get`, so an entry can expose a size or a transition alongside its
+  `Session`.
+
+### Learned (written into the example)
+
+- A shared component may NAME the value vocabulary but must not EVALUATE it at
+  module scope: a module body runs at require time, and off-engine the host
+  installs `UDim2`/`Color3` during startup. This works on Roblox and fails
+  everywhere else, which is the worst way for it to fail.

@@ -42,17 +42,11 @@ fn load() -> Application {
 /// on the machine running this, and a suite that fails on a bare CI container has
 /// told you about the container rather than about the renderer.
 fn system_font() -> Option<Font> {
-    for path in [
-        "C:/Windows/Fonts/segoeui.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-    ] {
-        if let Some(font) = Font::load(path, 0) {
-            return Some(font);
-        }
-    }
-    None
+    // The candidate list moved into `aether_runtime::font`, where both native
+    // shells reach it. A test carrying its own copy is a test that can pass while
+    // the shells fail on a machine it never tried.
+    let path = aether_runtime::font::system_font()?;
+    Font::load(&path.to_string_lossy(), 0)
 }
 
 fn pixel(canvas: &mut Canvas, x: u32, y: u32) -> (u8, u8, u8) {

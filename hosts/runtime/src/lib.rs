@@ -35,6 +35,8 @@
 //! installs by name, which is the property that makes a permission model possible
 //! at all.
 
+pub mod driver;
+pub mod font;
 pub mod frame;
 pub mod modules;
 pub mod painter;
@@ -44,6 +46,7 @@ pub mod raster;
 pub mod session;
 pub mod vm;
 
+pub use driver::Driver;
 pub use frame::{Delta, Frame, Node, Rect, Rgb};
 pub use painter::Painter;
 #[cfg(feature = "raster")]
@@ -80,6 +83,17 @@ impl Application {
 
     pub fn vm(&self) -> &Vm {
         &self.vm
+    }
+
+    /// Read any other field the entry module returned.
+    ///
+    /// Entry points expose more than a `Session` — a size to open a window at, a
+    /// transition a shell can drive, a title. Rather than growing a struct field
+    /// per convention, a shell asks for what it knows it needs and handles the
+    /// absence: an entry written for the CLI should not fail to load under Dew
+    /// merely because it omitted something Dew never reads.
+    pub fn get<T: FromLua>(&self, field: &str) -> LuaResult<T> {
+        self.entry.get(field)
     }
 
     /// Bind to the application's `Live.Session`.

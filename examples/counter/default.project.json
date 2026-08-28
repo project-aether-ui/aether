@@ -1,0 +1,17 @@
+{
+  "name": "AetherCounter",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "AetherCounter": {
+        "$path": "src",
+        "roblox_packages": { "$path": "../../roblox_packages" }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "AetherCounterEntry": { "$path": "entry/roblox.client.luau" }
+      }
+    }
+  }
+}
