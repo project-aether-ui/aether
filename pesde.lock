@@ -11,9 +11,6 @@ roblox = "src/Icon"
 [workspace."spektr/virtual"]
 roblox = "packages/virtual"
 
-[workspace."spektr/zune_host"]
-luau = "hosts/zune"
-
 [graph."spektr/virtual@0.0.1 roblox"]
 direct = ["Virtual", { workspace = "spektr/virtual", version = "^" }, "standard"]
 

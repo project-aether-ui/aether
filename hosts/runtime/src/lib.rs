@@ -38,11 +38,16 @@
 pub mod frame;
 pub mod modules;
 pub mod painter;
+
+#[cfg(feature = "raster")]
+pub mod raster;
 pub mod session;
 pub mod vm;
 
 pub use frame::{Delta, Frame, Node, Rect, Rgb};
 pub use painter::Painter;
+#[cfg(feature = "raster")]
+pub use raster::RasterPainter;
 pub use session::{Modifiers, Pointer, Session, Stats};
 pub use vm::{Capabilities, Vm};
 

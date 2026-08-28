@@ -11,7 +11,7 @@
 //! DirectComposition for per-pixel window transparency changes how a painter is
 //! CONSTRUCTED and nothing about this trait.
 
-use crate::frame::{Delta, Frame, Node, Rect, Rgb};
+use crate::frame::{Delta, Frame, Gradient, Node, Rect, Rgb};
 
 /// A display that paints frames.
 ///
@@ -39,6 +39,20 @@ pub trait Painter {
     /// defaults by the time they arrive — a painter that re-decides alignment is
     /// the bug this signature exists to prevent.
     fn draw_text(&mut self, node: &Node);
+
+    /// Fill with a gradient.
+    ///
+    /// The default FALLS BACK TO THE FLAT FILL rather than drawing nothing: a
+    /// backend that cannot ramp should render the node's own colour, which is
+    /// what it looked like before gradients existed. Drawing nothing would make
+    /// a gradient node disappear, which is worse than an unramped one and much
+    /// harder to spot.
+    fn fill_gradient(&mut self, rect: Rect, radius: f32, gradient: &Gradient, fallback: Option<Rgb>, alpha: f32) {
+        let _ = gradient;
+        if let Some(colour) = fallback {
+            self.fill_rounded_rect(rect, radius, colour, alpha);
+        }
+    }
 
     fn clip_push(&mut self, rect: Rect);
     fn clip_pop(&mut self);
@@ -77,9 +91,20 @@ fn paint_node<P: Painter + ?Sized>(painter: &mut P, node: &Node) {
     // A NODE WITH NO FILL IS NOT A BLACK NODE. Live.luau emits nil when nothing
     // set a colour, and the engine draws nothing for it; inventing a default here
     // would paint rectangles Roblox leaves empty.
-    if let Some(fill) = node.fill {
-        if node.alpha > 0.0 {
-            painter.fill_rounded_rect(node.rect, node.radius, fill, node.alpha);
+    //
+    // A GRADIENT REPLACES THE FLAT FILL, and is checked first for that reason. It
+    // can also be an ALPHA ramp over the node's own colour with no colour ramp of
+    // its own, which is why the fill travels with it rather than being skipped.
+    if node.alpha > 0.0 {
+        match &node.gradient {
+            Some(gradient) => {
+                painter.fill_gradient(node.rect, node.radius, gradient, node.fill, node.alpha)
+            }
+            None => {
+                if let Some(fill) = node.fill {
+                    painter.fill_rounded_rect(node.rect, node.radius, fill, node.alpha);
+                }
+            }
         }
     }
 

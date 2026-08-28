@@ -45,3 +45,21 @@ The first version of Aether as a standalone repository.
 - `docs/hosting_architecture.md` — the shared-pipeline decision: one Rust core
   (`hosts/runtime` + `hosts/raster`) under both the `aether` CLI and Dew, split at
   trust rather than at features, with a Roblox author depending on neither.
+
+### Added (painting)
+
+- `aether_raster::Canvas` — a safe Rust surface over the C ABI, wrapping it
+  rather than replacing it while the poison gates still fire through those
+  functions.
+- `aether_runtime::RasterPainter`, behind the `raster` feature — a CPU painter
+  over `Canvas`, and the first implementation of `Painter`.
+- `Painter::fill_gradient`. The trait had none, so every gradient in a frame was
+  dropped on the way to the surface. The default falls back to the flat fill.
+- `tests/render.rs` — pixel assertions, plus a PNG written to
+  `hosts/runtime/target/aether_frame.png` to look at.
+
+### Fixed (painting)
+
+- The painter added a font ascent on top of `ar_fill_text`, which already
+  converts a top-left to a baseline internally. Every run landed about a line
+  low. The ABI's own comment warns against exactly this.

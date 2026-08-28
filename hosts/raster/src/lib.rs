@@ -67,6 +67,11 @@ fn with_fonts<R>(f: impl FnOnce(&mut FontStore) -> R) -> R {
 ///
 /// Zero rather than a panic: a missing font is a deployment problem the host can
 /// report and fall back from, not a reason to take the process down.
+/// A safe Rust surface over the C ABI below. See `canvas.rs` for why it wraps
+/// these functions rather than replacing them.
+pub mod canvas;
+pub use canvas::{Backend, Canvas, Font};
+
 #[no_mangle]
 pub extern "C" fn ar_font_load(path: *const u8, len: u32, index: u32) -> u32 {
     if path.is_null() {
