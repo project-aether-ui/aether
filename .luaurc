@@ -1,6 +1,7 @@
 {
   "aliases": {
     "testkit": "./.testkit/core/src",
-    "testkit_env": "./.testkit/env/src"
+    "testkit_env": "./.testkit/env/src",
+    "aether": "./src"
   }
 }

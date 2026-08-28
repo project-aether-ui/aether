@@ -398,7 +398,7 @@ function Headless.new(): any
 	if not core then
 		error(
 			"Aether.Host.Headless: no installed vide reachable. Run `pesde install` in "
-				.. "pkgs/ui/framework/Aether, or add this version to VideCore.CANDIDATE_ROOTS.",
+				.. "the repository root, or add this version to VideCore.CANDIDATE_ROOTS.",
 			2
 		)
 	end

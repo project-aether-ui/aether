@@ -323,8 +323,7 @@ local BuilderFont = if isScript
 		if ok then return res end
 		local ok2, res2 = pcall(require, "./src/Icon/src/Packs/BuilderFont")
 		if ok2 then return res2 end
-		local ok3, res3 = pcall(require, "./pkgs/ui/framework/Aether/src/Icon/src/Packs/BuilderFont")
-		return if ok3 then res3 else { GetIcon = function() return nil end }
+		return { GetIcon = function() return nil end }
 	end)()
 IconManager.RegisterPack("Builder", BuilderFont, true)
 

@@ -17,8 +17,6 @@ local function loadSubmodule(instanceChild: any, relativePath: string): any
 	if ok then return res end
 	local ok2, res2 = pcall(require, "./src/" .. relativePath)
 	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "./pkgs/ui/framework/Aether/src/" .. relativePath)
-	if ok3 then return res3 end
 	return {}
 end
 
@@ -29,8 +27,7 @@ local Icon = if isScript
 		if ok then return res end
 		local ok2, res2 = pcall(require, "./src/Icon/src/Icon")
 		if ok2 then return res2 end
-		local ok3, res3 = pcall(require, "./pkgs/ui/framework/Aether/src/Icon/src/Icon")
-		return if ok3 then res3 else {}
+		return {}
 	end)()
 
 local SelectionModel = loadSubmodule(if isScript and script:FindFirstChild("controllers") then script.controllers:FindFirstChild("SelectionModel") else nil, "controllers/SelectionModel")
