@@ -9,7 +9,7 @@ includes = ["src/**", "pesde.toml", "README.md", "LICENSE"]
 # header belongs to that table, so `workspace_members` under `[target]` silently
 # became `target.workspace_members` and every member vanished — reported as
 # "no workspace member found with name spektr/virtual and target roblox".
-workspace_members = ["src/Icon", "packages/virtual", "hosts/zune"]
+workspace_members = ["src/Icon", "packages/virtual"]
 
 # THE VERSION IS 0.0.1, AND THAT IS A CLAIM ABOUT MATURITY, NOT A RESOLUTION KEY.
 #

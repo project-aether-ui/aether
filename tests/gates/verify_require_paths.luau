@@ -45,7 +45,6 @@ local PACKAGE_SRC_ROOTS = {
 	"src",
 	"src/Icon/src",
 	"packages/virtual/src",
-	"hosts/zune/src",
 }
 
 --- Files directly in `dir`, by module name.

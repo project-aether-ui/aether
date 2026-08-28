@@ -22,6 +22,10 @@ the wrong branch.
 | Headless | mock instances over vide's own reactive core |
 | `hosts/raster` | `vello_hybrid` / `wgpu` presenting to a window, via a C ABI |
 
+The off-engine hosts are Rust-owned: Rust holds the process and embeds Luau as a
+guest. See [docs/hosting_architecture.md](docs/hosting_architecture.md) for why,
+and for how the `aether` CLI and Dew share one pipeline.
+
 ## Status
 
 **0.0.1 — pre-alpha.** The API is not stable and nothing is published to a
@@ -43,7 +47,7 @@ simply lands in `roblox_packages/` rather than `luau_packages/`.
 ```
 src/            the framework; src/Icon is a workspace member
 packages/       workspace members that are not the framework (virtual)
-hosts/          off-engine hosts — raster (Rust), zune (Luau)
+hosts/          off-engine hosts — raster (Rust renderer)
 tests/          suites, and the structural gates under tests/gates
 stories/        visual cases
 ```

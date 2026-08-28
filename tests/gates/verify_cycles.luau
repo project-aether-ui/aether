@@ -98,7 +98,6 @@ local PACKAGE_ROOTS = {
 	"src",
 	"src/Icon/src",
 	"packages/virtual/src",
-	"hosts/zune/src",
 }
 
 print("=== VERIFY: require cycles ===")

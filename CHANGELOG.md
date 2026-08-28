@@ -26,3 +26,22 @@ The first version of Aether as a standalone repository.
   under a root-level `src/`. Its strip pattern required a separator before `src`,
   which no longer holds now that the framework's source is `src/` at the repository
   root. It reported two source defects and was one wrong pattern.
+
+### Removed
+
+- **The zune host.** It put Luau in charge of the process and reached native code
+  through `zune.ffi`, which cannot be sandboxed: a runtime that hands a guest
+  `dlopen` has no security boundary, and nothing above it can create one. Both
+  production hosts invert it — Rust owns the process and embeds Luau as a guest.
+  What the experiment established is recorded in `docs/hosting_architecture.md`;
+  the monorepo copy remains as the reference for the port.
+- `verify_frame_checks` and `verify_headless_is_portable`, which drove the zune
+  CLI. Both return, repointed at the `aether` CLI, once it exists. Deleted rather
+  than left red, because a permanently failing gate teaches everyone to ignore the
+  gate report.
+
+### Added
+
+- `docs/hosting_architecture.md` — the shared-pipeline decision: one Rust core
+  (`hosts/runtime` + `hosts/raster`) under both the `aether` CLI and Dew, split at
+  trust rather than at features, with a Roblox author depending on neither.

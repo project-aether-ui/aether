@@ -50,37 +50,21 @@ Resolve with §1: pin both by git, then point the aliases at the installed tree.
 
 ---
 
-## 3. The zune host's demo scene is dangling — NEEDS A DECISION
+## 3. The zune host is gone — RESOLVED
 
-`hosts/zune` came across and its Aether requires were retargeted. Four requires
-still point at the web host, which stayed behind:
+Scrapped rather than repaired. It put Luau in charge of the process and reached
+native code through `zune.ffi`, which is unsandboxable by construction: a runtime
+that hands a guest `dlopen` has no security boundary. Both production hosts —
+the `aether` CLI and Dew — invert it, with Rust owning the process and Luau
+embedded as a guest.
 
-```
-hosts/zune/src/Cli.luau:35     require("../../web/src/App")
-hosts/zune/src/Native.luau:33  require("../../web/src/App")
-hosts/zune/src/Server.luau:29  require("../../web/src/App")
-hosts/zune/src/Server.luau:30  require("../../web/src/Page")
-```
+That also dissolved the dangling `hosts/web/src/App` requires, which were the
+symptom: `App.luau` is a demo scene pulling in kits and Flux, and it stays in the
+monorepo along with the web host.
 
-`hosts/web/src/App.luau` is not framework machinery — it is a demo scene, and it
-pulls in `switcher_scene`, `ShopUI` and `Flux`, all of which correctly stayed in
-the monorepo. `Page.luau` and `Server.luau` beside it ARE transport.
-
-Three defensible answers, and this is a boundary decision rather than a repair:
-
-- **Bring the transport, replace the scene.** Take `hosts/web/src/{init,Page,Server}`
-  and write a small local scene in this repo. The hosts stay demonstrable and stop
-  depending on kits.
-- **Leave the zune host in the monorepo.** It consumes Aether AND kits AND Flux,
-  which is exactly the coupling the split exists to sever. `hosts/raster` — the
-  Rust crate Dew actually links — has no Luau coupling and stands alone.
-- **Bring everything including the scene**, and accept that this repo depends on
-  the kits.
-
-Until this is settled, `verify_frame_checks` and `verify_headless_is_portable`
-fail, because both drive the zune CLI.
-
----
+`verify_frame_checks` and `verify_headless_is_portable` drove the zune CLI and are
+deleted with it. Both are worth having and both come back, repointed at `aether`
+once that CLI exists. See `docs/hosting_architecture.md`.
 
 ## 4. `verify_test_inventory` still checks for an engine host
 
@@ -96,7 +80,8 @@ gate needs a "no engine tier" mode.
 PASS  verify_cycles, verify_property_names, verify_use_before_declaration,
       verify_reactive_scopes, verify_autosize_cycles, verify_tests_not_shipped,
       verify_no_versioned_vendor_paths, verify_require_paths
-FAIL  verify_frame_checks             (§3)
-FAIL  verify_headless_is_portable     (§3)
 FAIL  verify_test_inventory           (§2, §4)
+
+(verify_frame_checks and verify_headless_is_portable were deleted with the zune
+host -- see §3, and all_gates.luau for the terms of their return.)
 ```
