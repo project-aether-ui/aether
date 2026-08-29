@@ -111,3 +111,19 @@ The first version of Aether as a standalone repository.
   else. It now tests `typeof(game)` — the actual question — rather than
   `typeof(script)`.
 - `Text.luau` takes `create` from `Deps` instead of searching for vide itself.
+
+### Added
+
+- The reactive surface — `create`, `source`, `derive`, `effect`, `cleanup` — and
+  `Vocabulary` are exported from the root. They lived only in `Deps`, so an
+  author reached for the two things they build with through a module whose name
+  says "internal dependency resolution".
+
+### Changed
+
+- The public table moved to `src/api.luau`; `init.luau` forwards to it. The root
+  was unreachable by a string alias: pointing one at `src` loads `init.luau` but
+  keeps `src` as its identity, so every `./x` inside resolved one level too high,
+  and `@aether/init` never resolves because a require ending in `init` skips the
+  extension search that would find it. `@aether/api` has neither problem, and
+  Roblox's folder require still lands on `init`.
