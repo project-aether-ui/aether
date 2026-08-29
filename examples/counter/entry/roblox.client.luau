@@ -14,8 +14,8 @@
 
 local Players = game:GetService("Players")
 
-local Aether = require(script.Parent.Parent.roblox_packages.Aether)
-local Counter = require(script.Parent.Parent.src.Counter)
+local Aether = require("@pkg/Aether")
+local Counter = require("../src/Counter")
 
 local host = Aether.Host.detect()
 

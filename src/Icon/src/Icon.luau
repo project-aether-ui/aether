@@ -1,18 +1,14 @@
-local isScript = typeof(script) == "Instance"
 --- ms-51 M19: Aether's own headless host, not testkit's VideShim and not the
 --- two-function stub that stood behind it — that stub's `create` returned the
 --- props table unchanged, which is indistinguishable from working until
 --- something reads the result.
 ---
---- Reachable by a fixed path only because this module is now required BY NAME
---- rather than as a folder; see init.luau beside it for why that mattered.
-local Vide = if isScript
-	--- ms-51 M19: TWO hops, not one. As `init.luau` this module WAS the folder,
-	--- so `script.Parent` was the package root; as a named child module it is
-	--- `src`, and roblox_packages sits beside that. verify_require_paths caught
-	--- the difference the moment the file was renamed — the same way it caught
-	--- flux_motion's when that code moved out of an init.
-	then require(script.Parent.Parent.roblox_packages.vide)
+--- THE BRANCH IS ABOUT THE ARTEFACT, NOT THE PATH. Both arms are string requires
+--- now; what differs is that `roblox_packages/vide` is a redirect pesde generates
+--- for the engine and which cannot resolve without an Instance tree. See
+--- src/Deps.luau for the same split stated once, properly.
+local Vide = if typeof(game) == "Instance"
+	then require("../../../roblox_packages/vide")
 	else require("../../host/Headless").new()
 
 local IconManager = {}
@@ -316,15 +312,9 @@ function IconManager.Icon(props: IconProps)
 end
 
 -- Preload standard packs
-local BuilderFont = if isScript
-	then require(script.Parent.Packs.BuilderFont)
-	else (function()
-		local ok, res = pcall(require, "./Packs/BuilderFont")
-		if ok then return res end
-		local ok2, res2 = pcall(require, "./src/Icon/src/Packs/BuilderFont")
-		if ok2 then return res2 end
-		return { GetIcon = function() return nil end }
-	end)()
+--- ONE PATH. The fallbacks guessed at two more and swallowed both failures, so a
+--- renamed pack file became an icon set that silently drew nothing.
+local BuilderFont = require("./Packs/BuilderFont")
 IconManager.RegisterPack("Builder", BuilderFont, true)
 
 local EmojiPack: IconPack = {

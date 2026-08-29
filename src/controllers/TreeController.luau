@@ -37,24 +37,7 @@ export type TreeController = {
 	Subscribe: (listener: (expandedKeys: { any }) -> ()) -> (() -> ()),
 }
 
-local isScriptInstance = typeof(script) == "Instance"
-local Deps = if isScriptInstance
-	then (function()
-		local cur = script.Parent
-		while cur and cur ~= game do
-			if cur:FindFirstChild("Deps") then
-				return require(cur.Deps)
-			end
-			cur = cur.Parent
-		end
-		return {}
-	end)()
-	else (function()
-		local ok, res = pcall(require, "../Deps")
-		if ok then return res end
-		local ok2, res2 = pcall(require, "./Deps")
-		return if ok2 then res2 else {}
-	end)()
+local Deps = require("../Deps")
 
 local source = Deps.source
 

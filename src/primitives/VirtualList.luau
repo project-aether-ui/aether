@@ -16,85 +16,18 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
+local Deps = require("../Deps")
 
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-		if root and root:FindFirstChild("controllers") and root.controllers:FindFirstChild(name) then
-			return require(root.controllers[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild("controllers") and root.src.controllers:FindFirstChild(name) then
-			return require(root.src.controllers[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	local ok4, res4 = pcall(require, "../controllers/" .. name)
-	if ok4 then return res4 end
-	return {}
-end
+local ScrollController = require("../controllers/ScrollController")
 
-local Deps = if isScriptInstance
-	then (function()
-		local cur = script.Parent
-		while cur and cur ~= game do
-			if cur:FindFirstChild("Deps") then
-				return require(cur.Deps)
-			end
-			cur = cur.Parent
-		end
-		return {}
-	end)()
-	else (function()
-		local ok, res = pcall(require, "../Deps")
-		if ok then return res end
-		local ok2, res2 = pcall(require, "./Deps")
-		return if ok2 then res2 else {}
-	end)()
-
-local ScrollController = loadSibling("ScrollController")
-
--- ItemIndex from spektr/virtual
-local ItemIndex = (function()
-	if Deps.Virtual and (Deps.Virtual.ItemIndex or Deps.Virtual.new) then
-		return Deps.Virtual.ItemIndex or Deps.Virtual
-	end
-	if isScriptInstance then
-		local cur = script.Parent
-		while cur and cur ~= game do
-			local robloxPkgs = cur:FindFirstChild("roblox_packages")
-			if robloxPkgs and robloxPkgs:FindFirstChild("Virtual") then
-				local ok, mod = pcall(require, robloxPkgs.Virtual)
-				if ok and mod and (mod.ItemIndex or mod.new) then return mod.ItemIndex or mod end
-			end
-			cur = cur.Parent
-		end
-	end
-	local ok, res = pcall(require, "../../../../../core/virtual/src/ItemIndex")
-	if ok and res then return if res.ItemIndex then res.ItemIndex else res end
-	local ok2, res2 = pcall(require, "../../../../core/virtual/src/ItemIndex")
-	if ok2 and res2 then return if res2.ItemIndex then res2.ItemIndex else res2 end
-	local ok3, res3 = pcall(require, "./pkgs/core/virtual/src/ItemIndex")
-	if ok3 and res3 then return if res3.ItemIndex then res3.ItemIndex else res3 end
-	local ok4, res4 = pcall(require, "spektr/virtual")
-	if ok4 and res4 and res4.ItemIndex then return res4.ItemIndex end
-	return nil
-end)()
+-- ItemIndex from spektr/virtual, or nil.
+--
+-- ONE SOURCE, NOT FIVE. This used to fall back through an upward Instance walk
+-- and four guessed relative paths — three of them into the monorepo layout this
+-- package no longer lives in, so they could not have resolved and their failure
+-- was silent. `Deps.Virtual` is the declared dependency; if it is absent the
+-- answer is nil, which this module already handles by windowing nothing.
+local ItemIndex = if Deps.Virtual then (Deps.Virtual.ItemIndex or Deps.Virtual) else nil
 
 --- `mountedCount` is a change-guard, not a reactive value — nothing derives from
 --- it — but `reconcile` runs inside the props.Items effect, so a plain read would

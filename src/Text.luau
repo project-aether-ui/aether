@@ -21,33 +21,28 @@ local Deps = require("./Deps")
 local UDim2, Color3, Enum =
 	Deps.Vocabulary.UDim2, Deps.Vocabulary.Color3, Deps.Vocabulary.Enum
 
-local isScriptInstance = typeof(script) == "Instance"
-local packages: any = if isScriptInstance
-	then (script :: any).Parent.Parent:FindFirstChild("roblox_packages")
-	else nil
+--- vide THROUGH Deps, which already resolved it.
+---
+--- This file used to find vide for itself: an Instance lookup for
+--- `roblox_packages`, then a pcall fallback through `script.Parent.Parent`, then
+--- a second pcall for the same thing at a path that had never existed. Twenty
+--- lines to obtain `create`, which the module it was already requiring exports.
+---
+--- Both attempts were pcall'd, so when they failed they failed SILENTLY and
+--- `create` was nil — a fault the require-path gate found and no test could,
+--- because the headless branch never took either path.
+local create = Deps.create
 
-local Vide: any
-if packages and packages:FindFirstChild("vide") then
-	pcall(function() Vide = require(packages:FindFirstChild("vide")) end)
-end
-if not Vide then
-	-- ms-43 M34: .Parent.Parent, not .Parent. From a module inside src/, the
-	-- package's roblox_packages sits BESIDE src, one hop further out. This
-	-- fallback has always pointed at src.roblox_packages, which does not exist —
-	-- and because it is pcall'd, it failed silently rather than telling anyone.
-	-- Found by the require-path gate, not by a test: headless never takes this
-	-- branch.
-	pcall(function() Vide = require(script.Parent.Parent.roblox_packages.vide) end)
-end
-
-local ThemeCore
+--- OPTIONAL, and not a declared dependency. A consumer that installs
+--- `spektr/theme_core` gets scoped theming here; one that does not gets the
+--- unthemed path. That is why this alone stays a pcall: the module's absence is
+--- a supported configuration rather than a failure to report.
+local ThemeCore: any
 pcall(function()
-	if packages then
-		ThemeCore = require(packages:FindFirstChild("ThemeCore"))
-	end
+	ThemeCore = require("../roblox_packages/ThemeCore")
 end)
 
-local create = if Vide then Vide.create else nil :: any
+
 
 export type TextVariant = "Title" | "Header" | "Body" | "Muted"
 
@@ -66,7 +61,7 @@ export type TextProps = {
 }
 
 local function Text(props: TextProps)
-	if not Vide then return nil end
+	if not create then return nil end
 
 	local scopeTag = props.Scope or "Default"
 	local useScopedTheme = ThemeCore and ThemeCore.useScopedTheme

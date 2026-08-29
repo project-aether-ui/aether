@@ -98,3 +98,16 @@ The first version of Aether as a standalone repository.
   it — a window created from freed memory.
 - `aether --help` was parsed as a command needing an entry module, so it reported
   an error the user had not made before printing the usage.
+
+### Changed (require by string)
+
+- Every require in the package is a string path. Removed `script.Parent` and
+  Instance walks entirely, along with `loadSubmodule`, `loadSibling`, and the
+  pcall cascades that guessed at two to four candidate paths — several of which
+  pointed into the monorepo layout this package has left.
+- `Deps` keeps ONE environment branch, and it is about the artefact rather than
+  the path: `roblox_packages/vide` is a redirect pesde generates that reaches its
+  target through the Instance tree, so it resolves in the engine and nowhere
+  else. It now tests `typeof(game)` — the actual question — rather than
+  `typeof(script)`.
+- `Text.luau` takes `create` from `Deps` instead of searching for vide itself.

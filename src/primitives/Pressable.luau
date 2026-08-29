@@ -20,15 +20,9 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
-
-local Deps = if isScriptInstance then require((script :: any).Parent.Parent.Deps) else require("../Deps")
-local PointerRouter = if isScriptInstance
-	then require((script :: any).Parent.Parent.PointerRouter)
-	else require("../PointerRouter")
-local ScopeContext = if isScriptInstance
-	then require((script :: any).Parent.Parent.ScopeContext)
-	else require("../ScopeContext")
+local Deps = require("../Deps")
+local PointerRouter = require("../PointerRouter")
+local ScopeContext = require("../ScopeContext")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

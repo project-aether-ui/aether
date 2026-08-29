@@ -1,5 +1,4 @@
 --!strict
-local isScriptInstance = typeof(script) == "Instance"
 local Deps = require("./Deps")
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it
@@ -15,9 +14,7 @@ local effect = vide.effect
 local cleanup = vide.cleanup
 
 --- Renamed from PressableFrame and moved into primitives/ in ms-51 M14.
-local PressableFrame = if isScriptInstance
-	then require((script :: any).Parent.primitives.Pressable)
-	else require("./primitives/Pressable")
+local PressableFrame = require("./primitives/Pressable")
 local TextInputManager = require("./TextInputManager")
 local InputScope = require("./InputScope")
 

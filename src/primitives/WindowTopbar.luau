@@ -8,34 +8,9 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
-
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	return {}
-end
-
-local Deps = loadSibling("Deps")
+local Deps = require("../Deps")
 --- Renamed from PressableFrame in ms-51 M14; same primitive.
-local PressableFrame = loadSibling("Pressable")
+local PressableFrame = require("./Pressable")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

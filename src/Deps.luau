@@ -12,14 +12,29 @@
 	THE CONTRACT: every field below is NON-NIL, always. Consumers never guard.
 ]]
 
-local isScriptInstance = typeof(script) == "Instance"
+--- THE ONE PLACE AN ENVIRONMENT IS STILL BRANCHED ON, and it is not about paths.
+---
+--- Every require in this package is now a string, resolved the same way by every
+--- runtime. This branch survives because the two hosts do not obtain the same
+--- ARTEFACT, not because they spell the path differently:
+---
+---   * On Roblox, `roblox_packages/vide` is a redirect pesde GENERATES, and it
+---     reaches its target through the Instance tree. We require it by string; what
+---     it does inside is pesde's business and not ours to spell away.
+---   * Off-engine that redirect cannot resolve — there is no Instance tree — so
+---     VideCore takes the sixteen vide modules that load as plain Luau and
+---     supplies the seven that need an engine, over mock instances.
+---
+--- `typeof(game)` rather than `typeof(script)`: the question being asked is "is
+--- this the Roblox engine", and `game` answers it directly. `script` answers
+--- "was this loaded as an Instance", which is the same thing today and is a
+--- proxy rather than the question.
+local isRobloxEngine = typeof(game) == "Instance"
 
 local vide: any
-
 local VirtualPkg: any = nil
 
-if isScriptInstance then
-	local packages = (script :: any).Parent.Parent.roblox_packages
+if isRobloxEngine then
 	--- Unguarded: a missing hard dependency is a build error and must surface.
 	---
 	--- ms-51: this line was deleted by accident in c296a8c and only found in a
@@ -27,38 +42,17 @@ if isScriptInstance then
 	--- every consumer of Aether failed to load in-engine while 62 headless suites
 	--- and six gates stayed green — the Roblox branch is the one thing they cannot
 	--- reach. verify_require_paths now asserts it.
-	vide = require(packages.vide)
+	vide = require("../roblox_packages/vide")
 
-	pcall(function() VirtualPkg = require(packages.Virtual) end)
+	--- OPTIONAL. `spektr/virtual` windows a long list; without it VirtualList
+	--- renders every row, which is slow rather than wrong.
+	pcall(function()
+		VirtualPkg = require("../roblox_packages/Virtual")
+	end)
 else
-	-- ms-44 M5: ONE shim, in testkit/env, replacing six hand-rolled copies that had drifted
-	-- to three fidelity levels — M76's "create records the class" landed in 3 of 6, M43's
-	-- "effect actually runs" in 1 of 6. Both were bought with real Studio sessions and
-	-- reached none of the other packages.
-	--
-	-- WHAT IT MODELS, AND WHAT IT DELIBERATELY DOES NOT, is stated in VideShim.luau. The
-	-- behaviours are pinned by pkgs/testkit/env/tests/ShimConformance.test.luau, so this
-	-- cannot silently regress the way six copies did.
-	--
-	-- SAFE TO NAME FROM A SHIPPED FILE: this branch is taken only when `script` is not an
-	-- Instance, i.e. never in Roblox — the require is never evaluated there, so testkit
-	-- cannot reach a place. The alias resolves in the workspace only.
-	-- ms-51 M14: was `require("@testkit_env").VideShim.new()`.
-	--
-	-- The shim substituted the WHOLE of vide, including the reactive core that
-	-- never needed substituting — and its substitute was strictly weaker:
-	-- `effect` ran once with no dependency tracking, `derive` did not memoise.
-	-- No suite written against it could observe a re-render; Aether's own
-	-- TreeView suite documents routing around exactly that.
-	--
-	-- Aether.Host.Headless instead takes the sixteen vide modules that DO load
-	-- outside Roblox (the whole reactive core, unmodified) and supplies only the
-	-- seven that need an engine, over mock instances. It keeps the shim's
-	-- props-table access shape — `_ClassName`, array children, properties by
-	-- name — so suites written against the shim keep working.
-	--
-	-- SAFE TO NAME FROM A SHIPPED FILE: this branch is taken only when `script`
-	-- is not an Instance, i.e. never in Roblox.
+	--- The reactive core, unmodified, plus mock instances for the seven modules
+	--- that need an engine. VideCore.luau carries the measurement and the reason
+	--- the split lands exactly there.
 	vide = require("./host/Headless").new()
 end
 
@@ -105,9 +99,7 @@ end
 --- call sites stay exactly as they are while the provider becomes swappable.
 --- They are not deeply Roblox types: UDim2 is {scale, offset} per axis, Color3 is
 --- three floats. A non-Roblox host implements the same eleven names.
-local HostModule = if isScriptInstance
-	then require((script :: any).Parent.host.Host)
-	else require("./host/Host")
+local HostModule = require("./host/Host")
 
 local ResolvedHost = HostModule.detect(vide)
 local Vocabulary = ResolvedHost.Vocabulary

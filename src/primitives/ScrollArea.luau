@@ -8,42 +8,12 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
-
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild("controllers") and root.src.controllers:FindFirstChild(name) then
-			return require(root.src.controllers[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	local ok4, res4 = pcall(require, "../controllers/" .. name)
-	if ok4 then return res4 end
-	return {}
-end
-
-local Deps = loadSibling("Deps")
-local ScrollController = loadSibling("ScrollController")
-local Scrollbar = loadSibling("Scrollbar")
-local InputScope = loadSibling("InputScope")
-local PointerRouter = loadSibling("PointerRouter")
-local HitTest = loadSibling("HitTest")
+local Deps = require("../Deps")
+local ScrollController = require("../controllers/ScrollController")
+local Scrollbar = require("./Scrollbar")
+local InputScope = require("../InputScope")
+local PointerRouter = require("../PointerRouter")
+local HitTest = require("../HitTest")
 
 local UserInputService = if isRoblox and typeof(game) == "Instance" and game:GetService("UserInputService")
 	then game:GetService("UserInputService")
@@ -53,7 +23,7 @@ local UserInputService = if isRoblox and typeof(game) == "Instance" and game:Get
 --- springs, so this edge could not be reversed like the component seams —
 --- it was made OPTIONAL instead. Unregistered, Smooth hands the target
 --- straight back and the value steps. See Motion.luau.
-local Motion = loadSibling("Motion")
+local Motion = require("../Motion")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

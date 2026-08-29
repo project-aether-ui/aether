@@ -14,60 +14,11 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
+local Deps = require("../Deps")
 
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-		if root and root:FindFirstChild("controllers") and root.controllers:FindFirstChild(name) then
-			return require(root.controllers[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild("controllers") and root.src.controllers:FindFirstChild(name) then
-			return require(root.src.controllers[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	local ok4, res4 = pcall(require, "../controllers/" .. name)
-	if ok4 then return res4 end
-	return {}
-end
-
-local Deps = if isScriptInstance
-	then (function()
-		local cur = script.Parent
-		while cur and cur ~= game do
-			if cur:FindFirstChild("Deps") then
-				return require(cur.Deps)
-			end
-			cur = cur.Parent
-		end
-		return {}
-	end)()
-	else (function()
-		local ok, res = pcall(require, "../Deps")
-		if ok then return res end
-		local ok2, res2 = pcall(require, "./Deps")
-		return if ok2 then res2 else {}
-	end)()
-
-local TreeControllerMod = loadSibling("TreeController")
-local VirtualList = loadSibling("VirtualList")
-local ScrollController = loadSibling("ScrollController")
+local TreeControllerMod = require("../controllers/TreeController")
+local VirtualList = require("./VirtualList")
+local ScrollController = require("../controllers/ScrollController")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

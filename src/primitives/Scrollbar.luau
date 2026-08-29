@@ -9,53 +9,18 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
-
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("controllers") and root.controllers:FindFirstChild(name) then
-			return require(root.controllers[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild("controllers") and root.src.controllers:FindFirstChild(name) then
-			return require(root.src.controllers[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	local ok4, res4 = pcall(require, "../controllers/" .. name)
-	if ok4 then return res4 end
-	local ok5, res5 = pcall(require, "../../src/controllers/" .. name)
-	if ok5 then return res5 end
-	return {}
-end
-
-local Deps = loadSibling("Deps")
-local ScrollController = loadSibling("ScrollController")
+local Deps = require("../Deps")
+local ScrollController = require("../controllers/ScrollController")
 --- Renamed from PressableFrame in ms-51 M14; same primitive.
-local PressableFrame = loadSibling("Pressable")
-local PointerRouter = loadSibling("PointerRouter")
-local InputScope = loadSibling("InputScope")
+local PressableFrame = require("./Pressable")
+local PointerRouter = require("../PointerRouter")
+local InputScope = require("../InputScope")
 
 --- ms-51 M16: the motion SEAM, not Flux. Aether is a genuine consumer of
 --- springs, so this edge could not be reversed like the component seams —
 --- it was made OPTIONAL instead. Unregistered, Smooth hands the target
 --- straight back and the value steps. See Motion.luau.
-local Motion = loadSibling("Motion")
+local Motion = require("../Motion")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

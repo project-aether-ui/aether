@@ -23,9 +23,7 @@
 
 local isScriptInstance = typeof(script) == "Instance"
 
-local Deps = if isScriptInstance
-	then require((script :: any).Parent.Parent.roblox_packages.Aether.Deps)
-	else require("@aether/Deps")
+local Deps = require("@aether/Deps")
 
 local create = Deps.create
 local source = Deps.source

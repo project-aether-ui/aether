@@ -13,49 +13,16 @@
 ]=]
 
 local isRoblox = typeof(game) == "Instance"
-local isScriptInstance = typeof(script) == "Instance"
-
-local function loadSibling(name: string): any
-	if isScriptInstance then
-		local parent = (script :: any).Parent
-		if parent and parent:FindFirstChild(name) then
-			return require(parent[name])
-		end
-		local root = parent and parent.Parent
-		if root and root:FindFirstChild(name) then
-			return require(root[name])
-		end
-		if root and root:FindFirstChild("src") and root.src:FindFirstChild(name) then
-			return require(root.src[name])
-		end
-	end
-	local ok, res = pcall(require, "./" .. name)
-	if ok then return res end
-	local ok2, res2 = pcall(require, "../" .. name)
-	if ok2 then return res2 end
-	local ok3, res3 = pcall(require, "../../src/" .. name)
-	if ok3 then return res3 end
-	return {}
-end
-
-local Deps = loadSibling("Deps")
-local TextInput = loadSibling("TextInput")
-local useFloating = loadSibling("useFloating")
-local For = loadSibling("For")
+local Deps = require("../Deps")
+local TextInput = require("../TextInput")
+local useFloating = require("../useFloating")
+local For = require("../For")
 --- Renamed from PressableFrame in ms-51 M14; same primitive.
-local PressableFrame = loadSibling("Pressable")
-local ScopedSurface = loadSibling("ScopedSurface")
-local ScrollArea = loadSibling("ScrollArea")
+local PressableFrame = require("./Pressable")
+local ScopedSurface = require("../ScopedSurface")
+local ScrollArea = require("./ScrollArea")
 
-local SelectionModel = if isScriptInstance
-	then (function()
-		local controllers = (script :: any).Parent and (script :: any).Parent.Parent:FindFirstChild("controllers")
-		if controllers and controllers:FindFirstChild("SelectionModel") then
-			return require(controllers.SelectionModel)
-		end
-		return loadSibling("SelectionModel")
-	end)()
-	else loadSibling("controllers/SelectionModel")
+local SelectionModel = require("../controllers/SelectionModel")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it
