@@ -19,6 +19,7 @@ host.InstallVocabulary()
 local WIDTH, HEIGHT = 200, 100
 
 local presses = 0
+local activations = 0
 local hovers = 0
 
 local tree
@@ -38,6 +39,11 @@ host.root(function()
 			OnPressed = function()
 				presses += 1
 			end,
+			--- Press AND release inside. What a button should use: a press that
+			--- leaves before releasing must not count.
+			OnActivated = function()
+				activations += 1
+			end,
 			OnHoverChanged = function(hovered: boolean)
 				if hovered then
 					hovers += 1
@@ -56,6 +62,9 @@ return {
 	--- current count rather than a copy taken at module load.
 	Presses = function()
 		return presses
+	end,
+	Activations = function()
+		return activations
 	end,
 	Hovers = function()
 		return hovers

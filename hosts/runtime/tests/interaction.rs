@@ -73,3 +73,35 @@ fn moving_over_it_reports_hover() {
     assert!(count >= 1, "hover never reached the pressable");
 }
 
+
+/// `OnActivated` is what a button should use, and it is not `OnPressed`.
+///
+/// A press followed by a release INSIDE the element activates it; a press that
+/// wanders off and releases elsewhere must not. Worth pinning separately because
+/// a widget wired to `OnPressed` fires on mouse-down and cannot be cancelled,
+/// which is a subtly wrong button rather than a broken one.
+#[test]
+fn activation_needs_a_press_and_a_release_inside() {
+    let app = app();
+    let session = app.session().unwrap();
+    let activations: Function = app.get("Activations").unwrap();
+
+    session.step(1.0 / 60.0).unwrap();
+
+    session.pointer(Pointer::Down, INSIDE.0, INSIDE.1).unwrap();
+    session.pointer(Pointer::Up, INSIDE.0, INSIDE.1).unwrap();
+    assert_eq!(
+        activations.call::<i32>(()).unwrap(),
+        1,
+        "press and release inside should activate"
+    );
+
+    // Press inside, release outside: not an activation.
+    session.pointer(Pointer::Down, INSIDE.0, INSIDE.1).unwrap();
+    session.pointer(Pointer::Up, 180.0, 90.0).unwrap();
+    assert_eq!(
+        activations.call::<i32>(()).unwrap(),
+        1,
+        "releasing outside the element should not activate it"
+    );
+}
