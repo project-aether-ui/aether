@@ -57,6 +57,20 @@ pub use vm::{Capabilities, Vm};
 use mlua::prelude::*;
 use std::path::{Path, PathBuf};
 
+/// Drop Windows' extended-length path prefix.
+///
+/// `canonicalize` returns the `\?\C:\...` form, and almost nothing downstream
+/// accepts it: `FsRequirer` cannot reset its context to one, and it survives into
+/// a `.luaurc` as `//?/C:/...`, where it reads as a UNC host rather than a drive.
+/// Both failures point somewhere other than the path.
+pub fn strip_extended_prefix(path: PathBuf) -> PathBuf {
+    const PREFIX: &str = r"\?\";
+    match path.to_string_lossy().strip_prefix(PREFIX) {
+        Some(stripped) => PathBuf::from(stripped),
+        None => path,
+    }
+}
+
 /// Where Aether's own Luau source sits, relative to this crate.
 ///
 /// THE POINT IS THAT A HOST NEEDS NO PATH OF ITS OWN. A consumer pins this crate
@@ -75,7 +89,8 @@ use std::path::{Path, PathBuf};
 pub fn luau_source_root() -> Option<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let src = root.join("src");
-    src.is_dir().then(|| root.canonicalize().unwrap_or(root))
+    src.is_dir()
+        .then(|| strip_extended_prefix(root.canonicalize().unwrap_or_else(|_| root.clone()))) 
 }
 
 /// A loaded application, before it is driven.

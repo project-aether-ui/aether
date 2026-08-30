@@ -64,18 +64,7 @@ pub fn load_entry<'a>(vm: &'a Vm, path: &Path) -> LuaResult<LuaFunction> {
 
 /// An absolute path the requirer can navigate from.
 ///
-/// An absolute path the requirer can navigate from.
-///
-/// `canonicalize` on Windows returns an EXTENDED-LENGTH path (the `\\?\C:\...`
-/// form), and `FsRequirer` cannot reset its context to one: the guest's very
-/// first require fails with "could not reset to requiring context". The message
-/// names the module being required rather than the chunk doing the requiring, so
-/// it reads as a missing module when what is wrong is the caller's own path.
+/// See [`crate::strip_extended_prefix`] for what is stripped and why.
 fn absolute(path: &Path) -> PathBuf {
-    const EXTENDED_LENGTH_PREFIX: &str = r"\\?\";
-    let resolved = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    match resolved.to_string_lossy().strip_prefix(EXTENDED_LENGTH_PREFIX) {
-        Some(stripped) => PathBuf::from(stripped),
-        None => resolved,
-    }
+    crate::strip_extended_prefix(path.canonicalize().unwrap_or_else(|_| path.to_path_buf()))
 }
