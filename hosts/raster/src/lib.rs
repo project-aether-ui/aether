@@ -503,11 +503,39 @@ pub extern "C" fn ar_begin(ptr: *mut Surface, r: u8, g: u8, b: u8) {
     if poisoned("blackout") {
         return;
     }
-    if s.which == Which::VelloCpu {
-        vello_begin(s, r, g, b, None);
+    begin_with_alpha(s, r, g, b, 255);
+}
+
+/// Start a frame on a background that is not opaque.
+///
+/// `a` of 0 clears to nothing at all, which is what a LAYERED window wants: the
+/// desktop shows through wherever the widget did not paint, and the rounded
+/// corners and soft edges the tree draws become the window's real silhouette
+/// rather than a shape cut out of a rectangle of background colour.
+///
+/// Both backends produce PREMULTIPLIED output, which is also what
+/// `UpdateLayeredWindow` consumes, so nothing has to be converted on the way.
+#[no_mangle]
+pub extern "C" fn ar_begin_alpha(ptr: *mut Surface, r: u8, g: u8, b: u8, a: u8) {
+    let s = match unsafe { ptr.as_mut() } {
+        Some(s) => s,
+        None => return,
+    };
+    flush_pending(s);
+    s.clips.clear();
+    s.damage = None;
+    if poisoned("blackout") {
         return;
     }
-    s.pixmap.fill(tiny_skia::Color::from_rgba8(r, g, b, 255));
+    begin_with_alpha(s, r, g, b, a);
+}
+
+fn begin_with_alpha(s: &mut Surface, r: u8, g: u8, b: u8, a: u8) {
+    if s.which == Which::VelloCpu {
+        vello_begin(s, r, g, b, a, None);
+        return;
+    }
+    s.pixmap.fill(tiny_skia::Color::from_rgba8(r, g, b, a));
 }
 
 /// Start a vello frame: unwind any clips left from last time, reset the recorded
@@ -515,7 +543,7 @@ pub extern "C" fn ar_begin(ptr: *mut Surface, r: u8, g: u8, b: u8) {
 ///
 /// `reset` rather than a fresh context: the context owns sizeable scratch and
 /// rebuilding it every frame would allocate on the frame thread.
-fn vello_begin(s: &mut Surface, r: u8, g: u8, b: u8, damage: Option<(i32, i32, i32, i32)>) {
+fn vello_begin(s: &mut Surface, r: u8, g: u8, b: u8, a: u8, damage: Option<(i32, i32, i32, i32)>) {
     let (w, h) = (s.width, s.height);
     let v = match s.vello.as_mut() {
         Some(v) => v,
@@ -527,7 +555,7 @@ fn vello_begin(s: &mut Surface, r: u8, g: u8, b: u8, damage: Option<(i32, i32, i
     }
     v.ctx.reset();
     v.rendered = false;
-    v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, 255));
+    v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, a));
     match damage {
         Some((dx, dy, dw, dh)) => {
             // The damage rect is pushed as the base clip so nothing can paint
@@ -589,7 +617,7 @@ pub extern "C" fn ar_begin_rect(
     s.damage = Some(rect);
     if s.which == Which::VelloCpu {
         s.clips.push(rect);
-        vello_begin(s, r, g, b, Some(rect));
+        vello_begin(s, r, g, b, 255, Some(rect));
         return;
     }
     // The damage rect is the BASE CLIP, so every nested clip intersects with it
@@ -1023,8 +1051,11 @@ pub extern "C" fn ar_bgra(ptr: *mut Surface) -> *const u8 {
     // in a shape LLVM will not vectorise. Measured at 0.894 ms of an 8.4 ms
     // shop frame — 11% — against 0.082 ms for the upload it feeds.
     let Surface { which, vello, pixmap, bgra, width, .. } = s;
-    // Both backends hand back premultiplied RGBA; the surface is cleared opaque
-    // so alpha is 255 everywhere and no un-premultiply is needed.
+    // Both backends hand back PREMULTIPLIED RGBA, which is also what a layered
+    // window consumes, so the alpha is carried through rather than forced to 255.
+    // For an opaque surface every pixel is already 255 and this is identical to
+    // what it replaced; for a transparent one it is the difference between a
+    // widget with a real silhouette and a rectangle.
     let src: &[u8] = if *which == Which::VelloCpu {
         match vello.as_ref() {
             Some(v) => v.pixmap.data_as_u8_slice(),
@@ -1052,7 +1083,7 @@ pub extern "C" fn ar_bgra(ptr: *mut Surface) -> *const u8 {
             d[0] = if swap { p[0] } else { p[2] };
             d[1] = p[1];
             d[2] = if swap { p[2] } else { p[0] };
-            d[3] = 255;
+            d[3] = p[3];
         }
     }
     s.bgra.as_ptr()

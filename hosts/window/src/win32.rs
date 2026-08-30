@@ -1,10 +1,12 @@
 //! The Win32 implementation.
 
-use crate::{Button, Event};
+use crate::{Button, Event, Surface};
 use std::cell::RefCell;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
 use windows::Win32::Graphics::Gdi::{
+    CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, SelectObject, AC_SRC_ALPHA,
+    AC_SRC_OVER, BLENDFUNCTION, HBITMAP,
     BeginPaint, EndPaint, GetDC, ReleaseDC, StretchDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
     DIB_RGB_COLORS, HDC, PAINTSTRUCT, SRCCOPY, ScreenToClient,
 };
@@ -185,10 +187,11 @@ pub struct Window {
     hwnd: HWND,
     width: u32,
     height: u32,
+    layered: bool,
 }
 
 impl Window {
-    pub fn new(title: &str, width: u32, height: u32) -> Result<Window, String> {
+    pub fn new(surface: &Surface, width: u32, height: u32) -> Result<Window, String> {
         unsafe {
             let instance = GetModuleHandleW(None).map_err(|e| e.to_string())?;
             let class = wide("AetherWindow");
@@ -196,6 +199,8 @@ impl Window {
             // Registering twice returns an error that is not one — a second window
             // of the same class is fine and the class is already there. The
             // result is deliberately discarded rather than checked.
+            let layered = matches!(surface, Surface::Widget { .. });
+
             let wc = WNDCLASSW {
                 lpfnWndProc: Some(wndproc),
                 hInstance: instance.into(),
@@ -215,22 +220,56 @@ impl Window {
                 right: width as i32,
                 bottom: height as i32,
             };
-            let _ = AdjustWindowRect(&mut rect, WS_OVERLAPPEDWINDOW, false);
-
             // BOUND TO A LOCAL, not written inline. `PCWSTR(wide(title).as_ptr())`
             // drops the Vec at the end of the enclosing expression, so the window
             // is created from a pointer into freed memory — which usually
             // "works", occasionally shows a garbage title, and is undefined
             // behaviour every time.
-            let title_w = wide(title);
+            let title_w = wide(match surface {
+                Surface::Window { title } => title.as_str(),
+                Surface::Widget { .. } => "",
+            });
+
+            // A WIDGET IS BORDERLESS, TOPMOST, AND OUT OF THE TASKBAR.
+            //
+            // `WS_EX_TOOLWINDOW` is the one that keeps it out of Alt-Tab and the
+            // taskbar; without it a desktop clock is a window you can tab to,
+            // which is not what a widget is. `WS_EX_LAYERED` is what makes
+            // `UpdateLayeredWindow` available, and therefore per-pixel alpha.
+            let (style, ex_style, x, y) = match surface {
+                Surface::Window { .. } => (
+                    WS_OVERLAPPEDWINDOW,
+                    WINDOW_EX_STYLE::default(),
+                    CW_USEDEFAULT,
+                    CW_USEDEFAULT,
+                ),
+                Surface::Widget { x, y, click_through } => {
+                    let mut ex = WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+                    if *click_through {
+                        // TRANSPARENT means hit-testing falls through to whatever
+                        // is behind. It is a property of the window, not of the
+                        // painting, so a widget can be fully opaque and still be
+                        // clicked through.
+                        ex |= WS_EX_TRANSPARENT;
+                    }
+                    (WS_POPUP, ex, *x, *y)
+                }
+            };
+
+            // Only an ordinary window has chrome to account for. A popup's
+            // outer rectangle IS its client area, and adjusting one would make
+            // the widget larger than the surface it presents.
+            if !layered {
+                let _ = AdjustWindowRect(&mut rect, style, false);
+            }
 
             let hwnd = CreateWindowExW(
-                WINDOW_EX_STYLE::default(),
+                ex_style,
                 PCWSTR(class.as_ptr()),
                 PCWSTR(title_w.as_ptr()),
-                WS_OVERLAPPEDWINDOW,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
+                style,
+                x,
+                y,
                 rect.right - rect.left,
                 rect.bottom - rect.top,
                 None,
@@ -246,6 +285,7 @@ impl Window {
                 hwnd,
                 width,
                 height,
+                layered,
             })
         }
     }
@@ -279,8 +319,108 @@ impl Window {
         Some(events)
     }
 
+    /// Put a BGRA buffer on screen, whichever kind of surface this is.
+    ///
+    /// A widget takes the layered path, where the buffer's ALPHA becomes the
+    /// window's shape; an ordinary window takes the blit, where it is ignored.
+    /// The caller does not choose — it painted a frame, and how that reaches the
+    /// screen is a property of the window it asked for.
+    pub fn present(&self, bgra: &[u8], width: u32, height: u32) {
+        if self.layered {
+            self.present_layered(bgra, width, height);
+        } else {
+            self.blit(bgra, width, height);
+        }
+    }
+
+    /// Composite a premultiplied BGRA buffer as the window itself.
+    ///
+    /// `UpdateLayeredWindow` takes the bitmap AND the window's size and position
+    /// in one call — the window has no client area being painted into, it simply
+    /// IS this bitmap. That is what makes the alpha real: a pixel with alpha 0 is
+    /// not a transparent pixel drawn over a background, it is a pixel the window
+    /// does not occupy, and the desktop behind it is what shows and what receives
+    /// the click.
+    ///
+    /// PREMULTIPLIED is required, not preferred: `AC_SRC_ALPHA` says the colour
+    /// channels are already scaled by alpha. `aether_raster` produces exactly
+    /// that, so nothing converts on the way.
+    fn present_layered(&self, bgra: &[u8], width: u32, height: u32) {
+        if bgra.len() < (width * height * 4) as usize {
+            return;
+        }
+        unsafe {
+            let screen = GetDC(None);
+            if screen.is_invalid() {
+                return;
+            }
+            let mem = CreateCompatibleDC(Some(screen));
+            if mem.is_invalid() {
+                ReleaseDC(None, screen);
+                return;
+            }
+
+            let info = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: width as i32,
+                    // Negative for top-down, as in the blit path.
+                    biHeight: -(height as i32),
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+
+            let mut bits: *mut core::ffi::c_void = std::ptr::null_mut();
+            let bitmap: HBITMAP =
+                match CreateDIBSection(Some(mem), &info, DIB_RGB_COLORS, &mut bits, None, 0) {
+                    Ok(b) if !bits.is_null() => b,
+                    _ => {
+                        let _ = DeleteDC(mem);
+                        ReleaseDC(None, screen);
+                        return;
+                    }
+                };
+
+            std::ptr::copy_nonoverlapping(bgra.as_ptr(), bits as *mut u8, bgra.len());
+            let old = SelectObject(mem, bitmap.into());
+
+            let mut size = SIZE {
+                cx: width as i32,
+                cy: height as i32,
+            };
+            let mut src = POINT { x: 0, y: 0 };
+            let blend = BLENDFUNCTION {
+                BlendOp: AC_SRC_OVER as u8,
+                BlendFlags: 0,
+                SourceConstantAlpha: 255,
+                AlphaFormat: AC_SRC_ALPHA as u8,
+            };
+
+            let _ = UpdateLayeredWindow(
+                self.hwnd,
+                Some(screen),
+                None,
+                Some(&mut size),
+                Some(mem),
+                Some(&mut src),
+                COLORREF(0),
+                Some(&blend),
+                ULW_ALPHA,
+            );
+
+            SelectObject(mem, old);
+            let _ = DeleteObject(bitmap.into());
+            let _ = DeleteDC(mem);
+            ReleaseDC(None, screen);
+        }
+    }
+
     /// Put a BGRA buffer on screen. `bgra` must be `width * height * 4` bytes.
-    pub fn blit(&self, bgra: &[u8], width: u32, height: u32) {
+    fn blit(&self, bgra: &[u8], width: u32, height: u32) {
         if bgra.len() < (width * height * 4) as usize {
             return;
         }

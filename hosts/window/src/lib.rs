@@ -19,6 +19,38 @@ mod win32;
 
 pub use win32::Window;
 
+/// What kind of surface a window is.
+///
+/// NOT A FLAG ON ONE STRUCT, because the two differ in what they can be asked.
+/// A widget has an anchor and no title; a window has a title and no anchor, and
+/// letting either set the other's fields means a setting that is silently
+/// ignored — which is how a manifest becomes decoration.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Surface {
+    /// An ordinary window: caption, border, resizable, in the taskbar.
+    ///
+    /// What a developer previewing a component wants, and what a settings panel
+    /// or a log viewer should be.
+    Window { title: String },
+
+    /// A floating widget: no chrome, always on top, out of the taskbar, and
+    /// PER-PIXEL TRANSPARENT.
+    ///
+    /// The Rainmeter shape. The window's visible silhouette is whatever the tree
+    /// painted — rounded corners and soft edges included — because the surface is
+    /// composited from a premultiplied buffer rather than blitted into a
+    /// rectangle. `WS_EX_LAYERED` with `UpdateLayeredWindow` does this on an
+    /// ordinary DIB, so it needs no swapchain and no DirectComposition.
+    Widget {
+        /// Screen position of the top-left corner.
+        x: i32,
+        y: i32,
+        /// Let clicks fall through to whatever is behind. A monitor that only
+        /// displays wants this; anything with a control does not.
+        click_through: bool,
+    },
+}
+
 /// Which mouse button, spelled the way a shell wants to match on it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Button {

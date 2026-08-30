@@ -19,7 +19,7 @@
 //! and never hand out.
 
 use crate::{Surface, ar_begin, ar_clip_pop, ar_clip_push, ar_fill_gradient, ar_fill_rect,
-            ar_bgra, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
+            ar_begin_alpha, ar_bgra, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
             ar_surface_new_backend, ar_surface_free, ar_text_ascent, ar_text_width};
 
 /// Which rasteriser paints.
@@ -89,9 +89,22 @@ impl Canvas {
         self.height
     }
 
-    /// Start a frame, clearing to a background colour.
+    /// Start a frame, clearing to an opaque background colour.
     pub fn begin(&mut self, r: u8, g: u8, b: u8) {
         ar_begin(self.ptr, r, g, b);
+    }
+
+    /// Start a frame on a background that is not opaque.
+    ///
+    /// `a` of 0 clears to nothing, which is what a LAYERED window wants: the
+    /// desktop shows through wherever the tree did not paint, so the rounded
+    /// corners and soft edges it draws become the widget's real silhouette
+    /// instead of a shape cut out of a rectangle.
+    ///
+    /// The output stays PREMULTIPLIED, which is what `UpdateLayeredWindow`
+    /// consumes, so [`Canvas::bgra`] feeds it directly.
+    pub fn begin_alpha(&mut self, r: u8, g: u8, b: u8, a: u8) {
+        ar_begin_alpha(self.ptr, r, g, b, a);
     }
 
     pub fn fill_rect(&mut self, x: f32, y: f32, w: f32, h: f32, radius: f32, rgba: (u8, u8, u8, u8)) {
