@@ -55,7 +55,28 @@ pub use session::{Modifiers, Pointer, Session, Stats};
 pub use vm::{Capabilities, Vm};
 
 use mlua::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Where Aether's own Luau source sits, relative to this crate.
+///
+/// THE POINT IS THAT A HOST NEEDS NO PATH OF ITS OWN. A consumer pins this crate
+/// by commit; the framework's Luau lives in the same repository, so the checkout
+/// Cargo already made IS the matching source — same revision, by construction,
+/// with nothing to keep in step by hand.
+///
+/// A host that instead configured "../aether/src" would be carrying a second,
+/// unpinned dependency on the same thing: correct only while two checkouts
+/// happen to agree, and silently wrong the moment they do not.
+///
+/// `CARGO_MANIFEST_DIR` is baked at compile time — for a git dependency that is
+/// the vendored checkout under `~/.cargo/git`, and in this workspace it is the
+/// crate directory. Returns `None` if the layout is not there, which is a real
+/// possibility for a vendoring scheme that flattens crates.
+pub fn luau_source_root() -> Option<PathBuf> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let src = root.join("src");
+    src.is_dir().then(|| root.canonicalize().unwrap_or(root))
+}
 
 /// A loaded application, before it is driven.
 pub struct Application {
