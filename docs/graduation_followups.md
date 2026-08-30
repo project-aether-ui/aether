@@ -5,36 +5,44 @@ of it is a surprise waiting to be found.
 
 ---
 
-## 1. The monorepo cannot be reached by git dependency yet — BLOCKING
+## 1. The remote — RESOLVED for Aether, still open for the monorepo
 
-The whole cross-repo plan rests on `{ repo, rev, path }` git dependencies. The
-mechanism is verified working. The monorepo is not reachable through it:
+Aether lives at **github.com/project-aether-ui/aether**, in its own organisation
+rather than under `SpektrLabs`. That org is Roblox-focused, and this framework's
+whole claim is that it is not.
 
-1. **`SpektrLabs/rbx-essentials` is private.** An unauthenticated fetch returns
-   404, and pesde reports that as `no entry found at path pkgs/testkit/core` —
-   which reads like a missing directory and is not one.
-2. **It is 254 commits ahead of its own `origin/main`.** Even with auth,
-   `rev = "main"` resolves to a tree where this framework is still called CoreUI:
-   `pkgs/ui/framework/Aether` does not exist on the remote at all.
+Dew pins it by commit and builds. Both halves come from the one revision: the
+Rust crates through Cargo, and the Luau source through
+`aether_runtime::luau_source_root()`, which reports the checkout Cargo already
+made — so there is no second, unpinned dependency on the same thing.
 
-Until the monorepo is pushed, no consumer — this repo, Dew, or the monorepo
-itself — can pin anything by commit.
+TWO THINGS THAT HAD TO BE TRUE FIRST, and both are worth remembering:
 
-**Verified working**, so the plan is sound once the above is fixed:
+  * **Commits carried a private email.** GitHub refused the push outright. The
+    history was rewritten onto the noreply address — which had to happen BEFORE
+    anything pinned a revision, because it changed every SHA.
+  * **A pinned checkout has the framework and none of its dependencies.**
+    `roblox_packages/` is generated, so vide is not in the repository. VideCore
+    now takes `@vide` as its first candidate and a host supplies it; see
+    `Capabilities.aliases` for why a `.luaurc` cannot.
 
-- `{ repo = "owner/name", rev = "main" }` resolves and records the concrete
+STILL OPEN: `SpektrLabs/rbx-essentials` is private AND far ahead of its own
+origin/main, so testkit still cannot be reached by commit — see §2.
+
+**Verified working**, and worth not re-deriving:
+
+- `{ repo = "owner/name", rev = "..." }` resolves and records the concrete
   `tree_id` in `pesde.lock`.
 - `{ repo, rev, path = "sub/dir" }` resolves a subdirectory manifest.
-- A `luau`-target consumer CAN depend on a `roblox`-target git package; the
-  redirect lands in `roblox_packages/` and is an ordinary Luau file.
+- A `luau`-target consumer CAN depend on a `roblox`-target git package.
 
 **Verified NOT working**, so do not plan around it:
 
 - A subdirectory manifest whose `lib` reaches upward (`../../src`) — pesde copies
-  only that subdirectory, so the path is not there. **Two targets from one source
-  tree is not expressible.** One manifest, one target.
-
----
+  only that subdirectory. **Two targets from one source tree is not
+  expressible.** One manifest, one target.
+- A `file://` pin. It looks like pinning and is not: the revision exists on one
+  machine, so a lockfile built from it is unusable to anyone else.
 
 ## 2. testkit is wired by `.luaurc` alias, not by manifest
 
