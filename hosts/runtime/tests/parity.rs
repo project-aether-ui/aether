@@ -133,3 +133,30 @@ fn the_guest_has_no_escape_hatches() {
     assert!(debug.contains_key("info").unwrap());
 }
 
+
+/// The prefix strip is four characters of backslash-escaping and a draft shipped
+/// with one too few — matching nothing and stripping nothing. Asserted rather
+/// than eyeballed, because that is exactly the kind of literal a reader's eye
+/// slides over.
+#[test]
+fn the_extended_length_prefix_is_stripped() {
+    use aether_runtime::strip_extended_prefix;
+    use std::path::PathBuf;
+
+    // BUILT FROM CHARACTERS, not written as a literal. The prefix is four
+    // characters of pure backslash and every tool between a keyboard and this
+    // file has an opinion about them — the first draft of this test lost one in
+    // transit and then failed against a library that was correct, which is the
+    // most expensive way for a test to be wrong.
+    let prefix: String = ['\\', '\\', '?', '\\'].iter().collect();
+    let tail = r"C:\Users\someone\aether\src";
+
+    assert_eq!(
+        strip_extended_prefix(PathBuf::from(format!("{prefix}{tail}"))),
+        PathBuf::from(tail)
+    );
+
+    // An ordinary path is returned untouched.
+    let plain = PathBuf::from(r"C:\Users\someone\aether\src");
+    assert_eq!(strip_extended_prefix(plain.clone()), plain);
+}

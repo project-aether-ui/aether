@@ -59,12 +59,17 @@ use std::path::{Path, PathBuf};
 
 /// Drop Windows' extended-length path prefix.
 ///
-/// `canonicalize` returns the `\?\C:\...` form, and almost nothing downstream
+/// `canonicalize` returns the extended-length form (backslash, backslash,
+/// question mark, backslash, then the drive), and almost nothing downstream
 /// accepts it: `FsRequirer` cannot reset its context to one, and it survives into
 /// a `.luaurc` as `//?/C:/...`, where it reads as a UNC host rather than a drive.
 /// Both failures point somewhere other than the path.
+///
+/// The prefix is spelled out in prose above because it is four characters of
+/// pure backslash-escaping, and a draft of this function shipped with one too
+/// few — matching nothing, stripping nothing, and leaving every symptom intact.
 pub fn strip_extended_prefix(path: PathBuf) -> PathBuf {
-    const PREFIX: &str = r"\?\";
+    const PREFIX: &str = r"\\?\";
     match path.to_string_lossy().strip_prefix(PREFIX) {
         Some(stripped) => PathBuf::from(stripped),
         None => path,
