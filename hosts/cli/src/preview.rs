@@ -19,7 +19,7 @@ pub fn run(_args: &Args) -> Result<(), String> {
 pub fn run(args: &Args) -> Result<(), String> {
     use crate::snapshot::{painter, size_of};
     use aether_runtime::{Application, Capabilities, Driver, Modifiers, Pointer, Rgb};
-    use aether_window::{Button, Event, Window};
+    use aether_window::{Button, Event, Surface, Window};
     use std::time::{Duration, Instant};
 
     let root = args
@@ -35,8 +35,14 @@ pub fn run(args: &Args) -> Result<(), String> {
     let session = app.session().map_err(|e| e.to_string())?;
     let mut driver = Driver::new(session, painter(width, height)?, Some(Rgb(13, 17, 23)));
 
-    let title = format!("aether — {}", args.entry.display());
-    let mut window = Window::new(&title, width, height)?;
+    // AN ORDINARY WINDOW. `preview` is for looking at a component while writing
+    // it — chrome, a title bar and a taskbar entry are what that wants. The
+    // floating-widget surface is Dew's business, where a widget is the product
+    // rather than the subject.
+    let surface = Surface::Window {
+        title: format!("aether — {}", args.entry.display()),
+    };
+    let mut window = Window::new(&surface, width, height)?;
 
     println!("previewing {} at {width}x{height}", args.entry.display());
 
@@ -105,7 +111,7 @@ pub fn run(args: &Args) -> Result<(), String> {
         driver.frame(dt).map_err(|e| format!("while rendering: {e}"))?;
 
         if let Some(bgra) = driver.painter_mut().canvas_mut().bgra() {
-            window.blit(bgra, width, height);
+            window.present(bgra, width, height);
         }
 
         let elapsed = last.elapsed();
