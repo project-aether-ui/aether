@@ -527,6 +527,33 @@ export type Session = {
 --- polls at all — so a host that drives frames has to pump it or hover silently
 --- goes stale the moment anything animates.
 function Live.Session(host: any, root: any, router: any, width: number, height: number): Session
+	--- A LAYER ROOT, because hit-testing requires one and only Roblox supplies it
+	--- for free.
+	---
+	--- `HitTest.ContainsVisible` walks from a pressable up through its ancestors
+	--- and must terminate at an ENABLED layer root — a ScreenGui — or the element
+	--- is not on screen and cannot be hit. In Roblox an entry point mounts into
+	--- one (`host.mount(app, screenGui)`) and the walk ends there.
+	---
+	--- Off-engine nothing does. A host hands `Live.Session` a bare tree, the walk
+	--- runs off the top into nil, and EVERY hit test returns false — so pressables
+	--- render perfectly and no click, hover or drag ever lands. Nothing else
+	--- misbehaves, which is what makes it so hard to see: layout is right, the
+	--- display list is right, and the router is simply never told that anything is
+	--- under the pointer.
+	---
+	--- Done HERE rather than in each host because every host needs it identically,
+	--- and the one that forgets does not fail — it silently loses all input.
+	if root ~= nil and host.Scene.Parent(root) == nil then
+		local screen = host.create("ScreenGui")({
+			Name = "AetherScreen",
+			--- Explicit: `IsEnabled` reads this, and a mock instance has no Roblox
+			--- default to fall back on.
+			Enabled = true,
+		})
+		root.Parent = screen
+	end
+
 	local frames, events = 0, 0
 	--- Delta bookkeeping (ms-52 M4). `Sent` counts frames that carried a change,
 	--- `Skipped` counts frames where nothing did -- which is the number the exit
