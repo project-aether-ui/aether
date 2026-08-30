@@ -141,3 +141,51 @@ fn incrementing_changes_what_is_rendered() {
         "the reactive update never reached the display list; texts were {texts:?}"
     );
 }
+
+/// A small change must produce a small dirty rectangle, and a cheaper paint.
+///
+/// This is the property the damage-clipped repaint rests on. Without it
+/// `paint_delta` clips to a rectangle covering everything and saves nothing,
+/// which would look exactly like working code on a small surface and cost 30ms a
+/// frame on a desktop-sized one.
+#[test]
+fn a_small_change_dirties_a_small_rectangle() {
+    let app = app();
+    let session = app.session().expect("session");
+    let increment: mlua::Function = app.get("Increment").expect("Increment");
+
+    session.step(1.0 / 60.0).unwrap();
+    let full = session.delta(true).expect("full delta");
+    let (fw, fh) = (full.frame.width, full.frame.height);
+
+    // A forced full delta covers the surface, which is what makes it full.
+    let covers_all = full
+        .dirty
+        .map(|d| d.w >= fw && d.h >= fh)
+        .unwrap_or(true);
+    assert!(covers_all, "a forced full delta should dirty everything");
+
+    increment.call::<()>(()).expect("increment");
+    session.step(1.0 / 60.0).unwrap();
+
+    let delta = session.delta(false).expect("delta");
+    let dirty = delta.dirty.expect("changing the count should dirty something");
+
+    let changed_area = dirty.w * dirty.h;
+    let whole = fw * fh;
+    assert!(
+        changed_area < whole / 2.0,
+        "one label changed but the dirty rect covers {:.0}% of the frame \
+         ({}x{} of {fw}x{fh}) — the damage-clipped repaint saves nothing",
+        100.0 * changed_area / whole,
+        dirty.w,
+        dirty.h
+    );
+
+    println!(
+        "dirty {:.0}x{:.0} of {fw:.0}x{fh:.0} — {:.1}% of the surface",
+        dirty.w,
+        dirty.h,
+        100.0 * changed_area / whole
+    );
+}

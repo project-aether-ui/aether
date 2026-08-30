@@ -174,3 +174,50 @@ fn text_is_actually_drawn() {
         "found {light} near-white pixels in the label — no glyphs were drawn"
     );
 }
+
+/// Does clipping the frame to a small rectangle actually cost less?
+///
+/// Reported rather than asserted: the ratio depends on the machine and a
+/// threshold would be flaky. The number that matters is that it is a ratio at
+/// all — before `paint_delta` used the dirty rectangle, both paths did identical
+/// work and the ratio was 1.
+#[test]
+fn a_clipped_repaint_costs_less_than_a_full_one() {
+    use std::time::Instant;
+
+    // Desktop-sized, which is where this matters. At widget size the whole
+    // surface is small enough that clipping saves little and hides the effect.
+    const W: u32 = 2560;
+    const H: u32 = 1440;
+
+    let mut painter = RasterPainter::new(W, H, Backend::VelloCpu).expect("surface");
+
+    let rounds = 5;
+    let mut full = std::time::Duration::ZERO;
+    for _ in 0..rounds {
+        let t = Instant::now();
+        painter.canvas_mut().begin_alpha(0, 0, 0, 0);
+        painter
+            .canvas_mut()
+            .fill_rect(40.0, 40.0, 300.0, 150.0, 8.0, (56, 189, 248, 255));
+        let _ = painter.canvas_mut().bgra();
+        full += t.elapsed();
+    }
+
+    let mut clipped = std::time::Duration::ZERO;
+    for _ in 0..rounds {
+        let t = Instant::now();
+        painter.canvas_mut().begin_rect((0, 0, 0, 0), 40, 40, 310, 160);
+        painter
+            .canvas_mut()
+            .fill_rect(40.0, 40.0, 300.0, 150.0, 8.0, (56, 189, 248, 255));
+        let _ = painter.canvas_mut().bgra();
+        clipped += t.elapsed();
+    }
+
+    let (full, clipped) = (full / rounds, clipped / rounds);
+    println!(
+        "{W}x{H}: full {full:?} | clipped to 310x160 {clipped:?} | {:.1}x",
+        full.as_secs_f64() / clipped.as_secs_f64().max(f64::EPSILON)
+    );
+}
