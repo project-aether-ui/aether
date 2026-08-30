@@ -43,18 +43,28 @@
 
 local VideCore = {}
 
---- Candidate roots for the installed vide, newest first.
+--- Where the installed vide might be, in order of preference.
 ---
---- Version-pinned because pesde writes the version into the path, and the
---- redirect at `roblox_packages/vide.luau` cannot help us: it resolves through
---- `script.Parent`, which does not exist outside Roblox. A miss on any one of
---- these is caught, so an unknown version degrades to "core unavailable" rather
---- than to a broken require at module scope.
+--- `@vide` FIRST, AND IT IS THE ONE THAT SCALES. The rest are relative paths
+--- into this package's own `roblox_packages`, which works when Aether is the
+--- thing being developed and fails the moment it is a DEPENDENCY: a consumer
+--- pins this repository by commit, and `roblox_packages/` is generated, so the
+--- checkout Cargo or pesde made has Aether's source and none of Aether's own
+--- dependencies. Dew hit exactly that — "no installed vide reachable" from a
+--- pinned checkout that was otherwise perfectly correct.
+---
+--- An alias makes the supply an explicit seam: a host that embeds Aether
+--- installs vide wherever it likes and points `@vide` at it. Nothing here has to
+--- guess a layout, and nothing has to be re-listed when a version moves.
+---
+--- The version-pinned paths stay for the in-repo case — Aether's own tests and
+--- the CLI resolve through them — and because a miss on any candidate is caught,
+--- an unknown layout degrades to "core unavailable" rather than to a broken
+--- require at module scope.
 local CANDIDATE_ROOTS = {
+	"@vide/",
 	"../../roblox_packages/.pesde/centau_vide@0.4.1/vide/src/",
 	"../../roblox_packages/.pesde/centau_vide@0.4.0/vide/src/",
-	"../../../../../ui/framework/Aether/roblox_packages/.pesde/centau_vide@0.4.1/vide/src/",
-	"../../../../../ui/framework/Aether/roblox_packages/.pesde/centau_vide@0.4.0/vide/src/",
 }
 
 --- The modules that load outside Roblox, verified one-per-process against 0.4.1.
