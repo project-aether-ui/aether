@@ -88,7 +88,13 @@ pub trait Painter {
     }
 }
 
-fn paint_node<P: Painter + ?Sized>(painter: &mut P, node: &Node) {
+/// Paint one node, in the order its parts must be drawn.
+///
+/// `pub(crate)` so an implementor overriding `paint_delta` reuses this rather
+/// than writing the order out again — clip, fill or gradient, stroke, text. Three
+/// painters independently rediscovering that order is three chances to get it
+/// wrong on one backend only.
+pub(crate) fn paint_node<P: Painter + ?Sized>(painter: &mut P, node: &Node) {
     let clipped = node.clip.is_some();
     if let Some(clip) = node.clip {
         painter.clip_push(clip);

@@ -12,7 +12,7 @@
 //! A windowed painter reuses the same node traversal from `painter.rs` and swaps
 //! only how the canvas is obtained and presented.
 
-use crate::frame::{Align, Gradient, Node, Rect, Rgb};
+use crate::frame::{Align, Delta, Gradient, Node, Rect, Rgb};
 use crate::painter::Painter;
 use aether_raster::{Backend, Canvas, Font};
 
@@ -230,6 +230,59 @@ impl Painter for RasterPainter {
 
     fn clip_pop(&mut self) {
         self.canvas.clip_pop();
+    }
+
+    /// Repaint ONLY the rectangle that changed.
+    ///
+    /// The default throws the delta away and repaints the surface, which is
+    /// always correct and, on a desktop-sized overlay, wildly wasteful: a frame
+    /// where one window moved cost the same as one where the whole screen did —
+    /// 30ms to touch 3.7M pixels for a surface that was 3.2% painted.
+    ///
+    /// Three pieces already existed and none of them were connected. `Live.Frame`
+    /// computes the dirty rectangle, `begin_rect` clips the frame to it and
+    /// leaves the rest of the surface holding last frame's pixels, and `bgra()`
+    /// swizzles only the damaged rows. This is the line that joins them.
+    ///
+    /// EVERY NODE IS STILL WALKED, deliberately. Filtering the display list to
+    /// nodes that intersect the damage would be a second, weaker implementation
+    /// of the clip the rasteriser already applies — and it is not where the time
+    /// went: walking 3 windows' worth of nodes was 1.6ms against 30ms of
+    /// rasterising. The cost is per-PIXEL, so clipping pixels is the fix.
+    fn paint_delta(&mut self, delta: &Delta, background: Option<Rgb>) -> bool {
+        let Some(dirty) = delta.dirty else {
+            // No dirty rectangle means the frame did not say what moved — a full
+            // repaint is the only answer that is certainly right.
+            return self.paint_frame(&delta.frame, background);
+        };
+
+        // A rectangle covering the whole surface is a full repaint written
+        // expensively; skip the clip machinery and take the simple path.
+        if dirty.x <= 0.0
+            && dirty.y <= 0.0
+            && dirty.w >= delta.frame.width
+            && dirty.h >= delta.frame.height
+        {
+            return self.paint_frame(&delta.frame, background);
+        }
+
+        // OUTWARD TO WHOLE PIXELS. A rectangle rounded inward leaves a
+        // half-covered pixel of the previous frame at every edge, which reads as
+        // a faint outline trailing whatever moved.
+        let (x, y) = (dirty.x.floor() as i32, dirty.y.floor() as i32);
+        let w = (dirty.x + dirty.w).ceil() as i32 - x;
+        let h = (dirty.y + dirty.h).ceil() as i32 - y;
+
+        let clear = match background {
+            Some(bg) => (bg.0, bg.1, bg.2, 255),
+            None => (0, 0, 0, 0),
+        };
+        self.canvas.begin_rect(clear, x, y, w, h);
+
+        for node in &delta.frame.nodes {
+            crate::painter::paint_node(self, node);
+        }
+        self.end()
     }
 
     fn end(&mut self) -> bool {

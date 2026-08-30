@@ -18,7 +18,7 @@
 //! this file where each block is one deref of a pointer we allocated ourselves
 //! and never hand out.
 
-use crate::{Surface, ar_begin, ar_clip_pop, ar_clip_push, ar_fill_gradient, ar_fill_rect,
+use crate::{Surface, ar_begin, ar_begin_rect_alpha, ar_clip_pop, ar_clip_push, ar_fill_gradient, ar_fill_rect,
             ar_begin_alpha, ar_bgra, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
             ar_surface_new_backend, ar_surface_free, ar_text_ascent, ar_text_width};
 
@@ -92,6 +92,21 @@ impl Canvas {
     /// Start a frame, clearing to an opaque background colour.
     pub fn begin(&mut self, r: u8, g: u8, b: u8) {
         ar_begin(self.ptr, r, g, b);
+    }
+
+    /// Start a frame that may only touch one rectangle.
+    ///
+    /// THE REST OF THE SURFACE KEEPS LAST FRAME'S PIXELS. Everything outside the
+    /// rectangle is left exactly as it was — not cleared, not repainted — and
+    /// [`Canvas::bgra`] then swizzles only the damaged rows. On a desktop-sized
+    /// overlay that is the difference between touching 3.7M pixels and touching
+    /// the few hundred that actually moved.
+    ///
+    /// The rectangle is also pushed as the base clip, so nothing painted this
+    /// frame can escape it even if the caller hands over a node that lies
+    /// outside.
+    pub fn begin_rect(&mut self, rgba: (u8, u8, u8, u8), x: i32, y: i32, w: i32, h: i32) {
+        ar_begin_rect_alpha(self.ptr, rgba.0, rgba.1, rgba.2, rgba.3, x, y, w, h);
     }
 
     /// Start a frame on a background that is not opaque.

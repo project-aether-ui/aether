@@ -585,11 +585,23 @@ fn vello_begin(s: &mut Surface, r: u8, g: u8, b: u8, a: u8, damage: Option<(i32,
 /// must present only the damaged region too — presenting the whole surface would
 /// be correct but would give back the cost this saves.
 #[no_mangle]
-pub extern "C" fn ar_begin_rect(
+pub extern "C" fn ar_begin_rect(ptr: *mut Surface, r: u8, g: u8, b: u8, x: i32, y: i32, w: i32, h: i32) {
+    ar_begin_rect_alpha(ptr, r, g, b, 255, x, y, w, h)
+}
+
+/// The same, on a background that is not opaque.
+///
+/// A LAYERED SURFACE NEEDS THIS. Clearing the damaged region to opaque black
+/// would repaint a black rectangle over the desktop wherever a widget moved
+/// away from — the region has to be cleared to NOTHING for the pixels the tree
+/// no longer covers to become pixels the window no longer occupies.
+#[no_mangle]
+pub extern "C" fn ar_begin_rect_alpha(
     ptr: *mut Surface,
     r: u8,
     g: u8,
     b: u8,
+    a: u8,
     x: i32,
     y: i32,
     w: i32,
@@ -617,7 +629,7 @@ pub extern "C" fn ar_begin_rect(
     s.damage = Some(rect);
     if s.which == Which::VelloCpu {
         s.clips.push(rect);
-        vello_begin(s, r, g, b, 255, Some(rect));
+        vello_begin(s, r, g, b, a, Some(rect));
         return;
     }
     // The damage rect is the BASE CLIP, so every nested clip intersects with it
@@ -626,7 +638,7 @@ pub extern "C" fn ar_begin_rect(
     s.clips.push(rect);
     if let Some(re) = Rect::from_xywh(l as f32, t as f32, (rr - l) as f32, (bb - t) as f32) {
         let mut paint = Paint::default();
-        paint.set_color_rgba8(r, g, b, 255);
+        paint.set_color_rgba8(r, g, b, a);
         paint.anti_alias = false;
         paint.blend_mode = tiny_skia::BlendMode::Source;
         s.pixmap
