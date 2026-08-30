@@ -26,6 +26,14 @@ pub struct Capabilities {
     /// Let the guest print. Harmless in a CLI, noise in a desktop host, and worth
     /// naming rather than assuming either way.
     pub print: bool,
+
+    /// Aliases the HOST supplies, by name without the `@`.
+    ///
+    /// For dependencies that Aether declares and a host installs — `vide` above
+    /// all. A `.luaurc` cannot serve these: aliases resolve by walking up from
+    /// the requiring FILE, and when Aether is a pinned dependency its source is
+    /// in a package cache no file of the host's is anywhere near.
+    pub aliases: std::collections::HashMap<String, PathBuf>,
 }
 
 impl Capabilities {
@@ -36,6 +44,7 @@ impl Capabilities {
         Capabilities {
             require_roots: vec![project_root.into()],
             print: true,
+            ..Default::default()
         }
     }
 }

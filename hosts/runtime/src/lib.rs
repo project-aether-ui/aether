@@ -40,6 +40,7 @@ pub mod font;
 pub mod frame;
 pub mod modules;
 pub mod painter;
+pub mod requirer;
 
 #[cfg(feature = "raster")]
 pub mod raster;

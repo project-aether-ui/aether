@@ -14,7 +14,7 @@
 
 use crate::vm::{Capabilities, Vm};
 use mlua::prelude::*;
-use mlua::luau::FsRequirer;
+use crate::requirer::HostRequirer;
 use std::path::{Path, PathBuf};
 
 /// Install `require` into the guest.
@@ -23,10 +23,12 @@ use std::path::{Path, PathBuf};
 /// with no roots is a legitimate configuration (a mod supplied as a single
 /// pre-loaded chunk, for instance) rather than a misconfiguration to shout about.
 pub fn install(vm: &Vm, caps: &Capabilities) -> LuaResult<bool> {
-    if caps.require_roots.is_empty() {
+    if caps.require_roots.is_empty() && caps.aliases.is_empty() {
         return Ok(false);
     }
-    let require = vm.lua().create_require_function(FsRequirer::default())?;
+    let require = vm
+        .lua()
+        .create_require_function(HostRequirer::new(caps.aliases.clone()))?;
     vm.lua().globals().set("require", require)?;
     Ok(true)
 }
