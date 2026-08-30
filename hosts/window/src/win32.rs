@@ -179,6 +179,26 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
     }
 }
 
+/// The primary display's size in pixels.
+///
+/// `SM_CXSCREEN` is the PRIMARY monitor, not the virtual desktop spanning all of
+/// them. Proper multi-monitor placement is a real feature and this is not it —
+/// but a widget anchored to the primary display's corner is right far more often
+/// than one anchored to the bounding box of every display, which on a
+/// two-monitor setup puts it off the edge of the one you are looking at.
+pub fn screen_size() -> (i32, i32) {
+    unsafe {
+        let (w, h) = (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+        if w > 0 && h > 0 {
+            (w, h)
+        } else {
+            // A headless or remote session can report zero. A plausible desktop
+            // beats a widget positioned at the origin of a screen of size zero.
+            (1920, 1080)
+        }
+    }
+}
+
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
 }

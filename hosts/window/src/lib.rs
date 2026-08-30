@@ -17,7 +17,7 @@
 
 mod win32;
 
-pub use win32::Window;
+pub use win32::{screen_size, Window};
 
 /// What kind of surface a window is.
 ///
