@@ -89,8 +89,20 @@ fn rgba(c: Rgb, alpha: f32) -> (u8, u8, u8, u8) {
 
 impl Painter for RasterPainter {
     fn begin(&mut self, _width: f32, _height: f32, background: Option<Rgb>) {
-        let bg = background.unwrap_or(Rgb(0, 0, 0));
-        self.canvas.begin(bg.0, bg.1, bg.2);
+        // `None` MEANS TRANSPARENT, not black.
+        //
+        // It read as "no colour given, use a default" and cleared to opaque
+        // black, which on a layered window is a black rectangle rather than a
+        // shaped widget — the alpha channel said 255 everywhere and the rounded
+        // corners the tree drew had nothing to cut out of.
+        //
+        // The distinction is the whole reason the parameter is an Option: a
+        // surface either HAS a background or is composited from what was painted
+        // on it, and those are different frames, not a colour and its default.
+        match background {
+            Some(bg) => self.canvas.begin(bg.0, bg.1, bg.2),
+            None => self.canvas.begin_alpha(0, 0, 0, 0),
+        }
     }
 
     fn fill_rounded_rect(&mut self, rect: Rect, radius: f32, colour: Rgb, alpha: f32) {

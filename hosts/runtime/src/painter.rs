@@ -21,7 +21,13 @@ use crate::frame::{Delta, Frame, Gradient, Node, Rect, Rgb};
 /// holds the previous frame" is false there and the dirty rect has nothing to
 /// repair.
 pub trait Painter {
-    /// Begin a frame, clearing to the given background.
+    /// Begin a frame.
+    ///
+    /// `None` means clear to NOTHING — a surface composited from its own alpha,
+    /// where a pixel the tree did not paint is a pixel the window does not
+    /// occupy. It does not mean "no colour supplied, pick one": a painter that
+    /// substitutes black there turns every floating widget into a black
+    /// rectangle.
     fn begin(&mut self, width: f32, height: f32, background: Option<Rgb>);
 
     fn fill_rounded_rect(&mut self, rect: Rect, radius: f32, colour: Rgb, alpha: f32);
