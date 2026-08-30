@@ -219,7 +219,7 @@ impl Window {
             // Registering twice returns an error that is not one — a second window
             // of the same class is fine and the class is already there. The
             // result is deliberately discarded rather than checked.
-            let layered = matches!(surface, Surface::Widget { .. });
+            let layered = matches!(surface, Surface::Widget { .. } | Surface::Overlay { .. });
 
             let wc = WNDCLASSW {
                 lpfnWndProc: Some(wndproc),
@@ -247,7 +247,7 @@ impl Window {
             // behaviour every time.
             let title_w = wide(match surface {
                 Surface::Window { title } => title.as_str(),
-                Surface::Widget { .. } => "",
+                Surface::Widget { .. } | Surface::Overlay { .. } => "",
             });
 
             // A WIDGET IS BORDERLESS, TOPMOST, AND OUT OF THE TASKBAR.
@@ -273,6 +273,17 @@ impl Window {
                         ex |= WS_EX_TRANSPARENT;
                     }
                     (WS_POPUP, ex, *x, *y)
+                }
+                Surface::Overlay { topmost, click_through } => {
+                    let mut ex = WS_EX_LAYERED | WS_EX_TOOLWINDOW;
+                    if *topmost {
+                        ex |= WS_EX_TOPMOST;
+                    }
+                    if *click_through {
+                        ex |= WS_EX_TRANSPARENT;
+                    }
+                    // The caller sized this to the screen; it starts at its origin.
+                    (WS_POPUP, ex, 0, 0)
                 }
             };
 

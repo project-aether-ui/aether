@@ -49,6 +49,37 @@ pub enum Surface {
         /// displays wants this; anything with a control does not.
         click_through: bool,
     },
+
+    /// A widget the size of the desktop.
+    ///
+    /// The same layered surface as `Widget`, spanning the screen, so what the
+    /// tree paints appears to sit directly on the desktop with nothing around
+    /// it. An application that draws its own windows inside one of these is
+    /// indistinguishable from one that owns several.
+    ///
+    /// CLICKS FALL THROUGH WHERE NOTHING WAS PAINTED, and this is the property
+    /// that makes it work rather than a trick played on top of it. Windows
+    /// hit-tests a layered window against its ALPHA CHANNEL: a pixel with alpha
+    /// zero does not receive the click, it goes to whatever is behind. So a
+    /// full-screen overlay that is transparent except where it drew is also
+    /// click-through except where it drew, with no region, no hit-test hook and
+    /// no second surface to keep in step.
+    ///
+    /// `WS_EX_TRANSPARENT` would DESTROY that — it makes the whole window
+    /// click-through including the painted parts. It stays available because a
+    /// purely decorative overlay wants exactly that, but it is off by default
+    /// here for the opposite reason it is off for a widget.
+    Overlay {
+        /// Above every other window. A workspace you cannot see is useless, so
+        /// this defaults on — but it does mean the overlay sits above full-screen
+        /// applications, which is aggressive for anything that is not a shell.
+        ///
+        /// Sitting BELOW other windows but above the wallpaper is a different
+        /// technique entirely (parenting into the desktop's `WorkerW`), and not
+        /// this.
+        topmost: bool,
+        click_through: bool,
+    },
 }
 
 /// Which mouse button, spelled the way a shell wants to match on it.
