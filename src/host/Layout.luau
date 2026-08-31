@@ -567,7 +567,10 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		padL: number,
 		padT: number,
 		padR: number,
-		padB: number
+		padB: number,
+		--- The box this element was OFFERED by its own parent, which is not the
+		--- box it currently occupies. A scale-sized child resolves against this.
+		offered: Rect
 	): (boolean, boolean)
 		if not growX and not growY then
 			return false, false
@@ -590,17 +593,38 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		local right, bottom = -math.huge, -math.huge
 		local inheritX: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
 		local inheritY: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
+		--- Immediate children resolve scale against the offered box; deeper
+		--- descendants keep the old behaviour. Verified evidence covers one level
+		--- of nesting and nothing below it, and inventing a rule past the data is
+		--- how the first attempt at this got it wrong.
+		local childDepth = out[from + 1] and out[from + 1].Depth or 0
+
 		for i = from + 1, #out do
 			local item = out[i]
-			local xs, _, ys, _ = readUDim2(Scene.Raw(item.Node, "Size"))
+			local xs, xo, ys, yo = readUDim2(Scene.Raw(item.Node, "Size"))
 			local r = item.Rect
 			local d = item.Depth
 			local gotX, gotY = inheritX[d] or 0, inheritY[d] or 0
 			local _, _, ownR, ownB = paddingOf(Scene, item.Node)
 
+			--- A SCALE-SIZED CHILD IS MEASURED, NOT SKIPPED.
+			---
+			--- The cycle is real — the parent's size depends on the child and the
+			--- child's on the parent — and skipping the child was one way to break
+			--- it. It is not Roblox's way. Verified in Studio: a `{1,0, 0.5,20}`
+			--- child of an auto-sizing frame on a 200-tall surface makes the frame
+			--- 120 tall, which is `0.5 × 200 + 20`. The scale resolves against the
+			--- space the auto-sizing element was OFFERED, and the element then fits
+			--- the result.
+			---
+			--- Skipping produced 0, so the frame collapsed and vanished from the
+			--- display list entirely.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
+					inheritX[d + 1] = gotX
+				elseif d == childDepth then
+					right = math.max(right, r.X + (offered.Width * xs + xo) + gotX)
 					inheritX[d + 1] = gotX
 				else
 					inheritX[d + 1] = gotX + ownR
@@ -609,6 +633,9 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			if growY then
 				if ys == 0 then
 					bottom = math.max(bottom, r.Y + r.Height + gotY)
+					inheritY[d + 1] = gotY
+				elseif d == childDepth then
+					bottom = math.max(bottom, r.Y + (offered.Height * ys + yo) + gotY)
 					inheritY[d + 1] = gotY
 				else
 					inheritY[d + 1] = gotY + ownB
@@ -871,7 +898,8 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 
 		--- Re-place only when growing changed something AND a descendant actually
 		--- depends on that size. Most subtrees have neither and pay one scan.
-		local didX, didY = grow(Scene, entry, out, childrenFrom, box, growX, growY, padL, padT, padR, padB)
+		local didX, didY =
+			grow(Scene, entry, out, childrenFrom, box, growX, growY, padL, padT, padR, padB, parentBox)
 		if didX or didY then
 			local dependent = false
 			for i = childrenFrom + 1, #out do
