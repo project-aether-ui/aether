@@ -236,11 +236,35 @@ blocking on the browser.
 An implementation whose measurement is asynchronous has to make the same choice:
 answer approximately now, or do not answer at all. It may not make layout wait.
 
+### Wrapping
+
+`TextWrapped` breaks a string that does not fit the element's width;
+`AutomaticSize.Y` then grows the element to hold the resulting lines. With
+`TextWrapped` off the string overflows instead, and the element stays one line
+tall however long the text is.
+
+**Aether implements none of this.** `TextWrapped` is read by nothing, so both
+cases below are gated behind `requires` and report as unsupported rather than
+failing. They can still be verified against the engine, which is the point of the
+gate: a case may know the right answer before anything implements it.
+
+**[asserted]** `TextWrapped grows the height past one line` -- a string several
+times its element's width occupies at least two lines. Asserted as a **minimum**,
+because where the breaks fall is provider-specific and the line count follows
+from it. An implementation ignoring `TextWrapped` reports exactly 1.0.
+
+**[asserted]** `TextWrapped off keeps a long string on one line` -- the negative
+half, and the one that catches an implementation growing height for the wrong
+reason. Without it, something that measured height from the unwrapped width would
+pass the case above.
+
+**Break positions are deliberately not specified.** They are where two providers
+diverge most: the same string, the same width and the same nominal font can break
+differently on different rasterisers. A standard fixing them would be describing
+one text shaper.
+
 ### What is still unspecified
 
-- **Wrapping.** `TextWrapped` with a fixed width and `AutomaticSize.Y` should
-  give a height of line count times line height, but nothing here verifies where
-  the breaks fall, and break positions are where two providers diverge most.
 - **`TextScaled`**, which inverts the relationship: the size is chosen to fit the
   box rather than the box being measured from the size.
 - **Line height.** The headless provider uses `1.2 x TextSize`. Whether Roblox
