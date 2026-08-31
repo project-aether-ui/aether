@@ -10,6 +10,8 @@
 return {
 	name = "AutomaticSize includes UIPadding in the measured size",
 	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.728",
 	surface = { width = 200, height = 200 },
 
 	tree = {

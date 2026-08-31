@@ -146,7 +146,14 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 	if mismatch then
 		disagreed += 1
 		results[#results + 1] = `\nDISAGREES  {case.name}  [{case.provenance}]`
-		results[#results + 1] = "\tengine says:\n\texpect = {"
+		--- STAMP THE BUILD INTO THE PASTE. An expectation is only true of the
+		--- Roblox that produced it, and Roblox ships continuously. Re-running this
+		--- later against a newer build and getting a different number is not a bug
+		--- in the suite — it is the suite doing the most valuable thing it can,
+		--- which is noticing that the standard moved.
+		results[#results + 1] = `\tengine says (Roblox {version()}):`
+		results[#results + 1] = string.format('\tverifiedAgainst = "%s",', version())
+		results[#results + 1] = "\texpect = {"
 		for _, line in ipairs(lines) do
 			results[#results + 1] = line
 		end
@@ -164,5 +171,5 @@ for _, line in ipairs(results) do
 	print(line)
 end
 print("")
-print(`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree`)
+print(`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree  —  Roblox {version()}`)
 print("Paste a DISAGREES block into its case and set provenance = \"roblox\".")

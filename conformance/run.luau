@@ -135,6 +135,34 @@ local function runCase(case: any): Result
 	return { name = case.name, provenance = case.provenance, ok = true, note = case.note }
 end
 
+--- WHAT THIS IMPLEMENTATION CLAIMS TO SUPPORT.
+---
+--- A case naming a feature absent from this list is reported UNSUPPORTED rather
+--- than failed. Roblox ships features continuously — radial `UIGradient` is next
+--- — and a case for one we have not built yet is a roadmap item, not a
+--- regression. Failing it would make the suite red for the entirely correct
+--- reason that we are behind, and a permanently red suite stops being read.
+---
+--- Adding a feature here is a claim. If it is listed and the case fails, that is
+--- a real failure.
+local SUPPORTS: { [string]: boolean } = {
+	["UIListLayout"] = true,
+	["UIPadding"] = true,
+	["UICorner"] = true,
+	["AutomaticSize"] = true,
+	["AnchorPoint"] = true,
+	["ClipsDescendants"] = true,
+}
+
+local function unsupported(case: any): string?
+	for _, feature in ipairs(case.requires or {}) do
+		if not SUPPORTS[feature] then
+			return feature
+		end
+	end
+	return nil
+end
+
 local filter = process.args[1]
 local results: { Result } = {}
 
@@ -146,7 +174,18 @@ for _, entry in ipairs(fs.readDir("conformance/cases")) do
 	if filter and not string.find(string.lower(case.name), string.lower(filter), 1, true) then
 		continue
 	end
-	table.insert(results, runCase(case))
+	local missing = unsupported(case)
+	if missing then
+		table.insert(results, {
+			name = case.name,
+			provenance = case.provenance,
+			ok = true,
+			detail = missing,
+			note = "unsupported",
+		})
+	else
+		table.insert(results, runCase(case))
+	end
 end
 
 table.sort(results, function(a, b)
@@ -156,10 +195,16 @@ end)
 local failed = 0
 local divergent = 0
 local open = 0
+local skipped = 0
 
 print("")
 for _, r in ipairs(results) do
-	if r.ok then
+	if r.note == "unsupported" then
+		--- NOT A PASS AND NOT A FAILURE. The case describes behaviour this
+		--- implementation has not built; the expectation may well be right.
+		skipped += 1
+		print(`  -  {r.name}  (unsupported: {r.detail})`)
+	elseif r.ok then
 		--- A `divergent` case that PASSES is reported, not celebrated: it means
 		--- the implementation still matches a behaviour known to be wrong, which
 		--- is the state the note describes rather than a success.
@@ -197,9 +242,9 @@ end
 
 print("")
 print(
-	`CONFORMANCE: {#results - failed - open} of {#results} passing `
+	`CONFORMANCE: {#results - failed - open - skipped} of {#results - skipped} passing `
 		.. `({verified} verified against Roblox, {divergent} documented gaps, `
-		.. `{open} open questions)`
+		.. `{open} open questions, {skipped} unsupported)`
 )
 
 if failed > 0 then

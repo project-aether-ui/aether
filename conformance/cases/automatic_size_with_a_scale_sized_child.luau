@@ -26,6 +26,8 @@
 return {
 	name = "AutomaticSize resolves a Scale-sized child against the available space",
 	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.728",
 	note = "Our implementation produces 0 -- it excludes a scale-sized child from the measurement "
 		.. "entirely. A genuine conformance bug in Layout.luau.",
 	surface = { width = 200, height = 200 },
