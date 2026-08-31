@@ -39,11 +39,16 @@ jobs:
       # metadata in the tag and rokit will not resolve them. Pinned to the same
       # version the repository is developed against; see the note in rokit.toml.
       - name: Install pesde
-        shell: bash
+        shell: pwsh
         run: |
-          curl -fsSL -o pesde.zip https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-windows-x86_64.zip
-          unzip -q pesde.zip -d "$HOME/.pesde-bin"
-          echo "$HOME/.pesde-bin" >> "$GITHUB_PATH"
+          # PWSH, NOT BASH. A bash step writing $HOME/.pesde-bin into
+          # GITHUB_PATH writes a POSIX path, which later pwsh steps cannot
+          # resolve -- so pesde installed correctly and was still "not
+          # recognized" one step later.
+          $url = "https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-windows-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile pesde.zip
+          Expand-Archive -Path pesde.zip -DestinationPath "$env:RUNNER_TEMP/pesde" -Force
+          "$env:RUNNER_TEMP/pesde" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
       - run: pesde install
       - run: lune run conformance/syntax_check.luau
@@ -64,11 +69,16 @@ jobs:
       # -- so without this they fail with "no installed vide reachable", which
       # reads as a Rust problem and is a missing install.
       - name: Install pesde
-        shell: bash
+        shell: pwsh
         run: |
-          curl -fsSL -o pesde.zip https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-windows-x86_64.zip
-          unzip -q pesde.zip -d "$HOME/.pesde-bin"
-          echo "$HOME/.pesde-bin" >> "$GITHUB_PATH"
+          # PWSH, NOT BASH. A bash step writing $HOME/.pesde-bin into
+          # GITHUB_PATH writes a POSIX path, which later pwsh steps cannot
+          # resolve -- so pesde installed correctly and was still "not
+          # recognized" one step later.
+          $url = "https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-windows-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile pesde.zip
+          Expand-Archive -Path pesde.zip -DestinationPath "$env:RUNNER_TEMP/pesde" -Force
+          "$env:RUNNER_TEMP/pesde" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
       - run: pesde install
 
       # The raster feature is not default, and the tests that exercise painting,
