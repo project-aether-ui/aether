@@ -17,7 +17,7 @@
 	"render", and would make every future audit a lie.
 ]=]
 local T = require("@testkit")
-local Aether = require("../../src")
+local Aether = require("../../src/api")
 local Layout = require("../../src/host/Layout")
 local Svg = require("../../src/host/Svg")
 

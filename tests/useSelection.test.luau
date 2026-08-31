@@ -23,7 +23,7 @@
 	caught by this in D4; the fixture here reads on every step for the same reason.
 ]=]
 local T = require("@testkit")
-local Aether = require("../src")
+local Aether = require("../src/api")
 
 local host = Aether.Host.detect()
 host.InstallVocabulary()

@@ -29,7 +29,7 @@
 	the whole Scene, not one function.
 ]=]
 local T = require("@testkit")
-local Aether = require("../../src")
+local Aether = require("../../src/api")
 local Layout = require("../../src/host/Layout")
 
 --- A scene wrapper that records every access and forwards it unchanged.

@@ -5,7 +5,7 @@
 local TransitionOrchestrator = require("../src/TransitionOrchestrator")
 --- The clock the springs are stepped by; `detect` is memoised, so this is the
 --- same host the orchestrator resolved.
-local host = require("../src").Host.detect()
+local host = require("../src/api").Host.detect()
 
 -- Self-executing: the runner spawns `lune run <suite>` and judges by EXIT CODE
 -- alone, so a suite that merely RETURNS a function passes without running a

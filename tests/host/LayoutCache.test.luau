@@ -23,7 +23,7 @@
 	switched OFF -- never against the cache's own previous answer.
 ]=]
 local T = require("@testkit")
-local Aether = require("../../src")
+local Aether = require("../../src/api")
 local Layout = require("../../src/host/Layout")
 
 local VIEWPORT = { X = 0, Y = 0, Width = 400, Height = 300 }

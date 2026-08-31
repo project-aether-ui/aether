@@ -232,7 +232,7 @@ local function testNoGlobalVocabularyNeeded()
 	assert(typeof(Color3) == "nil", "nor Color3")
 	assert(typeof(Vector2) == "nil", "nor Vector2")
 
-	local Aether = require("../../src")
+	local Aether = require("../../src/api")
 	local scroll = Aether.ScrollController.new({ Orientation = "Vertical", ViewportSize = 300 })
 	local frame = Aether.ScrollingFrame({
 		Controller = scroll,

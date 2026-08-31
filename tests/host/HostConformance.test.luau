@@ -50,7 +50,7 @@ else
 	--- disagree with the engine. What remains, and is what this now guards, is the
 	--- half the host still supplies itself — `create` over mock instances against
 	--- `create` over real Instances.
-	local Aether = require("../../src")
+	local Aether = require("../../src/api")
 	local host = Aether.Host.Headless.new()
 	vide = host
 	classOf = host.classOf

@@ -25,7 +25,7 @@
 	how the two hosts drifted apart to begin with.
 ]=]
 local T = require("@testkit")
-local Aether = require("../src")
+local Aether = require("../src/api")
 
 local host = Aether.Host.detect()
 host.InstallVocabulary()
