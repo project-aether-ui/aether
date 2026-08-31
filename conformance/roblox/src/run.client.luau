@@ -102,7 +102,7 @@ local function round(n: number): number
 end
 
 local results: { string } = {}
-local agreed, disagreed, vacuous = 0, 0, 0
+local agreed, disagreed, vacuous, unobservable = 0, 0, 0, 0
 
 for _, module in ipairs(casesFolder:GetChildren()) do
 	if not module:IsA("ModuleScript") then
@@ -231,6 +231,18 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		end
 	end
 
+	--- ORDER IS NOT OBSERVABLE HERE. Roblox exposes no display list and no
+	--- painted sequence, so a case asserting only paint order has nothing for
+	--- this runner to read. Saying so is the honest report; agreeing would be the
+	--- vacuity this runner was already caught doing once.
+	if case.order and #case.expect == 0 and #(case.ratios or {}) == 0 then
+		unobservable += 1
+		results[#results + 1] =
+			`UNOBSERVABLE {case.name}  -- paint order; the engine exposes no display list`
+		surface:Destroy()
+		continue
+	end
+
 	--- A CASE THAT ASSERTS NOTHING CANNOT AGREE. Reporting one as agreeing is
 	--- worse than reporting a failure, because it manufactures provenance: two
 	--- text cases were promoted to `roblox` on the strength of exactly this
@@ -277,7 +289,7 @@ for _, line in ipairs(results) do
 end
 print("")
 print(
-	`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree, {vacuous} vacuous`
-		.. `  --  Roblox {version()}`
+	`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree, {vacuous} vacuous, `
+		.. `{unobservable} unobservable  --  Roblox {version()}`
 )
 print("Paste a DISAGREES block into its case and set provenance = \"roblox\".")

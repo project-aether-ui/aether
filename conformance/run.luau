@@ -84,7 +84,7 @@ local function runCase(case: any): Result
 	--- A CASE THAT ASSERTS NOTHING CANNOT PASS. Same hole the engine runner had:
 	--- an empty `expect` with no `ratios` walked no loops and was reported as
 	--- passing, which manufactures confidence out of nothing.
-	if #case.expect == 0 and #(case.ratios or {}) == 0 then
+	if #case.expect == 0 and #(case.ratios or {}) == 0 and not case.order then
 		return {
 			name = case.name,
 			provenance = case.provenance,
@@ -225,6 +225,38 @@ local function runCase(case: any): Result
 					"ratio %s.%s / %s.%s: expected %.3f +/- %.3f, got %.3f",
 					r.of, r.field, r.to, r.field, r.expect, slack, actual
 				),
+				note = case.note,
+			}
+		end
+	end
+
+	--- ORDER, which is a property of the display LIST rather than of any node in
+	--- it. `Layout.Solve` returns a flat, paint-ordered sequence: ZIndex, then
+	--- depth, then declaration. Nothing else in the suite looks at the sequence.
+	---
+	--- NOT OBSERVABLE IN THE ENGINE. Roblox exposes no display list, so the
+	--- engine runner reports a case asserting only this as unobservable rather
+	--- than agreeing with it. Such a case can therefore never be better than
+	--- `reference` until there is a runner that compares pixels.
+	if case.order then
+		local seen: { string } = {}
+		local wanted: { [string]: boolean } = {}
+		for _, n in ipairs(case.order) do
+			wanted[n] = true
+		end
+		for _, node in ipairs(frame.Nodes) do
+			if wanted[node.name] then
+				table.insert(seen, node.name)
+			end
+		end
+		local expected = table.concat(case.order, " < ")
+		local actual = table.concat(seen, " < ")
+		if expected ~= actual then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = `paint order: expected {expected}, got {actual}`,
 				note = case.note,
 			}
 		end

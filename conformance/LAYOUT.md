@@ -146,10 +146,31 @@ pixel-level runner.
 
 ## 6. Paint order
 
-Front-to-back order is `ZIndex`, then depth, then declaration order.
+Back-to-front order is `ZIndex`, then depth, then declaration order. The solve
+returns a flat list in the order a renderer should walk it.
 
-**[reference]** No case covers it. A case asserting order rather than geometry
-would need the runner to compare sequences, which it does not yet do.
+**[reference]** `ZIndex orders the paint, then depth, then declaration` -- three
+siblings declared in one order and ZIndexed into another come back in ZIndex
+order. It is the only case in the suite that asserts a **sequence**, because
+paint order is a property of the list rather than of any node in it.
+
+**It cannot be verified against the engine, and will stay `reference` until
+something can.** Roblox exposes no display list and no painted sequence: two
+overlapping frames look different and report identical geometry. The engine
+runner reports this case as *unobservable* rather than agreeing with it, which is
+the same discipline as refusing to agree with a case that asserts nothing.
+
+### Three gaps, one missing instrument
+
+| Gap | Why a geometric runner cannot see it |
+| :--- | :--- |
+| Paint order | overlapping elements report the same rectangles either way |
+| Clip radius | rounding a clip changes which pixels survive, not where the child is |
+| Gradient kind | a gradient moves nothing |
+
+All three need the same thing: a runner that compares **rendered pixels** rather
+than rectangles. That is one instrument closing three holes, and it is the
+largest single upgrade available to this suite.
 
 ## 7. Text measurement
 
