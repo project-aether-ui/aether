@@ -40,6 +40,20 @@ local function decode(value: any): any
 		return Color3.new(value[2], value[3], value[4])
 	elseif kind == "Vector2" then
 		return Vector2.new(value[2], value[3])
+	elseif kind == "Enum" then
+		--- `{ "Enum", "AutomaticSize", "Y" }`. Spelled by name rather than by
+		--- number, because Roblox's enum VALUES are an implementation detail and
+		--- a case that encoded them would be asserting something the standard does
+		--- not say.
+		local category = (Enum :: any)[value[2]]
+		if not category then
+			error(`conformance: no enum category '{value[2]}'`)
+		end
+		local member = category[value[3]]
+		if not member then
+			error(`conformance: {value[2]} has no member '{value[3]}'`)
+		end
+		return member
 	end
 	error(`conformance: unknown encoded type '{tostring(kind)}'`)
 end
@@ -118,7 +132,13 @@ local function runCase(case: any): Result
 				name = case.name,
 				provenance = case.provenance,
 				ok = false,
-				detail = `no node named '{expected.name}' in the display list`,
+				--- SAY WHY IT MIGHT BE ABSENT. `Live` drops any node whose solved
+				--- rectangle has zero width or height, so "missing" most often means
+				--- "measured to nothing" rather than "never built" — and the first
+				--- time this fired, the difference was the entire finding.
+				detail = `no node named '{expected.name}' in the display list `
+					.. `(a node solved to zero width or height is dropped, so it may have `
+					.. `been built and measured to nothing)`,
 				note = case.note,
 			}
 		end
@@ -129,6 +149,23 @@ local function runCase(case: any): Result
 				provenance = case.provenance,
 				ok = false,
 				detail = `{expected.name}: {mismatch}`,
+				note = case.note,
+			}
+		end
+	end
+
+	--- ABSENCE IS AN ASSERTION TOO. A case naming `expectAbsent` is claiming the
+	--- display list does NOT contain something — a node measured to nothing, or
+	--- one made invisible. Without this the field would be decoration, and a case
+	--- that states an intent the harness does not check is worse than one that
+	--- says less.
+	for _, absent in ipairs(case.expectAbsent or {}) do
+		if byName[absent] then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = `'{absent}' is in the display list and the case expects it absent`,
 				note = case.note,
 			}
 		end
