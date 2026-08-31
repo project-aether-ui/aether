@@ -607,23 +607,38 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			local gotX, gotY = inheritX[d] or 0, inheritY[d] or 0
 			local _, _, ownR, ownB = paddingOf(Scene, item.Node)
 
-			--- A SCALE-SIZED CHILD IS MEASURED, NOT SKIPPED.
+			--- A PARTLY SCALE-SIZED CHILD IS MEASURED. A FULLY SCALE-SIZED ONE IS
+			--- PASSED THROUGH. Both halves are verified in Studio, and they were
+			--- established in that order at the cost of getting the second wrong
+			--- first.
 			---
 			--- The cycle is real — the parent's size depends on the child and the
-			--- child's on the parent — and skipping the child was one way to break
-			--- it. It is not Roblox's way. Verified in Studio: a `{1,0, 0.5,20}`
-			--- child of an auto-sizing frame on a 200-tall surface makes the frame
-			--- 120 tall, which is `0.5 × 200 + 20`. The scale resolves against the
-			--- space the auto-sizing element was OFFERED, and the element then fits
-			--- the result.
+			--- child's on the parent — and skipping the child entirely was one way
+			--- to break it. That is not Roblox's way: a `{1,0, 0.5,20}` child of an
+			--- auto-sizing frame on a 200-tall surface makes the frame 120 tall,
+			--- which is `0.5 × 200 + 20`. The scale resolves against the space the
+			--- auto-sizing element was OFFERED, and the element fits the result.
+			--- Skipping produced 0, so the frame collapsed out of the display list.
 			---
-			--- Skipping produced 0, so the frame collapsed and vanished from the
-			--- display list entirely.
+			--- Generalising THAT to scale 1 was the mistake. A face sized
+			--- `fromScale(1, 1)` over 90 of content measures 90, not the 200 on
+			--- offer — the engine passes measurement through it to the content
+			--- behind, then places the face at whatever the parent grew to. It is
+			--- the difference between a partial constraint on the axis and asking
+			--- for all of it, which is the degenerate case of the cycle and has no
+			--- solution but the content.
+			---
+			--- WHY `>= 1` IS A FIT AND NOT YET A RULE. Four things differ between
+			--- the verified cases — scale magnitude, a UIListLayout, grandchildren,
+			--- and the axis — and this discriminates on the first because it is the
+			--- likeliest, not because the others are ruled out. Two `asserted` cases
+			--- are queued to separate them. Prefer changing this line over adding a
+			--- second mechanism beside it when they are answered.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
 					inheritX[d + 1] = gotX
-				elseif d == childDepth then
+				elseif d == childDepth and xs < 1 then
 					right = math.max(right, r.X + (offered.Width * xs + xo) + gotX)
 					inheritX[d + 1] = gotX
 				else
@@ -634,7 +649,7 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 				if ys == 0 then
 					bottom = math.max(bottom, r.Y + r.Height + gotY)
 					inheritY[d + 1] = gotY
-				elseif d == childDepth then
+				elseif d == childDepth and ys < 1 then
 					bottom = math.max(bottom, r.Y + (offered.Height * ys + yo) + gotY)
 					inheritY[d + 1] = gotY
 				else

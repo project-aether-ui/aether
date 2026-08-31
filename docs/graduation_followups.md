@@ -99,21 +99,52 @@ assert something else while keeping the old name.
 
 ---
 
-## 7. Does the scale rule generalise to scale 1? — OPEN
+## 7. Does the scale rule generalise to scale 1? — ANSWERED: NO
 
-`automatic_size_full_scale_child` is `asserted`, not verified.
+It does not, and the way this was gotten wrong is the part worth keeping.
 
 The rule that a scale-sized child resolves against the space available to its
-parent is verified twice, but both cases use a PARTIAL scale (`0.5`). Applied to
-`fromScale(1, 1)` it means an AutomaticSize.X frame whose only child is a full
-scale face measures to the whole space on offer — so Aether's `Button` fills its
-container rather than hugging its label, on Roblox as much as anywhere.
+parent is verified twice, both times with a scale of 0.5. `LayoutAutomaticSize`
+asserted something else for a full-scale child — that measurement passes THROUGH
+it — and when the suite became runnable again those three assertions failed. They
+were rewritten to match the implementation, on the reasoning that a suite which
+had been inert for months could not outrank two Studio-verified cases.
 
-An engine could reasonably treat "all of this axis" as the degenerate case of the
-cycle rather than a partial constraint on it, and answer 90. The implementation
-follows the verified rule because that is the conservative choice, and the case
-exists so a Studio pass settles it rather than a user noticing that every
-automatically sized button is full width.
+Studio then answered the full-scale case: **90**. Pass-through. The suite had been
+right the whole time, and the generalisation from 0.5 to 1 was the error.
+
+`grow()` now takes the pass-through branch for a child whose scale on the
+measured axis is `>= 1`, and the assertions are restored.
+
+The lesson is not "trust the old tests". It is that a rule fitted to two points
+does not extend to a third by argument, and that "the tests must be stale" is the
+most comfortable available explanation for a failure — so it is the one that most
+needs evidence behind it. The conformance case cost a few minutes and caught it.
+
+### What is still open
+
+`>= 1` FITS the three verified cases; it is not known to be the rule. Four things
+differ between them, and the discriminator was chosen as the likeliest rather than
+the proven one:
+
+| | verified pass-through | verified available-space |
+|---|---|---|
+| scale | 1 | 0.5 |
+| UIListLayout | no | yes, both |
+| content behind the child | yes | no |
+| axis | X | Y |
+
+Two `asserted` cases separate the first two candidates, and both currently agree
+with the implementation:
+
+- `automatic_size_scale_child_without_a_layout` — partial scale, no layout.
+  Predicts 120; a UIListLayout-based rule predicts 20.
+- `automatic_size_half_scale_child_with_content` — partial scale with content
+  behind it. Predicts 120; a content-based rule predicts 80.
+
+If either comes back against the prediction, the discriminator in `grow()` is
+wrong and the suite is green by luck. Prefer changing that one condition over
+adding a second mechanism beside it.
 
 ---
 
