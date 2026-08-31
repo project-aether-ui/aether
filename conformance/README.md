@@ -56,7 +56,25 @@ and every promotion makes the standard more real.
 one rule. If an implementation disagrees with a verified case, the implementation
 is wrong, or the case needs re-verifying in Studio — not adjusting.
 
+## Two runners, one description
+
+```
+conformance/cases/*.luau      the cases — data, not code
+conformance/decode.luau       the value encoding, shared
+conformance/run.luau          against the Luau implementation
+conformance/roblox/           against the engine
+```
+
+Both runners read the same cases through the same decoder. That is the point of
+the data format: two implementations, one description, and no way for a case to
+mean different things in different places.
+
+**Only the engine runner produces `roblox` provenance.** Its output is evidence;
+everything else is opinion.
+
 ## Running
+
+Against the Luau implementation:
 
 ```sh
 lune run conformance/run.luau            # every case
@@ -64,3 +82,17 @@ lune run conformance/run.luau layout     # cases whose name matches
 ```
 
 Exit code is non-zero on any failure, so it can gate a commit.
+
+Against the engine:
+
+```sh
+rojo serve conformance/roblox/default.project.json
+```
+
+Connect from Studio, run the place, read Output. A case the engine disagrees with
+prints a paste-ready `expect` block — copy it into the case and set
+`provenance = "roblox"`.
+
+Promoting a case is the only way the suite becomes a standard rather than a
+description of our own behaviour, and it is the one step that cannot be
+automated from here.

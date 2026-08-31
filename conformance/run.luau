@@ -22,50 +22,11 @@ local Live = require("../src/host/Live")
 local host = Host.detect()
 host.InstallVocabulary()
 
---- Turn a case's encoded value into a real one.
----
---- The encoding is `{ "TypeName", ...args }` for anything that is not a plain
---- number, string or boolean. It exists so a case is JSON-shaped: a Rust runner
---- reads the same array and calls the same constructor.
-local function decode(value: any): any
-	if type(value) ~= "table" then
-		return value
-	end
-	local kind = value[1]
-	if kind == "UDim2" then
-		return UDim2.new(value[2], value[3], value[4], value[5])
-	elseif kind == "UDim" then
-		return UDim.new(value[2], value[3])
-	elseif kind == "Color3" then
-		return Color3.new(value[2], value[3], value[4])
-	elseif kind == "Vector2" then
-		return Vector2.new(value[2], value[3])
-	elseif kind == "Enum" then
-		--- `{ "Enum", "AutomaticSize", "Y" }`. Spelled by name rather than by
-		--- number, because Roblox's enum VALUES are an implementation detail and
-		--- a case that encoded them would be asserting something the standard does
-		--- not say.
-		local category = (Enum :: any)[value[2]]
-		if not category then
-			error(`conformance: no enum category '{value[2]}'`)
-		end
-		local member = category[value[3]]
-		if not member then
-			error(`conformance: {value[2]} has no member '{value[3]}'`)
-		end
-		return member
-	end
-	error(`conformance: unknown encoded type '{tostring(kind)}'`)
-end
+--- Shared with the Roblox runner, so a case cannot mean two things.
+local decode = require("./decode")
 
 local function build(node: any): any
-	local props: { [any]: any } = {}
-	for key, value in pairs(node.props or {}) do
-		props[key] = decode(value)
-	end
-	if node.name then
-		props.Name = node.name
-	end
+	local props: { [any]: any } = decode.props(node)
 	for _, child in ipairs(node.children or {}) do
 		table.insert(props, build(child))
 	end

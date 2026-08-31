@@ -1,0 +1,15 @@
+{
+  "name": "AetherConformance",
+  "tree": {
+    "$className": "DataModel",
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Conformance": {
+          "$path": "src",
+          "cases": { "$path": "../cases" },
+          "decode": { "$path": "../decode.luau" }
+        }
+      }
+    }
+  }
+}
