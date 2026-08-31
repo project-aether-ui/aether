@@ -18,12 +18,12 @@ lune run tests/gates/all_gates.luau --run    # the structural gates
 lune run conformance/run.luau                # against Roblox's own behaviour
 ```
 
-The `aether` CLI renders a component with no engine underneath it:
+[aether-cli](https://github.com/project-aether-ui/aether-cli) renders a component
+with no engine underneath it, from its own repository:
 
 ```sh
-cargo build -p aether-cli
-./target/debug/aether snapshot examples/counter/entry/desktop.luau -o counter.png
-./target/debug/aether preview examples/counter/entry/desktop.luau
+aether snapshot examples/counter/entry/desktop.luau -o counter.png
+aether preview  examples/counter/entry/desktop.luau
 ```
 
 `snapshot` needs no display, so it runs in CI. `preview` opens a window.
@@ -62,7 +62,7 @@ being behind Roblox separately from being wrong.
 ```
 src/            the framework; src/Icon is a workspace member
 packages/       workspace members that are not the framework
-hosts/          raster, runtime, window, and the CLI
+hosts/          raster, runtime and window; the CLI is its own repository
 conformance/    cases, and a runner for each implementation
 tests/          suites, and the structural gates under tests/gates
 ```

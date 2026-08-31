@@ -16,9 +16,13 @@ members = [
     "hosts/raster",
     "hosts/runtime",
     "hosts/window",
-    "hosts/cli",
 ]
 
+# THE CLI LIVES IN ITS OWN REPOSITORY, at project-aether-ui/aether-cli. It was a
+# member here, which made the framework and its tooling one release and one
+# licence. They are neither: this has to stay permissive to run inside Roblox,
+# and the tooling around it does not.
+#
 # WORKSPACE-LEVEL, because cargo ignores `[profile]` in a member and says so.
 # These are the rasteriser's settings, which is the crate whose release
 # performance is load-bearing.
