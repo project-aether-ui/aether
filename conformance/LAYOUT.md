@@ -279,9 +279,14 @@ size times a line height -- so the suite reads them through a derived
 `textHeight` field and **only ratios over it are meaningful**. An absolute
 assertion on `textHeight` would be comparing a font size against a block height.
 
-**[asserted]** `TextScaled chooses the text size from the box` -- the same string
-in boxes of 1x and 2x height renders at 1x and 2x. An implementation ignoring
-`TextScaled` honours `TextSize` in both and reports 1.0.
+**[verified-relationally]** `TextScaled chooses the text size from the box` -- the
+same string in boxes of 1x and 2x height renders at 1x and 2x. An implementation
+ignoring `TextScaled` honours `TextSize` in both and reports 1.0.
+
+The engine returned exactly **2.0000**. Slack had been allowed for a fit that
+might round to a whole font size; it did not, so **the scaling is proportional
+rather than snapped**, and the case's tolerance is now tight enough to catch a
+clamped fit rather than loose enough to admit one.
 
 **Aether implements none of this.** `TextScaled` appears in one comment and is
 read by nothing, so the case is gated behind `requires`.

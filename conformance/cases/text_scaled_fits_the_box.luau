@@ -16,11 +16,12 @@
 ]]
 return {
 	name = "TextScaled chooses the text size from the box",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
 	requires = { "TextScaled" },
-	note = "Two identical strings in boxes of 1x and 2x height. If the text is chosen from the box, "
-		.. "the rendered size doubles with it. If TextScaled is ignored, both render at TextSize and "
-		.. "the ratio is 1.0.",
+	note = "Engine: exactly 2.0000. The slack was allowed for a fit that might round to a whole "
+		.. "font size; it did not, so scaling is proportional rather than snapped. TextSize is set "
+		.. "to 12 on both and honoured on neither, which is the other half of the claim.",
 	surface = { width = 400, height = 300 },
 
 	tree = {
@@ -56,8 +57,9 @@ return {
 
 	expect = {},
 	ratios = {
-		--- Twice the box, twice the text. A little slack because the fit is
-		--- constrained by width as well as height and may round to a whole size.
-		{ of = "Large", to = "Small", field = "textHeight", expect = 2.0, tolerance = 0.15 },
+		--- Twice the box, twice the text. The engine returned exactly 2.0000, so
+		--- the tolerance is now tight enough to catch a snapped or clamped fit
+		--- rather than loose enough to admit one.
+		{ of = "Large", to = "Small", field = "textHeight", expect = 2.0, tolerance = 0.02 },
 	},
 }
