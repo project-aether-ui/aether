@@ -898,8 +898,40 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 
 		--- Re-place only when growing changed something AND a descendant actually
 		--- depends on that size. Most subtrees have neither and pay one scan.
+		local beforeW, beforeH = entry.Rect.Width, entry.Rect.Height
 		local didX, didY =
 			grow(Scene, entry, out, childrenFrom, box, growX, growY, padL, padT, padR, padB, parentBox)
+
+		--- ANCHORPOINT IS APPLIED BEFORE AUTOMATICSIZE KNOWS THE SIZE.
+		---
+		--- `solveRect` subtracts `width * anchor.X` from the position, and for an
+		--- auto-sized element the width it has at that moment is the AUTHORED one
+		--- -- usually zero, because the whole point is that the content decides.
+		--- So the anchor offset was zero and the element landed as though anchored
+		--- at the top-left, however it was written.
+		---
+		--- Found writing an ordinary centred readout: a container anchored at
+		--- (0, 0.5) sat at the card's midpoint instead of straddling it, and its
+		--- second line fell off the bottom.
+		---
+		--- The children are already placed against the old rectangle, so they move
+		--- with it. Shifting is enough; nothing about their own layout changed.
+		if didX or didY then
+			local anchor = Scene.Raw(node, "AnchorPoint")
+			local ax = if anchor then (anchor.X or 0) else 0
+			local ay = if anchor then (anchor.Y or 0) else 0
+			local dx = if didX then (entry.Rect.Width - beforeW) * ax else 0
+			local dy = if didY then (entry.Rect.Height - beforeH) * ay else 0
+			if dx ~= 0 or dy ~= 0 then
+				entry.Rect.X -= dx
+				entry.Rect.Y -= dy
+				for i = childrenFrom + 1, #out do
+					out[i].Rect.X -= dx
+					out[i].Rect.Y -= dy
+				end
+			end
+		end
+
 		if didX or didY then
 			local dependent = false
 			for i = childrenFrom + 1, #out do

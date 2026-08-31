@@ -63,6 +63,14 @@ implementation that applies it earlier has nothing to multiply.
 **[verified]** `anchor point shifts an element by a fraction of its own size` --
 `(0.5, 0.5)` at position `(0.5, 0.5)` centres the element on the parent's centre.
 
+**[asserted]** `AnchorPoint offsets by the size AutomaticSize produced` -- and
+"its own size" means the size after `AutomaticSize` has decided it, not the
+authored one. The ordering matters only when an element is both anchored and
+auto-sized, which is why Aether got it wrong for the life of the file: the anchor
+was applied while resolving the element, against an authored height that is
+usually zero, so the offset was zero and the element sat as though anchored at
+the top-left.
+
 Children are then resolved against the **content box**: the element's own
 rectangle, inset by any `UIPadding` child. A container's own rectangle is never
 inset by its padding; only what it offers its children is.
