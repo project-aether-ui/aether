@@ -16,9 +16,9 @@
 return {
 	name = "text measurement is linear in TextSize",
 	provenance = "asserted",
-	note = "A relationship rather than a number, because the absolute width is a property of "
-		.. "whichever provider answered. Verify in Studio: the engine should agree, and if it does "
-		.. "not, linearity is not something an implementation may assume.",
+	note = "The engine runner reported AGREES on this vacuously, before it understood ratios: the "
+		.. "case has no `expect` entries, so nothing was compared. Re-run once the runner checks "
+		.. "ratios.",
 	surface = { width = 400, height = 200 },
 
 	tree = {

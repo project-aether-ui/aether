@@ -81,6 +81,19 @@ local function runCase(case: any): Result
 	--- Index the produced nodes by name. A case names what it cares about; the
 	--- display list's ORDER is a separate assertion (`order`), because a case
 	--- about geometry should not break when paint order changes.
+	--- A CASE THAT ASSERTS NOTHING CANNOT PASS. Same hole the engine runner had:
+	--- an empty `expect` with no `ratios` walked no loops and was reported as
+	--- passing, which manufactures confidence out of nothing.
+	if #case.expect == 0 and #(case.ratios or {}) == 0 then
+		return {
+			name = case.name,
+			provenance = case.provenance,
+			ok = false,
+			detail = "the case asserts nothing",
+			note = case.note,
+		}
+	end
+
 	local byName: { [string]: any } = {}
 	for _, node in ipairs(frame.Nodes) do
 		byName[node.name] = node

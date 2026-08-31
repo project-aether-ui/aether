@@ -16,8 +16,9 @@
 return {
 	name = "text measurement is per glyph, not per character",
 	provenance = "asserted",
-	note = "Rules out #text * factor. The exact ratio depends on the face, so the tolerance is "
-		.. "deliberately loose: the claim is that W is much wider than l, not how much.",
+	note = "The engine runner reported AGREES on this vacuously, before it understood ratios. Re-run "
+		.. "once it checks them; the observed ratio it prints is also how this tolerance gets "
+		.. "tightened from 3.2 +/- 1.2 to something that means anything.",
 	surface = { width = 400, height = 200 },
 
 	tree = {

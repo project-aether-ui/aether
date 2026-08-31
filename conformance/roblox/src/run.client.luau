@@ -75,7 +75,7 @@ local function round(n: number): number
 end
 
 local results: { string } = {}
-local agreed, disagreed = 0, 0
+local agreed, disagreed, vacuous = 0, 0, 0
 
 for _, module in ipairs(casesFolder:GetChildren()) do
 	if not module:IsA("ModuleScript") then
@@ -107,6 +107,7 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 	end
 
 	local lines: { string } = {}
+	local ratioLines: { string } = {}
 	local mismatch = false
 
 	for _, expected in ipairs(case.expect) do
@@ -143,6 +144,55 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		)
 	end
 
+	--- RATIOS, which this runner did not understand until a case that asserted
+	--- nothing else was reported as agreeing.
+	---
+	--- Text measurement is a host service, so a case about it compares two nodes
+	--- rather than naming a width. The observed value is printed even when it is
+	--- within tolerance, because otherwise nobody ever learns what the engine
+	--- actually says and a loose tolerance stays loose forever.
+	for _, r in ipairs(case.ratios or {}) do
+		local of, to = byName[r.of], byName[r.to]
+		if not of or not to then
+			lines[#lines + 1] = string.format("        -- ratio needs %s and %s", r.of, r.to)
+			mismatch = true
+			continue
+		end
+		local function field(g: GuiObject, f: string): number
+			local pos = g.AbsolutePosition - origin
+			local size = g.AbsoluteSize
+			if f == "w" then return size.X elseif f == "h" then return size.Y
+			elseif f == "x" then return pos.X else return pos.Y end
+		end
+		local denominator = field(to, r.field)
+		if denominator == 0 then
+			lines[#lines + 1] = string.format("        -- ratio %s/%s: denominator is zero", r.of, r.to)
+			mismatch = true
+			continue
+		end
+		local actual = field(of, r.field) / denominator
+		local slack = r.tolerance or 0.02
+		local verdict = if math.abs(actual - r.expect) <= slack then "within" else "OUTSIDE"
+		ratioLines[#ratioLines + 1] = string.format(
+			"    %s.%s / %s.%s = %.4f  (expected %.3f +/- %.3f, %s)",
+			r.of, r.field, r.to, r.field, actual, r.expect, slack, verdict
+		)
+		if verdict == "OUTSIDE" then
+			mismatch = true
+		end
+	end
+
+	--- A CASE THAT ASSERTS NOTHING CANNOT AGREE. Reporting one as agreeing is
+	--- worse than reporting a failure, because it manufactures provenance: two
+	--- text cases were promoted to `roblox` on the strength of exactly this
+	--- before the runner understood ratios.
+	if #case.expect == 0 and #(case.ratios or {}) == 0 then
+		vacuous += 1
+		results[#results + 1] = `VACUOUS    {case.name}  [{case.provenance}]  -- asserts nothing`
+		surface:Destroy()
+		continue
+	end
+
 	if mismatch then
 		disagreed += 1
 		results[#results + 1] = `\nDISAGREES  {case.name}  [{case.provenance}]`
@@ -163,6 +213,12 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		results[#results + 1] = `AGREES     {case.name}  [{case.provenance}]`
 	end
 
+	--- Printed whether or not the case agreed. An agreeing ratio says "within
+	--- tolerance", and the number is how the tolerance gets tightened later.
+	for _, line in ipairs(ratioLines) do
+		results[#results + 1] = line
+	end
+
 	surface:Destroy()
 end
 
@@ -171,5 +227,8 @@ for _, line in ipairs(results) do
 	print(line)
 end
 print("")
-print(`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree  —  Roblox {version()}`)
+print(
+	`ENGINE CONFORMANCE: {agreed} agree, {disagreed} disagree, {vacuous} vacuous`
+		.. `  --  Roblox {version()}`
+)
 print("Paste a DISAGREES block into its case and set provenance = \"roblox\".")
