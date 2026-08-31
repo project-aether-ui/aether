@@ -200,25 +200,30 @@ rule, and would fail the other host for being right. Ratios and minimums are the
 mechanism the suite offers for anything an implementation cannot be held to
 exactly; text is the first thing to need them.
 
-### Measurement converges; it is not stable immediately
+### Measured width is not reproducible to the last percent
 
 The same case, on the same build and the same machine, reported a width ratio of
 **1.9896** on one run and **2.0244** on the next. The height ratio was exactly
 **2.0000** both times.
 
-That split identifies the cause. Line height is a function of `TextSize` alone,
-so it is stable. Width depends on glyph advances, so it is not. The quantity that
-moved is exactly the one that depends on which face answered -- which is what a
-font still loading looks like, an early measurement being of a fallback.
+**The Studio viewport was resized between those two runs, and a third run
+returned exactly 1.9896.** So the measurement is deterministic for a given
+display configuration and moves with the configuration -- it is not drift, and it
+is not a font arriving late.
 
-**[reference]** So Roblox's own measurement converges rather than being correct
-immediately, which is the same shape as the web host's asynchronous cache. An
-implementation is not wrong for reporting a fallback width before its font
-arrives; it is wrong for never converging.
+That is consistent with the split: line height is computed from `TextSize`
+arithmetically and is stable, while width comes from glyph advances that are
+rasterised and rounded, so a change in display scale moves it.
 
-A consequence for anyone measuring: a text case observed too early is measuring
-the wrong face. The engine runner waits thirty frames for a case containing text
-against three for one that does not.
+**[unverified]** Whether the sensitivity is to viewport size, device pixel ratio,
+or GUI scale specifically. Three runs identify *that* the configuration matters,
+not *which part of it*.
+
+What follows: **a measured text width is reproducible for a given display and
+not across displays**, so the standard cannot fix one and a case must not assert
+one. That is the second independent reason for the rule, after the four
+providers, and this one applies even within a single provider on a single
+machine.
 
 ### The contract layout depends on
 

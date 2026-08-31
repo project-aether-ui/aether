@@ -75,20 +75,20 @@ local function measuresText(node: any): boolean
 	return false
 end
 
---- TEXT SETTLES LATER THAN LAYOUT DOES.
+--- TEXT GETS LONGER, cheaply and without a confirmed reason.
 ---
---- Observed: the same case, on the same build and machine, reported a width
---- ratio of 1.9896 on one run and 2.0244 on the next. The HEIGHT ratio was
---- exactly 2.0000 both times.
+--- A width ratio moved between two runs on the same build (1.9896, then 2.0244)
+--- while the height ratio held at exactly 2.0000. The Studio viewport had been
+--- resized between them, which is the likely cause and would explain the split:
+--- line height is arithmetic from TextSize, while width comes from rasterised
+--- glyph advances that round.
 ---
---- That split is the tell. Line height is a function of TextSize alone, so it is
---- stable; width depends on glyph advances, so it is not. The quantity that
---- varied is exactly the one that depends on which face answered, which is what
---- a font still loading looks like -- an early measurement is of a fallback.
+--- An earlier version of this comment asserted a font still loading. That was an
+--- inference from the same two numbers and it was probably wrong.
 ---
---- Thirty frames rather than three for text, which is half a second and cheap
---- against being wrong. If a text ratio still moves between runs, raise it again
---- before concluding anything about the engine.
+--- Thirty frames rather than three is kept anyway: fonts genuinely do load
+--- asynchronously in Roblox, half a second costs nothing, and it removes one
+--- variable from any future measurement.
 local function settle(needsText: boolean)
 	for _ = 1, (if needsText then 30 else 3) do
 		RunService.Heartbeat:Wait()
