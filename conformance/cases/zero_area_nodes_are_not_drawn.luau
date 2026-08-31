@@ -12,7 +12,7 @@ return {
 	name = "a node with zero area is absent from the display list",
 	provenance = "roblox",
 	--- The build these numbers came from. See conformance/README.md.
-	verifiedAgainst = "0.728",
+	verifiedAgainst = "0.736.0.7361346",
 	surface = { width = 200, height = 100 },
 
 	tree = {

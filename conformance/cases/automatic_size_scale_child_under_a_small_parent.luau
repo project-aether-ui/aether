@@ -23,9 +23,11 @@
 ]]
 return {
 	name = "AutomaticSize with a Scale child under a smaller grandparent",
-	provenance = "asserted",
-	note = "Discriminates 'available space' (60) from 'surface' (120). Run the engine runner and "
-		.. "paste whichever it says; the answer decides how grow() must resolve scale.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "ANSWERED: the engine produces 60, so the scale resolves against the space AVAILABLE to "
+		.. "the parent (80) and not against the surface (200). The rule in LAYOUT.md is confirmed "
+		.. "rather than assumed.",
 	surface = { width = 200, height = 200 },
 
 	tree = {

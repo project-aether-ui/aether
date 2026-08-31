@@ -13,7 +13,7 @@ return {
 	name = "UIListLayout stacks children and ignores their Position",
 	provenance = "roblox",
 	--- The build these numbers came from. See conformance/README.md.
-	verifiedAgainst = "0.728",
+	verifiedAgainst = "0.736.0.7361346",
 	note = "VERIFIED IN STUDIO: the engine produces exactly this. Our implementation does not -- "
 		.. "Layout allocates slot 0 to First and First then ignores it, keeping its own Position, "
 		.. "while Second and Third take slots 1 and 2 correctly. So the stacking works and the "

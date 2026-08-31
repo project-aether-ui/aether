@@ -11,7 +11,7 @@ return {
 	name = "anchor point shifts an element by a fraction of its own size",
 	provenance = "roblox",
 	--- The build these numbers came from. See conformance/README.md.
-	verifiedAgainst = "0.728",
+	verifiedAgainst = "0.736.0.7361346",
 	surface = { width = 200, height = 100 },
 
 	tree = {

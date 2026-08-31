@@ -9,7 +9,7 @@ return {
 	name = "scale resolves against the parent, not the surface",
 	provenance = "roblox",
 	--- The build these numbers came from. See conformance/README.md.
-	verifiedAgainst = "0.728",
+	verifiedAgainst = "0.736.0.7361346",
 	surface = { width = 200, height = 100 },
 
 	tree = {

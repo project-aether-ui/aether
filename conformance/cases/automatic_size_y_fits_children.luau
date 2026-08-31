@@ -11,7 +11,7 @@ return {
 	name = "AutomaticSize Y grows a frame to fit its children",
 	provenance = "roblox",
 	--- The build these numbers came from. See conformance/README.md.
-	verifiedAgainst = "0.728",
+	verifiedAgainst = "0.736.0.7361346",
 	surface = { width = 200, height = 200 },
 
 	tree = {

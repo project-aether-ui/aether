@@ -14,6 +14,12 @@ verified against the engine or marked as not.
 | **[reference]** | Recorded from the Luau implementation. It is what we do, not necessarily what Roblox does. |
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
 
+Cases were last run against Roblox **0.736.0.7361346**, and each records the
+build that verified it. The property surface is generated from a reflection
+database currently at **0.728**, so the standard's two halves are measured
+against different builds. Neither is wrong; the skew is worth knowing before
+someone reconciles two numbers that were never taken at the same time.
+
 Nothing here is normative because it is written down. It is normative because a
 case in `cases/` proves it, and the ones that carry no case are the ones to be
 suspicious of.
@@ -87,10 +93,11 @@ Neither of the two obvious guesses is right. Treating the scale as zero and
 measuring only the offset gives 20; excluding the child from the measurement
 gives 0. The engine gives 120.
 
-**[unverified]** Whether "the space the parent was offered" or "the grandparent's
-size" is the rule. The verified case cannot distinguish them, because there they
-were the same 200. `AutomaticSize with a Scale child under a smaller grandparent`
-separates them and is waiting on Studio.
+**[verified]** `AutomaticSize with a Scale child under a smaller grandparent` --
+the same child under an 80-tall grandparent makes the frame 60 tall, which is
+`0.5 * 80 + 20`. It is the space the parent was **offered**, not the surface. The
+first verified case could not distinguish the two, because there they were the
+same 200; this one separates them.
 
 **[reference]** The rule is applied to immediate children only. Deeper
 descendants sized in Scale on the measured axis contribute nothing. No case
