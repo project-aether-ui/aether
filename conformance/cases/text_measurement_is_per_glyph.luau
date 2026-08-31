@@ -9,16 +9,22 @@
 	non-zero. "WW" and "ll" are two characters each and are nowhere near the same
 	width in any real face.
 
-	The RATIO is provider-specific -- how much wider W is than l depends on the
-	font -- so this asserts only that the wide pair is substantially wider, with
-	tolerance wide enough to hold for any humanist sans.
+	THE RATIO IS PROVIDER-SPECIFIC and the measured spread proves it: Roblox
+	reports 4.4286 for four W against four l, and Aether's off-engine table
+	reports about 3.39. Both are correct for their own face.
+
+	So the case asserts a MINIMUM rather than a value. Its claim is "not per
+	character", and any per-character implementation reports exactly 1.0. A
+	tolerance fitted around either observed number would make the case assert a
+	font instead of asserting the rule, and would fail the other host for being
+	right.
 ]]
 return {
 	name = "text measurement is per glyph, not per character",
-	provenance = "asserted",
-	note = "The engine runner reported AGREES on this vacuously, before it understood ratios. Re-run "
-		.. "once it checks them; the observed ratio it prints is also how this tolerance gets "
-		.. "tightened from 3.2 +/- 1.2 to something that means anything.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "Engine 4.4286, Aether about 3.39. Both conform: the rule is that measurement is per "
+		.. "glyph, and a per-character implementation would report exactly 1.0.",
 	surface = { width = 400, height = 200 },
 
 	tree = {
@@ -52,10 +58,9 @@ return {
 
 	expect = {},
 	ratios = {
-		--- Four W against four l. In any humanist sans this is somewhere near
-		--- three; the tolerance covers everything from a condensed face to a wide
-		--- one without admitting a per-character implementation, which would
-		--- report exactly 1.0.
-		{ of = "Wide", to = "Narrow", field = "w", expect = 3.2, tolerance = 1.2 },
+		--- Two, comfortably below both observed values and comfortably above the
+		--- 1.0 a per-character implementation reports. The bound expresses the
+		--- claim; it is not fitted to either font.
+		{ of = "Wide", to = "Narrow", field = "w", min = 2.0 },
 	},
 }

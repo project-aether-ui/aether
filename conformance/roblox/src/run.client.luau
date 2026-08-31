@@ -171,11 +171,18 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 			continue
 		end
 		local actual = field(of, r.field) / denominator
-		local slack = r.tolerance or 0.02
-		local verdict = if math.abs(actual - r.expect) <= slack then "within" else "OUTSIDE"
+		local verdict, bound
+		if r.min then
+			verdict = if actual >= r.min then "within" else "OUTSIDE"
+			bound = string.format("at least %.3f", r.min)
+		else
+			local slack = r.tolerance or 0.02
+			verdict = if math.abs(actual - r.expect) <= slack then "within" else "OUTSIDE"
+			bound = string.format("expected %.3f +/- %.3f", r.expect, slack)
+		end
 		ratioLines[#ratioLines + 1] = string.format(
-			"    %s.%s / %s.%s = %.4f  (expected %.3f +/- %.3f, %s)",
-			r.of, r.field, r.to, r.field, actual, r.expect, slack, verdict
+			"    %s.%s / %s.%s = %.4f  (%s, %s)",
+			r.of, r.field, r.to, r.field, actual, bound, verdict
 		)
 		if verdict == "OUTSIDE" then
 			mismatch = true

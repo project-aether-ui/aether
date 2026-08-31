@@ -176,8 +176,12 @@ non-conformant for being correct.
 The relationships, which every correct provider agrees on.
 
 **[verified-relationally]** `text measurement is linear in TextSize` -- doubling
-the size doubles both the measured width and the line height, because an advance
-is a fraction of the em square and the em square is the size.
+the size doubles the measured width and the line height, because an advance is a
+fraction of the em square and the em square is the size.
+
+Measured on the engine: height exactly **2.0000**, width **1.9896**. Linearity is
+something an implementation may rely on; exactness is not, and the missing
+percent is glyph advances rounding differently at 14 and at 28.
 
 **[verified-relationally]** `text measurement is per glyph, not per character` --
 `WWWW` and `llll` are the same length and nowhere near the same width. This rules
@@ -185,9 +189,16 @@ out `#text * factor`, which reports a plausible width for every string while
 being wrong about all of them, and which passes any test that only checks a width
 is non-zero.
 
-Both are asserted as **ratios with tolerance** rather than as pixel values. That
-is the mechanism the suite offers for anything an implementation cannot be held
-to exactly, and text is the first thing to need it.
+**The spread between providers is measured, and it is large.** For those two
+strings the engine reports **4.4286** and Aether's off-engine table **3.39**.
+Both conform. Any implementation measuring per character reports exactly 1.0, and
+that is the only thing the case forbids.
+
+So this one asserts a **minimum** rather than a value. A tolerance fitted around
+either observed number would make the case assert a font instead of asserting the
+rule, and would fail the other host for being right. Ratios and minimums are the
+mechanism the suite offers for anything an implementation cannot be held to
+exactly; text is the first thing to need them.
 
 ### The contract layout depends on
 

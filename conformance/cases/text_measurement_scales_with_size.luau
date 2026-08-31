@@ -15,10 +15,11 @@
 ]]
 return {
 	name = "text measurement is linear in TextSize",
-	provenance = "asserted",
-	note = "The engine runner reported AGREES on this vacuously, before it understood ratios: the "
-		.. "case has no `expect` entries, so nothing was compared. Re-run once the runner checks "
-		.. "ratios.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "Engine: width 1.9896, height 2.0000. Height is exactly linear; width is linear to within "
+		.. "a percent, which is glyph advances rounding differently at 14 and at 28. An "
+		.. "implementation may rely on linearity, not on it being exact.",
 	surface = { width = 400, height = 200 },
 
 	tree = {

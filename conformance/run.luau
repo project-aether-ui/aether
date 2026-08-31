@@ -160,6 +160,24 @@ local function runCase(case: any): Result
 			}
 		end
 		local actual = of[r.field] / denominator
+		--- `min` rather than `expect`, for a claim of the form "much greater
+		--- than". Fitting a tolerance around an observed number would make the
+		--- case assert a font instead of asserting the rule.
+		if r.min then
+			if actual < r.min then
+				return {
+					name = case.name,
+					provenance = case.provenance,
+					ok = false,
+					detail = string.format(
+						"ratio %s.%s / %s.%s: expected at least %.3f, got %.3f",
+						r.of, r.field, r.to, r.field, r.min, actual
+					),
+					note = case.note,
+				}
+			end
+			continue
+		end
 		local slack = r.tolerance or 0.02
 		if math.abs(actual - r.expect) > slack then
 			return {
