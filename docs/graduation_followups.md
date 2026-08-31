@@ -44,17 +44,76 @@ origin/main, so testkit still cannot be reached by commit — see §2.
 - A `file://` pin. It looks like pinning and is not: the revision exists on one
   machine, so a lockfile built from it is unusable to anyone else.
 
-## 2. testkit is wired by `.luaurc` alias, not by manifest
+## 2. testkit is wired by `.luaurc` alias, not by manifest — RESOLVED
 
-`.luaurc` aliases `@testkit` and `@testkit_env` to `./.testkit/...`, which nothing
-populates yet. `verify_test_inventory` still requires testkit by the monorepo's
-old relative path and fails.
+Resolved by not depending on testkit at all.
 
-This mirrors how the monorepo does it — its root declares no testkit workspace
-member either, which is why declaring testkit as a pesde path dependency fails
-with `workspace package spektr/testkit_core luau not found in package`.
+`.luaurc` aliased `@testkit` and `@testkit_env` into `./.testkit/...`, which
+nothing populated. All thirty-three suites were therefore unrunnable from the day
+Aether graduated, and nothing said so: a suite that cannot load produces no
+failures, so their silence read as success for months.
 
-Resolve with §1: pin both by git, then point the aliases at the installed tree.
+Measured before replacing it, the entire surface those suites use is four
+functions — `test` 171 times, `run` 33, `it` 11, `describe` 6 — with 815 plain
+`assert()` calls doing the checking. That is a registry, not a framework, and
+pinning a cross-repository dependency on a private monorepo to obtain it costs
+more than the eighty lines in `tests/testkit.luau`. The call shapes are kept
+exactly, so no suite changed to accommodate it.
+
+`tests/run.luau` went the same way: 587 monorepo lines orchestrating tiers and
+naming suites that do not exist here, replaced by a discoverer that runs one
+process per `*.test.luau`.
+
+What the silence had been hiding, once they ran:
+
+- Nine suites required `"../../src"`, a DIRECTORY — which resolves `init.luau`
+  but keeps the directory as the module's identity, so `init`'s own `"./api"`
+  resolved one level too high. The same identity trap that made Aether's root
+  unreachable from Dew.
+- Two still pointed at `../../../framework/Aether/src`, and one at
+  `../../../../motion/Flux/src/flux`. Flux did not graduate; that test now
+  installs `host.spring` — vide's real spring, already driven by the simulated
+  clock — through the `Motion` seam, which is what the seam is for.
+- Three `LayoutAutomaticSize` cases asserted that measurement passes THROUGH a
+  scale-sized child. Two Studio-verified conformance cases say it is measured
+  against the space available to its parent. The suite had been asserting a third
+  behaviour, matching neither the engine nor the implementation it was written
+  against, for as long as it could not run. See §7.
+
+`lune run tests/run.luau` is back in CI.
+
+---
+
+## 6. verify_test_inventory is blocked on LAYOUT, not testkit — OPEN
+
+The blocker was recorded as "testkit is not reachable by commit". That is
+resolved and was never the whole story. The gate requires testkit's `Discover`
+from `pkgs/testkit/core/src`, and its first assertion is that
+`tests/engine/prism` still scans for `.spec.luau` files. Neither the directory
+nor the file convention exists in this repository.
+
+What a test inventory should assert HERE is a different question with a different
+answer: 33 `*.test.luau` suites discovered by `tests/run.luau`, no specs, no
+engine mount. Left blocked with an accurate reason rather than rewritten to
+assert something else while keeping the old name.
+
+---
+
+## 7. Does the scale rule generalise to scale 1? — OPEN
+
+`automatic_size_full_scale_child` is `asserted`, not verified.
+
+The rule that a scale-sized child resolves against the space available to its
+parent is verified twice, but both cases use a PARTIAL scale (`0.5`). Applied to
+`fromScale(1, 1)` it means an AutomaticSize.X frame whose only child is a full
+scale face measures to the whole space on offer — so Aether's `Button` fills its
+container rather than hugging its label, on Roblox as much as anywhere.
+
+An engine could reasonably treat "all of this axis" as the degenerate case of the
+cycle rather than a partial constraint on it, and answer 90. The implementation
+follows the verified rule because that is the conservative choice, and the case
+exists so a Studio pass settles it rather than a user noticing that every
+automatically sized button is full width.
 
 ---
 

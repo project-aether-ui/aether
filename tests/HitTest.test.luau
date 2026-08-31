@@ -17,7 +17,7 @@
 --- `InstallVocabulary` is the one place that answers this. It still resolves to
 --- Lune's real Roblox types where they exist, so nothing about running under Lune
 --- changes; on a runtime without them it installs the pure-Luau vocabulary.
-require("../../../framework/Aether/src").Host.detect().InstallVocabulary()
+require("../src/api").Host.detect().InstallVocabulary()
 
 local HitTest = require("../src/HitTest")
 

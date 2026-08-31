@@ -74,9 +74,20 @@ M.GATES = {
 --- Each entry is a debt with a name. Emptying this table is the goal; adding to
 --- it should feel expensive.
 M.BLOCKED = {
-	["tests/gates/verify_test_inventory.luau"] = "spektr/testkit is not reachable by commit: the "
-		.. "monorepo is private and far ahead of its own origin/main. See "
-		.. "docs/graduation_followups.md.",
+	--- NOT the testkit blocker any more, which is resolved: the suites run and
+	--- tests/testkit.luau replaces the alias. What remains is that this gate
+	--- checks a MONOREPO LAYOUT. It requires testkit's `Discover` from
+	--- `pkgs/testkit/core/src`, and its first assertion is that
+	--- `tests/engine/prism` still scans for `.spec.luau` files -- a directory and
+	--- a file convention Aether does not have and did not bring with it.
+	---
+	--- Deciding what a test inventory should mean HERE is the actual work, and it
+	--- is not the same question: this repository has 33 `*.test.luau` suites
+	--- discovered by tests/run.luau and no specs at all. Left blocked with an
+	--- accurate reason rather than quietly rewritten to assert something else.
+	["tests/gates/verify_test_inventory.luau"] = "checks the monorepo's layout: it requires "
+		.. "testkit's Discover from pkgs/ and asserts tests/engine/prism scans for specs, neither "
+		.. "of which exists here. See docs/graduation_followups.md.",
 }
 
 --- Executed only when this file is RUN, not when it is required. `process.args` is empty

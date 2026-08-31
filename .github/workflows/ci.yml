@@ -52,18 +52,12 @@ jobs:
 
       - run: pesde install
       - run: lune run conformance/syntax_check.luau
-      # `lune run tests/run.luau` IS NOT HERE, and its absence is the largest
-      # hole in this workflow.
-      #
-      # The suites require `@testkit_env`, which is reached through a .luaurc
-      # alias into the monorepo this repository no longer sits inside. They have
-      # not been runnable since Aether graduated, which is the same blocker that
-      # stops verify_test_inventory and is recorded in pesde.toml and in
-      # docs/graduation_followups.md.
-      #
-      # Everything below this line therefore checks the framework's BEHAVIOUR
-      # against Roblox and its STRUCTURE against the gates, and checks its unit
-      # suites not at all.
+      # THE SUITES RUN AGAIN. They required `spektr/testkit` through a .luaurc
+      # alias into the monorepo this repository no longer sits inside, so they
+      # had not been runnable since Aether graduated -- and their silence read
+      # as success for months. tests/testkit.luau replaces the four functions
+      # they actually used.
+      - run: lune run tests/run.luau
       - run: lune run tests/gates/all_gates.luau --run
       - run: lune run conformance/run.luau
 

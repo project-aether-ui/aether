@@ -13,7 +13,7 @@
 --- `InstallVocabulary` is the one place that answers this. It still resolves to
 --- Lune's real Roblox types where they exist, so nothing about running under Lune
 --- changes; on a runtime without them it installs the pure-Luau vocabulary.
-require("../../../framework/Aether/src").Host.detect().InstallVocabulary()
+require("../src/api").Host.detect().InstallVocabulary()
 local InputSink = require("../src/InputSink")
 
 -- Self-executing: the runner spawns `lune run <suite>` and judges by EXIT CODE

@@ -31,17 +31,37 @@ type Case = { name: string, fn: () -> (), tier: string? }
 local pending: { Case } = {}
 local prefix = ""
 
---- Register a test. The third argument is a tier the monorepo's runner used to
---- filter on; it is accepted and ignored, because nothing here filters and a
---- suite passing an argument that errors is worse than one passing an argument
---- that does nothing.
-function Testkit.test(name: string, fn: () -> (), tier: string?)
-	table.insert(pending, { name = prefix .. name, fn = fn, tier = tier })
+--- Register a test.
+---
+--- TWO SHAPES, because the suites use two. Most call `test(name, fn)`; the
+--- conformance suites call `it(name, { tier = "math" }, fn)`, with the options
+--- table in the MIDDLE. A first draft of this file guessed a tier STRING in the
+--- trailing position, which type-checked fine and then failed all eleven of
+--- HostConformance's cases with "attempt to call a table value" -- the options
+--- table being called as the body.
+---
+--- `tier` selected subsets in the monorepo's runner. Nothing here selects, so it
+--- is recorded and not acted on: a suite is either in this repository and run, or
+--- it is not here. It is kept rather than rejected because a suite passing an
+--- argument that does nothing is a great deal better than one that errors.
+local function register(name: string, a: any, b: any)
+	local fn = if type(a) == "function" then a else b
+	local opts = if type(a) == "table" then a else nil
+	assert(type(fn) == "function", `{name}: no test body`)
+	table.insert(pending, {
+		name = prefix .. name,
+		fn = fn,
+		tier = if opts then opts.tier else nil,
+	})
+end
+
+function Testkit.test(name: string, a: any, b: any?)
+	register(name, a, b)
 end
 
 --- The same thing under the name a BDD-shaped suite reaches for.
-function Testkit.it(name: string, fn: () -> ())
-	Testkit.test(name, fn)
+function Testkit.it(name: string, a: any, b: any?)
+	register(name, a, b)
 end
 
 --- Group the tests a callback registers under one label.

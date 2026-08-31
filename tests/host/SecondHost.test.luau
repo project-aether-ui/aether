@@ -1145,11 +1145,31 @@ local function testDragReleaseDoesNotSnapBack()
 		--- A MOTION RUNTIME IS THE PRECONDITION, not decoration.
 		---
 		--- `Motion.Smooth` returns its target unchanged when no spring driver is
-		--- registered, so with no Flux there is no lag, no handover, and nothing to
-		--- snap back from. Without this require the test was vacuous and a poison
-		--- proved it: removing the fix changed nothing because the fix had nothing to
-		--- do.
-		require("../../../../motion/Flux/src/flux")
+		--- registered, so with no driver there is no lag, no handover, and nothing
+		--- to snap back from. Without this the test was vacuous and a poison proved
+		--- it: removing the fix changed nothing because the fix had nothing to do.
+		---
+		--- THE DRIVER IS BUILT HERE rather than required from Flux, which is what
+		--- this line used to do. Flux did not graduate with Aether, so the require
+		--- resolved into a monorepo four directories up and this suite could not run
+		--- at all. Reaching for it was incidental coupling in the first place: what
+		--- the test needs is A spring, and Motion is a seam precisely so that any
+		--- runtime satisfying the contract will do.
+		---
+		--- `host.spring` IS vide's real spring, and `Clock.Step` already drives it
+		--- through `update_springs`. So this is not a stand-in that might lag
+		--- differently from the real thing -- it is the same arithmetic Flux wraps,
+		--- on a simulated clock, which makes the trajectory exact and repeatable
+		--- where a Heartbeat-driven one would be a race.
+		Aether.Motion._reset()
+		Aether.Motion.SetSpringDriver(function(target, options)
+			local get = host.spring(
+				target,
+				if options then options.Period else nil,
+				if options then options.DampingRatio else nil
+			)
+			return get
+		end, "SecondHost.test")
 		assert((Aether.Motion :: any).HasSpringDriver(),
 			"this test is meaningless without a spring driver")
 
