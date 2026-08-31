@@ -110,7 +110,13 @@ impl FontStore {
         let blob = Blob::new(bytes.clone() as Arc<dyn AsRef<[u8]> + Send + Sync>);
         self.next += 1;
         let id = self.next;
-        self.fonts.insert(id, Font { data: FontData::new(blob, index), bytes });
+        self.fonts.insert(
+            id,
+            Font {
+                data: FontData::new(blob, index),
+                bytes,
+            },
+        );
         id
     }
 
@@ -148,7 +154,11 @@ impl FontStore {
             // has already spent a session on "the icons are not showing".
             let gid = charmap.map(ch).unwrap_or_default();
             let advance = gm.advance_width(gid).unwrap_or(0.0);
-            glyphs.push(Positioned { id: gid.to_u32(), x, y: 0.0 });
+            glyphs.push(Positioned {
+                id: gid.to_u32(),
+                x,
+                y: 0.0,
+            });
             x += advance;
         }
 

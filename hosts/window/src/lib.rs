@@ -98,16 +98,38 @@ pub enum Button {
 /// conversion happens inside rather than being left as a trap for each caller.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    PointerMove { x: f32, y: f32 },
-    PointerDown { x: f32, y: f32, button: Button },
-    PointerUp { x: f32, y: f32, button: Button },
+    PointerMove {
+        x: f32,
+        y: f32,
+    },
+    PointerDown {
+        x: f32,
+        y: f32,
+        button: Button,
+    },
+    PointerUp {
+        x: f32,
+        y: f32,
+        button: Button,
+    },
     /// Positive scrolls the content up, matching `Live.Session`'s own sign.
-    Wheel { x: f32, y: f32, delta: f32 },
+    Wheel {
+        x: f32,
+        y: f32,
+        delta: f32,
+    },
     /// A typed character, already decoded from the platform's encoding.
     Char(char),
     /// A named key that produces no character — "Backspace", "Left", "Return".
-    Key { name: String, shift: bool, ctrl: bool },
-    Resized { width: u32, height: u32 },
+    Key {
+        name: String,
+        shift: bool,
+        ctrl: bool,
+    },
+    Resized {
+        width: u32,
+        height: u32,
+    },
     /// The surface must be fully repainted; nothing can be patched.
     Exposed,
     CloseRequested,

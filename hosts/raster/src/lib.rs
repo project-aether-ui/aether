@@ -34,22 +34,24 @@
 
 #[cfg(feature = "gpu")]
 pub mod hybrid_probe;
+pub mod text;
 #[cfg(feature = "gpu")]
 pub mod windowed;
-pub mod text;
 
 use std::collections::HashMap;
+use text::FontStore;
 use tiny_skia::{
     FillRule, GradientStop, LinearGradient, Mask, Paint, PathBuilder, Pixmap, Point, Rect, Stroke,
     Transform,
 };
 use vello_cpu::color::{AlphaColor, DynamicColor, Srgb};
-use vello_cpu::kurbo::{BezPath, Point as VPoint, Rect as VRect, RoundedRect, Shape,
-    Stroke as VStroke};
+use vello_cpu::kurbo::{
+    BezPath, Point as VPoint, Rect as VRect, RoundedRect, Shape, Stroke as VStroke,
+};
 use vello_cpu::peniko::{ColorStop, Gradient as VGradient};
-use text::FontStore;
-use vello_cpu::{CompositeMode, Pixmap as VPixmap, RasterizerSettings, RenderContext, RenderMode,
-    Resources};
+use vello_cpu::{
+    CompositeMode, Pixmap as VPixmap, RasterizerSettings, RenderContext, RenderMode, Resources,
+};
 
 /// The loaded fonts, shared by every surface.
 ///
@@ -190,7 +192,8 @@ pub extern "C" fn ar_fill_text(
     // it drew every label in the screen's top-left corner on top of each other.
     let baseline = y + ascent;
     let count = glyphs.len() as u32;
-    v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
+    v.ctx
+        .set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
     v.ctx
         .glyph_run(&mut v.resources, &data)
         .font_size(size)
@@ -214,7 +217,6 @@ pub extern "C" fn ar_fill_text(
         }));
     count
 }
-
 
 // ---------------------------------------------------------------------------
 // Poison: deliberate sabotage, for proving the gates can fail (ms-52 M15.1b).
@@ -433,7 +435,11 @@ pub extern "C" fn ar_surface_new_backend(width: u32, height: u32, backend: u32) 
         Some(p) => p,
         None => return std::ptr::null_mut(),
     };
-    let which = if backend == 1 { Which::VelloCpu } else { Which::TinySkia };
+    let which = if backend == 1 {
+        Which::VelloCpu
+    } else {
+        Which::TinySkia
+    };
     // vello sizes in u16, so a window wider than 65535 is not representable. It
     // is reported as a failure rather than silently truncated.
     if which == Which::VelloCpu && (width > u16::MAX as u32 || height > u16::MAX as u32) {
@@ -585,7 +591,16 @@ fn vello_begin(s: &mut Surface, r: u8, g: u8, b: u8, a: u8, damage: Option<(i32,
 /// must present only the damaged region too — presenting the whole surface would
 /// be correct but would give back the cost this saves.
 #[no_mangle]
-pub extern "C" fn ar_begin_rect(ptr: *mut Surface, r: u8, g: u8, b: u8, x: i32, y: i32, w: i32, h: i32) {
+pub extern "C" fn ar_begin_rect(
+    ptr: *mut Surface,
+    r: u8,
+    g: u8,
+    b: u8,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+) {
     ar_begin_rect_alpha(ptr, r, g, b, 255, x, y, w, h)
 }
 
@@ -641,8 +656,7 @@ pub extern "C" fn ar_begin_rect_alpha(
         paint.set_color_rgba8(r, g, b, a);
         paint.anti_alias = false;
         paint.blend_mode = tiny_skia::BlendMode::Source;
-        s.pixmap
-            .fill_rect(re, &paint, Transform::identity(), None);
+        s.pixmap.fill_rect(re, &paint, Transform::identity(), None);
     }
 }
 
@@ -703,7 +717,8 @@ pub extern "C" fn ar_fill_rect(
     if s.which == Which::VelloCpu {
         if let Some(path) = Surface::vello_path(x, y, w, h, radius) {
             if let Some(v) = s.vello.as_mut() {
-                v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
+                v.ctx
+                    .set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
                 v.ctx.fill_path(&path);
             }
         }
@@ -725,8 +740,17 @@ pub extern "C" fn ar_fill_rect(
     // boundaries. Only rounded corners need the path.
     if radius <= 0.0 {
         if let Some(rect) = Rect::from_xywh(x, y, w, h) {
-            let Surface { pixmap, masks, clips, .. } = s;
-            let mask = if cuts { clips.last().and_then(|k| masks.get(k)) } else { None };
+            let Surface {
+                pixmap,
+                masks,
+                clips,
+                ..
+            } = s;
+            let mask = if cuts {
+                clips.last().and_then(|k| masks.get(k))
+            } else {
+                None
+            };
             pixmap.fill_rect(rect, &paint, Transform::identity(), mask);
         }
         return;
@@ -736,9 +760,24 @@ pub extern "C" fn ar_fill_rect(
         Some(p) => p,
         None => return,
     };
-    let Surface { pixmap, masks, clips, .. } = s;
-    let mask = if cuts { clips.last().and_then(|k| masks.get(k)) } else { None };
-    pixmap.fill_path(&path, &paint, FillRule::Winding, Transform::identity(), mask);
+    let Surface {
+        pixmap,
+        masks,
+        clips,
+        ..
+    } = s;
+    let mask = if cuts {
+        clips.last().and_then(|k| masks.get(k))
+    } else {
+        None
+    };
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        mask,
+    );
 }
 
 /// An outline. Drawn as a separate pass from the fill, unlike the GDI painter
@@ -767,7 +806,8 @@ pub extern "C" fn ar_stroke_rect(
     if s.which == Which::VelloCpu {
         if let Some(path) = Surface::vello_path(x, y, w, h, radius) {
             if let Some(v) = s.vello.as_mut() {
-                v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
+                v.ctx
+                    .set_paint(AlphaColor::<Srgb>::from_rgba8(r, g, b, alpha));
                 v.ctx.set_stroke(VStroke::new(thickness.max(0.1) as f64));
                 v.ctx.stroke_path(&path);
             }
@@ -790,8 +830,17 @@ pub extern "C" fn ar_stroke_rect(
     if cuts {
         s.ensure_mask();
     }
-    let Surface { pixmap, masks, clips, .. } = s;
-    let mask = if cuts { clips.last().and_then(|k| masks.get(k)) } else { None };
+    let Surface {
+        pixmap,
+        masks,
+        clips,
+        ..
+    } = s;
+    let mask = if cuts {
+        clips.last().and_then(|k| masks.get(k))
+    } else {
+        None
+    };
     pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), mask);
 }
 
@@ -836,7 +885,8 @@ pub extern "C" fn ar_fill_gradient(
         // A single stop is a flat fill, and tiny-skia requires two. The colour is
         // re-read from the raw array rather than from the stop, which exposes no
         // accessor.
-        let c = tiny_skia::Color::from_rgba8(raw[1] as u8, raw[2] as u8, raw[3] as u8, raw[4] as u8);
+        let c =
+            tiny_skia::Color::from_rgba8(raw[1] as u8, raw[2] as u8, raw[3] as u8, raw[4] as u8);
         parsed.push(GradientStop::new(1.0, c));
     }
 
@@ -863,7 +913,10 @@ pub extern "C" fn ar_fill_gradient(
         let stops = if stops.len() < 2 {
             let mut v = stops.clone();
             if let Some(first) = stops.first() {
-                v.push(ColorStop { offset: 1.0, color: first.color });
+                v.push(ColorStop {
+                    offset: 1.0,
+                    color: first.color,
+                });
             }
             v
         } else {
@@ -884,7 +937,8 @@ pub extern "C" fn ar_fill_gradient(
                 // Back to a solid paint, or the next fill silently inherits the
                 // gradient -- the recorded-scene equivalent of GDI's "selected
                 // object survives the call" trap.
-                v.ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(0, 0, 0, 255));
+                v.ctx
+                    .set_paint(AlphaColor::<Srgb>::from_rgba8(0, 0, 0, 255));
             }
         }
         return;
@@ -914,9 +968,24 @@ pub extern "C" fn ar_fill_gradient(
     if cuts {
         s.ensure_mask();
     }
-    let Surface { pixmap, masks, clips, .. } = s;
-    let mask = if cuts { clips.last().and_then(|k| masks.get(k)) } else { None };
-    pixmap.fill_path(&path, &paint, FillRule::Winding, Transform::identity(), mask);
+    let Surface {
+        pixmap,
+        masks,
+        clips,
+        ..
+    } = s;
+    let mask = if cuts {
+        clips.last().and_then(|k| masks.get(k))
+    } else {
+        None
+    };
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        mask,
+    );
 }
 
 /// Push a clip rectangle. Nested clips INTERSECT, which is what a display list's
@@ -949,8 +1018,11 @@ pub extern "C" fn ar_clip_push(ptr: *mut Surface, x: i32, y: i32, w: i32, h: i32
         // would intersect a raw rect with its parent anyway, so this only makes
         // the two backends provably identical in what they clip to.
         let rect = VRect::new(
-            next.0 as f64, next.1 as f64,
-            (next.0 + next.2) as f64, (next.1 + next.3) as f64);
+            next.0 as f64,
+            next.1 as f64,
+            (next.0 + next.2) as f64,
+            (next.1 + next.3) as f64,
+        );
         if let Some(v) = s.vello.as_mut() {
             v.ctx.push_clip_path(&rect.to_path(0.1));
             v.depth += 1;
@@ -1023,7 +1095,11 @@ fn vello_render(s: &mut Surface) {
     // `SrcOver` leaves them. Inside the rect the background fill is opaque, so it
     // overwrites regardless, and the result is identical to a full repaint --
     // which is what `--damage-check` asserts rather than assumes.
-    let composite = if damaged { CompositeMode::SrcOver } else { CompositeMode::Replace };
+    let composite = if damaged {
+        CompositeMode::SrcOver
+    } else {
+        CompositeMode::Replace
+    };
     // OptimizeSpeed selects the u8 pipeline, which is what the crate recommends
     // for application rendering; OptimizeQuality is for snapshot tests.
     v.ctx.render_with(
@@ -1062,7 +1138,14 @@ pub extern "C" fn ar_bgra(ptr: *mut Surface) -> *const u8 {
     // bounds-checked byte reads and four bounds-checked byte writes per pixel,
     // in a shape LLVM will not vectorise. Measured at 0.894 ms of an 8.4 ms
     // shop frame — 11% — against 0.082 ms for the upload it feeds.
-    let Surface { which, vello, pixmap, bgra, width, .. } = s;
+    let Surface {
+        which,
+        vello,
+        pixmap,
+        bgra,
+        width,
+        ..
+    } = s;
     // Both backends hand back PREMULTIPLIED RGBA, which is also what a layered
     // window consumes, so the alpha is carried through rather than forced to 255.
     // For an opaque surface every pixel is already 255 and this is identical to
@@ -1223,7 +1306,12 @@ mod gpu_abi {
         if width == 0 || height == 0 || width > u16::MAX as u32 || height > u16::MAX as u32 {
             return std::ptr::null_mut();
         }
-        match Windowed::attach_reporting(hwnd as isize, hinstance as isize, width as u16, height as u16) {
+        match Windowed::attach_reporting(
+            hwnd as isize,
+            hinstance as isize,
+            width as u16,
+            height as u16,
+        ) {
             Ok(w) => Box::into_raw(Box::new(w)),
             Err(why) => {
                 *ATTACH_ERROR.lock().expect("attach error poisoned") = Some(why);
@@ -1235,7 +1323,10 @@ mod gpu_abi {
     /// Why the last `ar_win_attach` failed. 0 means it has not.
     #[no_mangle]
     pub extern "C" fn ar_win_attach_error() -> u32 {
-        ATTACH_ERROR.lock().expect("attach error poisoned").unwrap_or(0)
+        ATTACH_ERROR
+            .lock()
+            .expect("attach error poisoned")
+            .unwrap_or(0)
     }
 
     /// Is this a live target? 1 if the pointer resolves, 0 if null.
@@ -1264,10 +1355,21 @@ mod gpu_abi {
 
     #[no_mangle]
     pub extern "C" fn ar_win_fill_rect(
-        ptr: *mut Windowed, x: f32, y: f32, w: f32, h: f32, radius: f32,
-        r: u8, g: u8, b: u8, alpha: u8,
+        ptr: *mut Windowed,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        radius: f32,
+        r: u8,
+        g: u8,
+        b: u8,
+        alpha: u8,
     ) {
-        let win = match unsafe { ptr.as_mut() } { Some(v) => v, None => return };
+        let win = match unsafe { ptr.as_mut() } {
+            Some(v) => v,
+            None => return,
+        };
         if let Some(path) = Windowed::path(x, y, w, h, radius) {
             win.fill(&path, r, g, b, alpha);
         }
@@ -1275,10 +1377,22 @@ mod gpu_abi {
 
     #[no_mangle]
     pub extern "C" fn ar_win_stroke_rect(
-        ptr: *mut Windowed, x: f32, y: f32, w: f32, h: f32, radius: f32, thickness: f32,
-        r: u8, g: u8, b: u8, alpha: u8,
+        ptr: *mut Windowed,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        radius: f32,
+        thickness: f32,
+        r: u8,
+        g: u8,
+        b: u8,
+        alpha: u8,
     ) {
-        let win = match unsafe { ptr.as_mut() } { Some(v) => v, None => return };
+        let win = match unsafe { ptr.as_mut() } {
+            Some(v) => v,
+            None => return,
+        };
         if let Some(path) = Windowed::path(x, y, w, h, radius) {
             win.stroke(&path, thickness, r, g, b, alpha);
         }
@@ -1288,10 +1402,20 @@ mod gpu_abi {
     /// structured crosses the ABI, here or anywhere else in this library.
     #[no_mangle]
     pub extern "C" fn ar_win_fill_gradient(
-        ptr: *mut Windowed, x: f32, y: f32, w: f32, h: f32, radius: f32, rotation: f32,
-        stops: *const f32, stop_count: u32,
+        ptr: *mut Windowed,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        radius: f32,
+        rotation: f32,
+        stops: *const f32,
+        stop_count: u32,
     ) {
-        let win = match unsafe { ptr.as_mut() } { Some(v) => v, None => return };
+        let win = match unsafe { ptr.as_mut() } {
+            Some(v) => v,
+            None => return,
+        };
         if stops.is_null() || stop_count == 0 {
             return;
         }
@@ -1300,8 +1424,10 @@ mod gpu_abi {
             .map(|i| ColorStop {
                 offset: raw[i * 5].clamp(0.0, 1.0),
                 color: DynamicColor::from_alpha_color(AlphaColor::<Srgb>::from_rgba8(
-                    raw[i * 5 + 1] as u8, raw[i * 5 + 2] as u8,
-                    raw[i * 5 + 3] as u8, raw[i * 5 + 4] as u8,
+                    raw[i * 5 + 1] as u8,
+                    raw[i * 5 + 2] as u8,
+                    raw[i * 5 + 3] as u8,
+                    raw[i * 5 + 4] as u8,
                 )),
             })
             .collect();
@@ -1309,7 +1435,10 @@ mod gpu_abi {
         // one-stop ramp -- the same rule the CPU backends follow.
         if parsed.len() == 1 {
             let c = parsed[0].color;
-            parsed.push(ColorStop { offset: 1.0, color: c });
+            parsed.push(ColorStop {
+                offset: 1.0,
+                color: c,
+            });
         }
         if parsed.len() < 2 {
             return;
@@ -1318,8 +1447,14 @@ mod gpu_abi {
         let (cx, cy) = (x + w / 2.0, y + h / 2.0);
         let half = (rad.cos().abs() * w / 2.0) + (rad.sin().abs() * h / 2.0);
         let grad = VGradient::new_linear(
-            vello_cpu::kurbo::Point::new((cx - rad.cos() * half) as f64, (cy - rad.sin() * half) as f64),
-            vello_cpu::kurbo::Point::new((cx + rad.cos() * half) as f64, (cy + rad.sin() * half) as f64),
+            vello_cpu::kurbo::Point::new(
+                (cx - rad.cos() * half) as f64,
+                (cy - rad.sin() * half) as f64,
+            ),
+            vello_cpu::kurbo::Point::new(
+                (cx + rad.cos() * half) as f64,
+                (cy + rad.sin() * half) as f64,
+            ),
         )
         .with_stops(parsed.as_slice());
         if let Some(path) = Windowed::path(x, y, w, h, radius) {
@@ -1347,27 +1482,57 @@ mod gpu_abi {
     /// two drift apart.
     #[no_mangle]
     pub extern "C" fn ar_win_fill_text(
-        ptr: *mut Windowed, font: u32, size: f32, x: f32, y: f32,
-        r: u8, g: u8, b: u8, alpha: u8, text: *const u8, len: u32,
+        ptr: *mut Windowed,
+        font: u32,
+        size: f32,
+        x: f32,
+        y: f32,
+        r: u8,
+        g: u8,
+        b: u8,
+        alpha: u8,
+        text: *const u8,
+        len: u32,
     ) -> u32 {
-        let win = match unsafe { ptr.as_mut() } { Some(v) => v, None => return 0 };
-        let string = match utf8(text, len) { Some(s) => s, None => return 0 };
+        let win = match unsafe { ptr.as_mut() } {
+            Some(v) => v,
+            None => return 0,
+        };
+        let string = match utf8(text, len) {
+            Some(s) => s,
+            None => return 0,
+        };
         if string.is_empty() {
             return 0;
         }
         let laid = with_fonts(|f| {
-            f.layout(font, size, string)
-                .map(|run| (run.glyphs, run.ascent, f.get(font).map(|ft| ft.data.clone())))
+            f.layout(font, size, string).map(|run| {
+                (
+                    run.glyphs,
+                    run.ascent,
+                    f.get(font).map(|ft| ft.data.clone()),
+                )
+            })
         });
-        let (glyphs, ascent, data) = match laid { Some(v) => v, None => return 0 };
-        let data = match data { Some(d) => d, None => return 0 };
+        let (glyphs, ascent, data) = match laid {
+            Some(v) => v,
+            None => return 0,
+        };
+        let data = match data {
+            Some(d) => d,
+            None => return 0,
+        };
         let baseline = y + ascent;
         let count = glyphs.len() as u32;
         // Collected because `fill_glyphs` wants a Clone iterator and a `map` over
         // a moved Vec is not one twice over.
         let positioned: Vec<vello_cpu::Glyph> = glyphs
             .into_iter()
-            .map(|p| vello_cpu::Glyph { id: p.id, x: x + p.x, y: baseline + p.y })
+            .map(|p| vello_cpu::Glyph {
+                id: p.id,
+                x: x + p.x,
+                y: baseline + p.y,
+            })
             .collect();
         win.glyphs(&data, size, (r, g, b, alpha), positioned.into_iter());
         count
@@ -1392,7 +1557,10 @@ mod gpu_abi {
     /// thousands of them.
     #[no_mangle]
     pub extern "C" fn ar_win_verify_capture(ptr: *mut Windowed) -> u32 {
-        let win = match unsafe { ptr.as_mut() } { Some(v) => v, None => return 0 };
+        let win = match unsafe { ptr.as_mut() } {
+            Some(v) => v,
+            None => return 0,
+        };
         match win.read_back() {
             Some(pixels) => {
                 *VERIFY.lock().expect("verify buffer poisoned") = Some(pixels);
@@ -1406,7 +1574,10 @@ mod gpu_abi {
     /// range or when nothing has been captured.
     #[no_mangle]
     pub extern "C" fn ar_win_verify_pixel(ptr: *const Windowed, x: u32, y: u32) -> u32 {
-        let win = match unsafe { ptr.as_ref() } { Some(v) => v, None => return 0xFFFF_FFFF };
+        let win = match unsafe { ptr.as_ref() } {
+            Some(v) => v,
+            None => return 0xFFFF_FFFF,
+        };
         if x >= win.width as u32 || y >= win.height as u32 {
             return 0xFFFF_FFFF;
         }
@@ -1470,14 +1641,22 @@ mod tests {
         ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(255, 0, 0, 255));
         ctx.fill_rect(&VRect::new(0.0, 0.0, 32.0, 32.0));
         ctx.flush();
-        ctx.render_with(&mut target, &mut resources, RasterizerSettings {
-            render_mode: RenderMode::OptimizeSpeed,
-            composite_mode: CompositeMode::Replace,
-            ..Default::default()
-        });
+        ctx.render_with(
+            &mut target,
+            &mut resources,
+            RasterizerSettings {
+                render_mode: RenderMode::OptimizeSpeed,
+                composite_mode: CompositeMode::Replace,
+                ..Default::default()
+            },
+        );
         let d = target.data_as_u8_slice();
         let far = (28 * 32 + 28) * 4;
-        assert_eq!((d[far], d[far + 1], d[far + 2]), (255, 0, 0), "setup failed");
+        assert_eq!(
+            (d[far], d[far + 1], d[far + 2]),
+            (255, 0, 0),
+            "setup failed"
+        );
 
         // Frame two: repaint only an 8x8 corner, SrcOver.
         ctx.reset();
@@ -1487,11 +1666,15 @@ mod tests {
         ctx.fill_rect(&clip);
         ctx.pop_clip_path();
         ctx.flush();
-        ctx.render_with(&mut target, &mut resources, RasterizerSettings {
-            render_mode: RenderMode::OptimizeSpeed,
-            composite_mode: CompositeMode::SrcOver,
-            ..Default::default()
-        });
+        ctx.render_with(
+            &mut target,
+            &mut resources,
+            RasterizerSettings {
+                render_mode: RenderMode::OptimizeSpeed,
+                composite_mode: CompositeMode::SrcOver,
+                ..Default::default()
+            },
+        );
 
         let d = target.data_as_u8_slice();
         let near = (4 * 32 + 4) * 4;
@@ -1550,9 +1733,16 @@ mod tests {
         // than two measurements of different things.
         let cpu = hybrid_probe::shoplike_cpu_ms(W, H, 67, 30);
         println!("  vello_cpu, IDENTICAL scene: {cpu:.3} ms");
-        println!("  -> GPU raster alone is {:.1}x the CPU; with readback it is {:.2}x",
-            cpu / render, cpu / (render + readback));
-        assert_eq!(out.len(), usize::from(W) * usize::from(H) * 4, "readback size");
+        println!(
+            "  -> GPU raster alone is {:.1}x the CPU; with readback it is {:.2}x",
+            cpu / render,
+            cpu / (render + readback)
+        );
+        assert_eq!(
+            out.len(),
+            usize::from(W) * usize::from(H) * 4,
+            "readback size"
+        );
     }
 
     /// A real system font, so these tests exercise the same file the host will.
@@ -1598,12 +1788,17 @@ mod tests {
         // And it must scale with size, or `textSize` is being ignored -- the exact
         // symptom of GDI's stock font before M7 selected one.
         let big = ar_text_width(font, 28.0, wide.as_ptr(), wide.len() as u32);
-        assert!(big > w * 1.8, "width must scale with size: 14px {w}, 28px {big}");
+        assert!(
+            big > w * 1.8,
+            "width must scale with size: 14px {w}, 28px {big}"
+        );
 
         // An unknown font must REPORT failure, not answer zero. A zero width
         // collapses the element, which is worse than an approximate one.
-        assert!(ar_text_width(9999, 14.0, wide.as_ptr(), wide.len() as u32) < 0.0,
-            "an unknown font must not answer a width");
+        assert!(
+            ar_text_width(9999, 14.0, wide.as_ptr(), wide.len() as u32) < 0.0,
+            "an unknown font must not answer a width"
+        );
     }
 
     /// PAINTING AND MEASURING MUST AGREE, which is the rule M7 broke by measuring
@@ -1626,9 +1821,24 @@ mod tests {
 
         let s = ar_surface_new_backend(512, 128, 1);
         ar_begin(s, 0, 0, 0);
-        let drawn = ar_fill_text(s, font, size, 20.0, 20.0, 255, 255, 255, 255,
-            text.as_ptr(), text.len() as u32);
-        assert_eq!(drawn as usize, text.chars().count(), "one glyph per character");
+        let drawn = ar_fill_text(
+            s,
+            font,
+            size,
+            20.0,
+            20.0,
+            255,
+            255,
+            255,
+            255,
+            text.as_ptr(),
+            text.len() as u32,
+        );
+        assert_eq!(
+            drawn as usize,
+            text.chars().count(),
+            "one glyph per character"
+        );
 
         let mut rightmost = 0;
         let mut inked = 0;
@@ -1643,14 +1853,23 @@ mod tests {
             }
         }
         ar_surface_free(s);
-        println!("measured {width:.1}px, ink ends at x={rightmost} (started at 20), {inked} lit pixels");
-        assert!(inked > 200, "the run must actually paint; only {inked} pixels were lit");
+        println!(
+            "measured {width:.1}px, ink ends at x={rightmost} (started at 20), {inked} lit pixels"
+        );
+        assert!(
+            inked > 200,
+            "the run must actually paint; only {inked} pixels were lit"
+        );
         // Ink must not exceed the advertised width, and must fill most of it --
         // a run that measured far wider than it draws is the AutomaticSize bug.
-        assert!((rightmost as f32) <= 20.0 + width + 2.0,
-            "ink ran past the measured width: ends {rightmost}, measured {width}");
-        assert!((rightmost as f32) > 20.0 + width * 0.75,
-            "ink fell far short of the measured width: ends {rightmost}, measured {width}");
+        assert!(
+            (rightmost as f32) <= 20.0 + width + 2.0,
+            "ink ran past the measured width: ends {rightmost}, measured {width}"
+        );
+        assert!(
+            (rightmost as f32) > 20.0 + width * 0.75,
+            "ink fell far short of the measured width: ends {rightmost}, measured {width}"
+        );
     }
 
     /// A VARIATION SELECTOR MUST NOT DRAW A BOX.
@@ -1681,8 +1900,14 @@ mod tests {
         // that cannot draw the character at all and proves nothing.
         assert_eq!(a.len(), 1, "the emoji should be one glyph");
         assert_ne!(a[0], 0, "the emoji must map to a real glyph, not .notdef");
-        assert_eq!(b, a, "a variation selector must add no glyph, got {b:?} vs {a:?}");
-        assert!(!b.contains(&0), "no .notdef may be drawn for a formatting character");
+        assert_eq!(
+            b, a,
+            "a variation selector must add no glyph, got {b:?} vs {a:?}"
+        );
+        assert!(
+            !b.contains(&0),
+            "no .notdef may be drawn for a formatting character"
+        );
 
         // ZWJ, the bidi marks and a stray BOM are the same class of character.
         for t in ["a\u{200D}b", "a\u{200E}b", "a\u{FEFF}b", "a\u{00AD}b"] {
@@ -1697,15 +1922,21 @@ mod tests {
         let wb = ar_text_width(font, 32.0, bare.as_ptr(), bare.len() as u32);
         let wv = ar_text_width(font, 32.0, with_vs.as_ptr(), with_vs.len() as u32);
         assert!(wb > 0.0);
-        assert_eq!(wb, wv, "a variation selector must add no width: {wb} vs {wv}");
+        assert_eq!(
+            wb, wv,
+            "a variation selector must add no width: {wb} vs {wv}"
+        );
 
         // A character the font genuinely LACKS must still draw .notdef. Without
         // this the fix above could have been "skip anything that does not map",
         // which would make a missing font invisible instead of obvious.
         let missing = "\u{10FFFD}";
         let g = ids(missing);
-        assert_eq!(g, vec![0],
-            "an unmapped PRINTING character must still draw .notdef, got {g:?}");
+        assert_eq!(
+            g,
+            vec![0],
+            "an unmapped PRINTING character must still draw .notdef, got {g:?}"
+        );
     }
 
     /// The smallest possible question: does a surface of each backend, asked for

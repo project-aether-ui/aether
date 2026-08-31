@@ -39,8 +39,8 @@ fn driver() -> Driver<aether_runtime::RasterPainter> {
     let app = app();
     let session = app.session().expect("session");
 
-    let mut painter = aether_runtime::RasterPainter::new(240, 96, Backend::VelloCpu)
-        .expect("surface");
+    let mut painter =
+        aether_runtime::RasterPainter::new(240, 96, Backend::VelloCpu).expect("surface");
     if let Some(path) = aether_runtime::font::system_font() {
         if let Some(font) = Font::load(&path.to_string_lossy(), 0) {
             painter = painter.with_font(font);
@@ -65,7 +65,10 @@ fn the_shared_component_loads_off_engine() {
 fn the_first_frame_paints_everything() {
     let mut driver = driver();
     let painted = driver.frame(1.0 / 120.0).expect("frame");
-    assert!(painted, "the first frame must paint; there is nothing to patch");
+    assert!(
+        painted,
+        "the first frame must paint; there is nothing to patch"
+    );
 }
 
 /// And the second must not, because nothing moved.
@@ -78,7 +81,10 @@ fn an_unchanged_second_frame_paints_nothing() {
     let mut driver = driver();
     driver.frame(1.0 / 120.0).expect("first");
     let painted = driver.frame(1.0 / 120.0).expect("second");
-    assert!(!painted, "nothing changed, so nothing should have been painted");
+    assert!(
+        !painted,
+        "nothing changed, so nothing should have been painted"
+    );
 }
 
 /// Writes the example out so it can be compared against the same component
@@ -159,17 +165,16 @@ fn a_small_change_dirties_a_small_rectangle() {
     let (fw, fh) = (full.frame.width, full.frame.height);
 
     // A forced full delta covers the surface, which is what makes it full.
-    let covers_all = full
-        .dirty
-        .map(|d| d.w >= fw && d.h >= fh)
-        .unwrap_or(true);
+    let covers_all = full.dirty.map(|d| d.w >= fw && d.h >= fh).unwrap_or(true);
     assert!(covers_all, "a forced full delta should dirty everything");
 
     increment.call::<()>(()).expect("increment");
     session.step(1.0 / 60.0).unwrap();
 
     let delta = session.delta(false).expect("delta");
-    let dirty = delta.dirty.expect("changing the count should dirty something");
+    let dirty = delta
+        .dirty
+        .expect("changing the count should dirty something");
 
     let changed_area = dirty.w * dirty.h;
     let whole = fw * fh;

@@ -12,9 +12,9 @@
 //! reach the filesystem through require at all, rather than reaching it through a
 //! resolver that merely declines to help.
 
+use crate::requirer::HostRequirer;
 use crate::vm::{Capabilities, Vm};
 use mlua::prelude::*;
-use crate::requirer::HostRequirer;
 use std::path::{Path, PathBuf};
 
 /// Install `require` into the guest.
@@ -43,7 +43,10 @@ pub fn install(vm: &Vm, caps: &Capabilities) -> LuaResult<bool> {
 /// which reads like a bug in the module rather than in how it was loaded.
 pub fn load_entry<'a>(vm: &'a Vm, path: &Path) -> LuaResult<LuaFunction> {
     let source = std::fs::read_to_string(path).map_err(|e| {
-        LuaError::RuntimeError(format!("could not read entry module {}: {e}", path.display()))
+        LuaError::RuntimeError(format!(
+            "could not read entry module {}: {e}",
+            path.display()
+        ))
     })?;
 
     // A BOM is not whitespace to the Luau lexer; it is an unexpected symbol on

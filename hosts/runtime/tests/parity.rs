@@ -129,10 +129,12 @@ fn the_guest_has_no_escape_hatches() {
     // SURVIVE: Luau's carries only `info` and `traceback`, and vide calls
     // `debug.info` on the first line it executes. Asserting its presence keeps a
     // future tightening of the list above from silently breaking the framework.
-    let debug: mlua::Table = lua.globals().get("debug").expect("Luau's debug must survive");
+    let debug: mlua::Table = lua
+        .globals()
+        .get("debug")
+        .expect("Luau's debug must survive");
     assert!(debug.contains_key("info").unwrap());
 }
-
 
 /// The prefix strip is four characters of backslash-escaping and a draft shipped
 /// with one too few — matching nothing and stripping nothing. Asserted rather

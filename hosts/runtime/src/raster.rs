@@ -188,7 +188,13 @@ impl Painter for RasterPainter {
                 .iter()
                 .map(|s| {
                     let a = alpha_at(&gradient.alpha_stops, s.at).unwrap_or(1.0) * alpha;
-                    [s.at, s.colour.0 as f32, s.colour.1 as f32, s.colour.2 as f32, a * 255.0]
+                    [
+                        s.at,
+                        s.colour.0 as f32,
+                        s.colour.1 as f32,
+                        s.colour.2 as f32,
+                        a * 255.0,
+                    ]
                 })
                 .collect()
         } else {
@@ -196,7 +202,13 @@ impl Painter for RasterPainter {
                 .alpha_stops
                 .iter()
                 .map(|s| {
-                    [s.at, base.0 as f32, base.1 as f32, base.2 as f32, s.alpha * alpha * 255.0]
+                    [
+                        s.at,
+                        base.0 as f32,
+                        base.1 as f32,
+                        base.2 as f32,
+                        s.alpha * alpha * 255.0,
+                    ]
                 })
                 .collect()
         };
@@ -220,12 +232,8 @@ impl Painter for RasterPainter {
     }
 
     fn clip_push(&mut self, rect: Rect) {
-        self.canvas.clip_push(
-            rect.x as i32,
-            rect.y as i32,
-            rect.w as i32,
-            rect.h as i32,
-        );
+        self.canvas
+            .clip_push(rect.x as i32, rect.y as i32, rect.w as i32, rect.h as i32);
     }
 
     fn clip_pop(&mut self) {

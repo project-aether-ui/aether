@@ -53,7 +53,14 @@ pub trait Painter {
     /// what it looked like before gradients existed. Drawing nothing would make
     /// a gradient node disappear, which is worse than an unramped one and much
     /// harder to spot.
-    fn fill_gradient(&mut self, rect: Rect, radius: f32, gradient: &Gradient, fallback: Option<Rgb>, alpha: f32) {
+    fn fill_gradient(
+        &mut self,
+        rect: Rect,
+        radius: f32,
+        gradient: &Gradient,
+        fallback: Option<Rgb>,
+        alpha: f32,
+    ) {
         let _ = gradient;
         if let Some(colour) = fallback {
             self.fill_rounded_rect(rect, radius, colour, alpha);

@@ -96,7 +96,7 @@ pub fn luau_source_root() -> Option<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let src = root.join("src");
     src.is_dir()
-        .then(|| strip_extended_prefix(root.canonicalize().unwrap_or_else(|_| root.clone()))) 
+        .then(|| strip_extended_prefix(root.canonicalize().unwrap_or_else(|_| root.clone())))
 }
 
 /// A loaded application, before it is driven.

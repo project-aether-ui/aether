@@ -15,8 +15,8 @@
 //! whether the windowed architecture (which forces text into vello) is required or
 //! merely optional.
 
-use vello_cpu::kurbo::{BezPath, Rect as VRect, RoundedRect, Shape};
 use vello_cpu::color::{AlphaColor, Srgb};
+use vello_cpu::kurbo::{BezPath, Rect as VRect, RoundedRect, Shape};
 use vello_hybrid::{RenderSize, RenderTargetConfig, Renderer, Resources, Scene, TextureBindings};
 
 pub struct Gpu {
@@ -81,8 +81,18 @@ impl Gpu {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
-        Some(Self { device, queue, renderer, resources, texture, view, buffer,
-            bytes_per_row, width, height })
+        Some(Self {
+            device,
+            queue,
+            renderer,
+            resources,
+            texture,
+            view,
+            buffer,
+            bytes_per_row,
+            width,
+            height,
+        })
     }
 
     /// Render one scene and bring the pixels back. Returns (render_ms, readback_ms).
@@ -98,7 +108,10 @@ impl Gpu {
                 &self.device,
                 &self.queue,
                 &mut encoder,
-                &RenderSize { width: self.width.into(), height: self.height.into() },
+                &RenderSize {
+                    width: self.width.into(),
+                    height: self.height.into(),
+                },
                 &self.view,
                 &TextureBindings::new(),
             )
@@ -129,7 +142,9 @@ impl Gpu {
 
         let t1 = std::time::Instant::now();
         self.buffer.slice(..).map_async(wgpu::MapMode::Read, |_| {});
-        self.device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .unwrap();
         out.clear();
         let w = usize::from(self.width) * 4;
         for row in self
@@ -160,7 +175,11 @@ pub fn shoplike_scene(width: u16, height: u16, nodes: usize) -> Scene {
         let x = 40.0 + (f * 17.0) % (width as f64 - 300.0);
         let y = 40.0 + (f * 29.0) % (height as f64 - 220.0);
         scene.set_paint(AlphaColor::<Srgb>::from_rgba8(
-            (30 + i * 3) as u8, (41 + i * 2) as u8, (59 + i) as u8, 200));
+            (30 + i * 3) as u8,
+            (41 + i * 2) as u8,
+            (59 + i) as u8,
+            200,
+        ));
         scene.fill_path(&rounded(x, y, 260.0, 180.0, 12.0));
     }
     scene
@@ -190,7 +209,11 @@ pub fn shoplike_cpu_ms(width: u16, height: u16, nodes: usize, iters: usize) -> f
             let x = 40.0 + (f * 17.0) % (width as f64 - 300.0);
             let y = 40.0 + (f * 29.0) % (height as f64 - 220.0);
             ctx.set_paint(AlphaColor::<Srgb>::from_rgba8(
-                (30 + i * 3) as u8, (41 + i * 2) as u8, (59 + i) as u8, 200));
+                (30 + i * 3) as u8,
+                (41 + i * 2) as u8,
+                (59 + i) as u8,
+                200,
+            ));
             ctx.fill_path(&rounded(x, y, 260.0, 180.0, 12.0));
         }
         ctx.flush();

@@ -18,9 +18,11 @@
 //! this file where each block is one deref of a pointer we allocated ourselves
 //! and never hand out.
 
-use crate::{Surface, ar_begin, ar_begin_rect_alpha, ar_clip_pop, ar_clip_push, ar_fill_gradient, ar_fill_rect,
-            ar_begin_alpha, ar_bgra, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
-            ar_surface_new_backend, ar_surface_free, ar_text_ascent, ar_text_width};
+use crate::{
+    ar_begin, ar_begin_alpha, ar_begin_rect_alpha, ar_bgra, ar_clip_pop, ar_clip_push,
+    ar_fill_gradient, ar_fill_rect, ar_fill_text, ar_font_load, ar_png, ar_stroke_rect,
+    ar_surface_free, ar_surface_new_backend, ar_text_ascent, ar_text_width, Surface,
+};
 
 /// Which rasteriser paints.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -122,7 +124,15 @@ impl Canvas {
         ar_begin_alpha(self.ptr, r, g, b, a);
     }
 
-    pub fn fill_rect(&mut self, x: f32, y: f32, w: f32, h: f32, radius: f32, rgba: (u8, u8, u8, u8)) {
+    pub fn fill_rect(
+        &mut self,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        radius: f32,
+        rgba: (u8, u8, u8, u8),
+    ) {
         ar_fill_rect(self.ptr, x, y, w, h, radius, rgba.0, rgba.1, rgba.2, rgba.3);
     }
 
@@ -136,7 +146,9 @@ impl Canvas {
         thickness: f32,
         rgba: (u8, u8, u8, u8),
     ) {
-        ar_stroke_rect(self.ptr, x, y, w, h, radius, thickness, rgba.0, rgba.1, rgba.2, rgba.3);
+        ar_stroke_rect(
+            self.ptr, x, y, w, h, radius, thickness, rgba.0, rgba.1, rgba.2, rgba.3,
+        );
     }
 
     /// Fill with a gradient. Each stop is `(at, r, g, b, a)`, flattened, which is
@@ -155,7 +167,17 @@ impl Canvas {
             return;
         }
         let flat: Vec<f32> = stops.iter().flatten().copied().collect();
-        ar_fill_gradient(self.ptr, x, y, w, h, radius, rotation, flat.as_ptr(), stops.len() as u32);
+        ar_fill_gradient(
+            self.ptr,
+            x,
+            y,
+            w,
+            h,
+            radius,
+            rotation,
+            flat.as_ptr(),
+            stops.len() as u32,
+        );
     }
 
     /// Draw a run. `x`/`y` are the TOP-LEFT of the text box, matching every other
@@ -169,7 +191,15 @@ impl Canvas {
     /// Returns false when nothing was drawn. The most likely reason is the
     /// BACKEND: tiny-skia is a shape backend and has no text at all, so a run on
     /// one is silently dropped. Use [`Backend::VelloCpu`] for anything with text.
-    pub fn fill_text(&mut self, font: Font, size: f32, x: f32, y: f32, rgba: (u8, u8, u8, u8), text: &str) -> bool {
+    pub fn fill_text(
+        &mut self,
+        font: Font,
+        size: f32,
+        x: f32,
+        y: f32,
+        rgba: (u8, u8, u8, u8),
+        text: &str,
+    ) -> bool {
         ar_fill_text(
             self.ptr,
             font.0,

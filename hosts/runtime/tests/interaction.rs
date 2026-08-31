@@ -73,7 +73,6 @@ fn moving_over_it_reports_hover() {
     assert!(count >= 1, "hover never reached the pressable");
 }
 
-
 /// `OnActivated` is what a button should use, and it is not `OnPressed`.
 ///
 /// A press followed by a release INSIDE the element activates it; a press that

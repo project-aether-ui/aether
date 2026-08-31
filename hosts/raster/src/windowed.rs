@@ -18,7 +18,9 @@
 //!     apply. Every frame is drawn whole, which is affordable precisely because
 //!     the GPU is drawing it.
 
-use raw_window_handle::{RawDisplayHandle, RawWindowHandle, Win32WindowHandle, WindowsDisplayHandle};
+use raw_window_handle::{
+    RawDisplayHandle, RawWindowHandle, Win32WindowHandle, WindowsDisplayHandle,
+};
 use std::num::NonZeroIsize;
 use vello_cpu::color::{AlphaColor, Srgb};
 use vello_cpu::kurbo::{BezPath, Rect as VRect, RoundedRect, Shape, Stroke as VStroke};

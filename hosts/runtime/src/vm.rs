@@ -80,8 +80,16 @@ impl Vm {
             // anyway is deliberate: this reads as the full inventory rather than
             // as the subset that happened to need removing on the day it was
             // written.
-            for name in ["io", "os", "package", "dofile", "loadfile", "load", "loadstring", "require"]
-            {
+            for name in [
+                "io",
+                "os",
+                "package",
+                "dofile",
+                "loadfile",
+                "load",
+                "loadstring",
+                "require",
+            ] {
                 globals.set(name, LuaValue::Nil)?;
             }
 

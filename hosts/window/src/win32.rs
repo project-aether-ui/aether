@@ -5,10 +5,9 @@ use std::cell::RefCell;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
 use windows::Win32::Graphics::Gdi::{
-    CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, SelectObject, AC_SRC_ALPHA,
-    AC_SRC_OVER, BLENDFUNCTION, HBITMAP,
-    BeginPaint, EndPaint, GetDC, ReleaseDC, StretchDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
-    DIB_RGB_COLORS, HDC, PAINTSTRUCT, SRCCOPY, ScreenToClient,
+    BeginPaint, CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, EndPaint, GetDC,
+    ReleaseDC, ScreenToClient, SelectObject, StretchDIBits, AC_SRC_ALPHA, AC_SRC_OVER, BITMAPINFO,
+    BITMAPINFOHEADER, BI_RGB, BLENDFUNCTION, DIB_RGB_COLORS, HBITMAP, HDC, PAINTSTRUCT, SRCCOPY,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
@@ -263,7 +262,11 @@ impl Window {
                     CW_USEDEFAULT,
                     CW_USEDEFAULT,
                 ),
-                Surface::Widget { x, y, click_through } => {
+                Surface::Widget {
+                    x,
+                    y,
+                    click_through,
+                } => {
                     let mut ex = WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
                     if *click_through {
                         // TRANSPARENT means hit-testing falls through to whatever
@@ -274,7 +277,10 @@ impl Window {
                     }
                     (WS_POPUP, ex, *x, *y)
                 }
-                Surface::Overlay { topmost, click_through } => {
+                Surface::Overlay {
+                    topmost,
+                    click_through,
+                } => {
                     let mut ex = WS_EX_LAYERED | WS_EX_TOOLWINDOW;
                     if *topmost {
                         ex |= WS_EX_TOPMOST;

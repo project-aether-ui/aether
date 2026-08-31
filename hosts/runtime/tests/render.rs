@@ -136,7 +136,6 @@ fn writes_a_png_to_look_at() {
     println!("wrote {path} ({size} bytes)");
 }
 
-
 /// Text must reach the surface, not just the display list.
 ///
 /// The label is 120x24 at (20, 28) filled cyan, with "aether" centred in white.
@@ -207,7 +206,9 @@ fn a_clipped_repaint_costs_less_than_a_full_one() {
     let mut clipped = std::time::Duration::ZERO;
     for _ in 0..rounds {
         let t = Instant::now();
-        painter.canvas_mut().begin_rect((0, 0, 0, 0), 40, 40, 310, 160);
+        painter
+            .canvas_mut()
+            .begin_rect((0, 0, 0, 0), 40, 40, 310, 160);
         painter
             .canvas_mut()
             .fill_rect(40.0, 40.0, 300.0, 150.0, 8.0, (56, 189, 248, 255));
