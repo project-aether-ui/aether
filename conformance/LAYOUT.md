@@ -200,6 +200,26 @@ rule, and would fail the other host for being right. Ratios and minimums are the
 mechanism the suite offers for anything an implementation cannot be held to
 exactly; text is the first thing to need them.
 
+### Measurement converges; it is not stable immediately
+
+The same case, on the same build and the same machine, reported a width ratio of
+**1.9896** on one run and **2.0244** on the next. The height ratio was exactly
+**2.0000** both times.
+
+That split identifies the cause. Line height is a function of `TextSize` alone,
+so it is stable. Width depends on glyph advances, so it is not. The quantity that
+moved is exactly the one that depends on which face answered -- which is what a
+font still loading looks like, an early measurement being of a fallback.
+
+**[reference]** So Roblox's own measurement converges rather than being correct
+immediately, which is the same shape as the web host's asynchronous cache. An
+implementation is not wrong for reporting a fallback width before its font
+arrives; it is wrong for never converging.
+
+A consequence for anyone measuring: a text case observed too early is measuring
+the wrong face. The engine runner waits thirty frames for a case containing text
+against three for one that does not.
+
 ### The contract layout depends on
 
 **Measurement must be synchronous.** `Layout.Solve` runs inside a frame and

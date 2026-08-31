@@ -62,8 +62,35 @@ end
 --- being measured can take several passes. Three frames is empirical and cheap;
 --- if a case ever reports zeroes for something plainly visible, raise it before
 --- suspecting the engine.
-local function settle()
-	for _ = 1, 3 do
+--- Does this case measure text? Text needs longer, and the reason is below.
+local function measuresText(node: any): boolean
+	if node.props and node.props.Text ~= nil then
+		return true
+	end
+	for _, child in ipairs(node.children or {}) do
+		if measuresText(child) then
+			return true
+		end
+	end
+	return false
+end
+
+--- TEXT SETTLES LATER THAN LAYOUT DOES.
+---
+--- Observed: the same case, on the same build and machine, reported a width
+--- ratio of 1.9896 on one run and 2.0244 on the next. The HEIGHT ratio was
+--- exactly 2.0000 both times.
+---
+--- That split is the tell. Line height is a function of TextSize alone, so it is
+--- stable; width depends on glyph advances, so it is not. The quantity that
+--- varied is exactly the one that depends on which face answered, which is what
+--- a font still loading looks like -- an early measurement is of a fallback.
+---
+--- Thirty frames rather than three for text, which is half a second and cheap
+--- against being wrong. If a text ratio still moves between runs, raise it again
+--- before concluding anything about the engine.
+local function settle(needsText: boolean)
+	for _ = 1, (if needsText then 30 else 3) do
 		RunService.Heartbeat:Wait()
 	end
 end
@@ -96,7 +123,7 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 	surface.Parent = screen
 
 	build(case.tree, surface)
-	settle()
+	settle(measuresText(case.tree))
 
 	local origin = surface.AbsolutePosition
 	local byName: { [string]: GuiObject } = {}
