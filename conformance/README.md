@@ -83,6 +83,16 @@ lune run conformance/run.luau layout     # cases whose name matches
 
 Exit code is non-zero on any failure, so it can gate a commit.
 
+Before handing anything to Studio:
+
+```sh
+lune run conformance/syntax_check.luau
+```
+
+Compiles every runner and every case without running them. The engine runner
+cannot be *executed* outside Studio, so a syntax error in it is otherwise
+invisible here and comes back as a line number from someone else's Output window.
+
 Against the engine:
 
 ```sh

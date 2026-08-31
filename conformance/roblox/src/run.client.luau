@@ -128,8 +128,19 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 			end
 		end
 
-		lines[#lines + 1] =
-			`\t\t{{ name = "{expected.name}", x = {got.x}, y = {got.y}, w = {got.w}, h = {got.h} }},`
+		--- `string.format`, not interpolation. This line's whole job is to emit
+		--- literal braces, and an interpolated string reads `{` as the start of an
+		--- expression — "Double braces are not permitted within interpolated
+		--- strings". Escaping them would compile and would make the one line whose
+		--- output has to be copy-pasteable the hardest one in the file to read.
+		lines[#lines + 1] = string.format(
+			'\t\t{ name = "%s", x = %s, y = %s, w = %s, h = %s },',
+			expected.name,
+			tostring(got.x),
+			tostring(got.y),
+			tostring(got.w),
+			tostring(got.h)
+		)
 	end
 
 	if mismatch then
