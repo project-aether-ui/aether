@@ -21,3 +21,9 @@ target/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Private working notes. NOT ignored by anything in this repository until now --
+# only by a global gitignore on one machine, which is not a property the drafts
+# can rely on. A fresh clone, a second machine, or a contributor would all have
+# committed them. The directory is deliberately outside the repository's history.
+.artifacts/
