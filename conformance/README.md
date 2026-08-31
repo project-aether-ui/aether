@@ -1,5 +1,13 @@
 # DataModel Standard — conformance suite
 
+[LAYOUT.md](LAYOUT.md) is the specification these cases verify: what an
+implementation must compute, given a tree, to produce the same rectangles Roblox
+produces. Every claim in it is marked verified, reference or unverified, and the
+verified ones name the case that proves them.
+
+The property surface is the other half of the standard, and is generated rather
+than written -- see Dew's `docs/datamodel_scope.md`.
+
 A tree goes in. A display list comes out. Any implementation can be run against
 it.
 
