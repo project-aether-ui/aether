@@ -1,38 +1,33 @@
 --!strict
 --[[
-	The DESKTOP entry point — `aether` CLI and Dew.
+	The DESKTOP entry point, for the `aether` CLI and any other host with no
+	engine under it.
 
-	Three things Roblox does not need, and each for a stated reason:
+	Everything that used to be here -- resolving the host, installing the value
+	vocabulary, opening a reactive scope, opening a session -- is `Desktop.Mount`.
+	It moved into the framework because every off-engine host was doing the same
+	four things, and the one that forgot a step got a working-looking program that
+	silently lost input or drew nothing.
 
-	  1. `InstallVocabulary`, because there is no engine to supply `UDim2` and
-	     `Color3` as globals. The component names them; something has to define
-	     them.
-	  2. `Live.Session`, because nothing is driving frames. Roblox has a Heartbeat
-	     and a renderer; here the host does both.
-	  3. A size, because there is no ScreenGui to inherit one from.
-
-	Everything else — the component itself — is shared, and that is the entire
-	point of the file being this short.
+	What is left is the two facts only this file knows: which component, and how
+	big. Compare `roblox.client.luau` beside it, which knows the same two and
+	nothing else either.
 ]]
 
-local Host = require("@aether/host/Host")
-local Live = require("@aether/host/Live")
-local PointerRouter = require("@aether/PointerRouter")
-
+local Desktop = require("@aether/host/Desktop")
 local Counter = require("../src/Counter")
 
 local WIDTH, HEIGHT = 240, 96
 
-local host = Host.detect()
-host.InstallVocabulary()
-
-local tree, increment = Counter({ start = 0 })
+local mounted = Desktop.Mount(function()
+	return Counter({ start = 0 })
+end, WIDTH, HEIGHT)
 
 return {
-	Session = Live.Session(host, tree, PointerRouter, WIDTH, HEIGHT),
-	--- Exposed so a shell can drive the example without the component having to
-	--- know what a keystroke or a timer is.
-	Increment = increment,
+	Session = mounted.Session,
+	--- The counter hands its increment back beside its tree, so a host can drive
+	--- the component without reaching into it.
+	Increment = mounted.Actions,
 	Width = WIDTH,
 	Height = HEIGHT,
 }
