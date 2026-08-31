@@ -221,6 +221,23 @@ rule, and would fail the other host for being right. Ratios and minimums are the
 mechanism the suite offers for anything an implementation cannot be held to
 exactly; text is the first thing to need them.
 
+### Line height
+
+**[verified]** `one line of text is a fixed multiple of TextSize` -- a
+single-line auto-sized label resolves to exactly **1.5 x TextSize**. Measured
+against a `Frame` of fixed height rather than against another text element, since
+a ratio between two labels cancels the line height out.
+
+Aether used **1.2** and had done since the file was written, under a comment
+asserting that "Roblox's own text bounds report the same shape". Nobody had
+checked. Every auto-sized `TextLabel` off-engine was twenty percent short --
+small enough to read as a font difference, large enough to misplace everything
+below it in a list.
+
+**[unverified]** Whether 1.5 is purely line height or includes something the
+engine adds. What is established is the resolved height, which is what layout
+needs.
+
 ### Measured width is not reproducible to the last percent
 
 The same case, on the same build and the same machine, reported a width ratio of
@@ -318,9 +335,6 @@ scale-under-AutomaticSize cycle in section 3 -- and that one turned out to have 
 specific answer nobody guessed, so this one probably does too.
 
 ### What is still unspecified
-- **Line height.** The headless provider uses `1.2 x TextSize`. Whether Roblox
-  agrees is unverified, and it is exactly the kind of constant that is wrong by a
-  few percent everywhere without anyone noticing.
 
 ## 8. What reaches the display list
 

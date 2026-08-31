@@ -14,10 +14,12 @@
 ]]
 return {
 	name = "one line of text is a fixed multiple of TextSize",
-	provenance = "asserted",
-	note = "Aether says 1.2. The tolerance admits anything from 1.0 to 1.4, because the claim being "
-		.. "tested is that Roblox uses SOME fixed multiple and what it is; a tight bound would be "
-		.. "asserting Aether's constant rather than measuring the engine's.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "ENGINE: 1.5000 exactly. Aether used 1.2, so every auto-sized TextLabel was 20 percent "
+		.. "short. What is measured is the RESOLVED HEIGHT of a single-line auto-sized label as a "
+		.. "multiple of TextSize; whether that is purely line height or includes something else is "
+		.. "not established by this case.",
 	surface = { width = 300, height = 200 },
 
 	tree = {
@@ -48,6 +50,6 @@ return {
 
 	expect = {},
 	ratios = {
-		{ of = "OneLine", to = "Ruler", field = "h", expect = 1.2, tolerance = 0.2 },
+		{ of = "OneLine", to = "Ruler", field = "h", expect = 1.5, tolerance = 0.02 },
 	},
 }

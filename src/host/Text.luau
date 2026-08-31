@@ -64,9 +64,22 @@ end
 --- collapse a layout that a wide guess merely loosens.
 local DEFAULT_ADVANCE = 1.0
 
---- Line height as a multiple of the font size. A nominal sans sits near 1.2;
---- Roblox's own text bounds report the same shape.
-local LINE_HEIGHT = 1.2
+--- Line height as a multiple of the font size.
+---
+--- MEASURED, not assumed. An auto-sized single-line TextLabel at TextSize 20
+--- resolves to exactly 30 in Roblox 0.736 -- see the conformance case
+--- `one line of text is a fixed multiple of TextSize`.
+---
+--- This was 1.2 for the life of the file, with a comment asserting that "Roblox's
+--- own text bounds report the same shape". Nobody had checked. Every auto-sized
+--- TextLabel off-engine was twenty percent short, which is small enough to look
+--- like a font difference and large enough to misplace everything below it in a
+--- list.
+---
+--- Whether 1.5 is purely line height or includes something the engine adds is
+--- not established. What is established is the resolved height, which is what
+--- layout needs.
+local LINE_HEIGHT = 1.5
 
 --- Measure with the built-in table. Exposed so a richer provider can defer to it
 --- for strings it has no exact answer for yet.
