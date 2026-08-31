@@ -8,6 +8,7 @@ three comes from writing for the wrong one.
 | **Commit** | someone running `git blame` in two years | *why is this line like this?* |
 | **Pull request** | a reviewer, now | *what am I looking at, and where should I look?* |
 | **Release note** | someone upgrading | *what will I notice, and what must I do?* |
+| **README** | someone who just arrived | *what is this, and is it for me?* |
 
 A commit that reads like a release note is too vague to be useful in a blame. A
 release note that reads like a commit is unreadable to anyone who does not know
@@ -151,7 +152,60 @@ depend on gets as much prose as it takes.
 
 ---
 
-## The rule underneath all three
+## READMEs and repository descriptions
+
+The reader has been here for four seconds and is deciding whether to leave.
+
+```
+# Name
+
+<one or two sentences: what it is, plainly>
+
+## Running it
+## <the two or three things a reader needs next>
+## License
+```
+
+**Say what it is, not what it enables.**
+"A desktop applet platform. Widgets are written in Luau and run on Aether" tells
+someone what they are looking at. "Enables fast, lightweight workflow utilities
+authored as typed Luau modules" is the same sentence with the information taken
+out. If a phrase would fit any project in the category, it is not doing work.
+
+**No second introduction.**
+A tagline followed by an "Overview" that restates it is the most common README
+failure. Say it once, then move to something the reader cannot infer.
+
+**Running it comes early.**
+Before architecture, before philosophy. The reader wants to know whether they can
+try it.
+
+**Architecture only where it earns the space.**
+A diagram is worth including when the shape is the point and prose would take a
+paragraph. It is not worth including as decoration, and it should never come
+before the reader knows what the project is.
+
+**No decorative horizontal rules.**
+Headings already separate sections. A `---` between every one is visual noise
+that makes a short document look long.
+
+**No emoji in the title.**
+
+### Repository descriptions
+
+One sentence, under about 100 characters, in the same voice as the README's first
+line. It appears in search results and next to the name in a list, so it should
+read as a definition rather than a slogan:
+
+```
+A headless UI framework for Luau. One component runs in Roblox, on the desktop, and in CI.
+```
+
+Not a tagline, not a promise, and no em dash.
+
+---
+
+## The rule underneath all of them
 
 Write the thing you would want to find. Every one of these is read by someone
 under time pressure trying to answer a specific question, and the writing is

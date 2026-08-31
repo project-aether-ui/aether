@@ -1,76 +1,89 @@
 # Aether
 
-A headless UI framework for Luau. Layout, hit testing, pointer arbitration, focus
-and text editing are resolved in Luau; a **host** binds that abstract geometry to a
-concrete target and paints it.
+A headless UI framework for Luau. One component runs inside Roblox, on the
+desktop, and in CI, because layout, hit testing, pointer arbitration, focus and
+text editing are all resolved in Luau rather than by an engine.
+
+A host binds that abstract geometry to something concrete and paints it.
+`Host.detect()` picks one by environment and never by configuration: the Roblox
+host when `game` is an Instance, the headless host otherwise.
+
+## Running it
+
+```sh
+pesde install
+
+lune run tests/run.luau                      # the suites
+lune run tests/gates/all_gates.luau --run    # the structural gates
+lune run conformance/run.luau                # against Roblox's own behaviour
+```
+
+The `aether` CLI renders a component with no engine underneath it:
+
+```sh
+cargo build -p aether-cli
+./target/debug/aether snapshot examples/counter/entry/desktop.luau -o counter.png
+./target/debug/aether preview examples/counter/entry/desktop.luau
+```
+
+`snapshot` needs no display, so it runs in CI. `preview` opens a window.
+
+## One component, three hosts
+
+[`examples/counter`](examples/counter) is the whole claim in one directory:
 
 ```
-Layer 2     Aether.Core        abstract behaviour, no Instance anywhere
-Layer 2.5   Aether.Host.*      binds abstract geometry to a target
+src/Counter.luau            host-agnostic; asks Deps for create and source
+entry/roblox.client.luau    mounts into a ScreenGui, the engine drives
+entry/desktop.luau          installs the vocabulary, opens a Live.Session
 ```
 
-`Host.detect()` selects by ENVIRONMENT, never by configuration — the Roblox host
-when `game` is an Instance, the headless host otherwise. There is no flag to force
-the wrong one, because every bug in this area has been a path that silently took
-the wrong branch.
-
-## Targets
+Both entry points are under twenty lines. That ratio is the point.
 
 | Host | What stands in for the engine |
 | :--- | :--- |
 | Roblox | the engine itself |
 | Headless | mock instances over vide's own reactive core |
-| `hosts/raster` | `vello_hybrid` / `wgpu` presenting to a window, via a C ABI |
+| `hosts/raster` | `vello_hybrid` or `vello_cpu`, presenting to a window |
 
 The off-engine hosts are Rust-owned: Rust holds the process and embeds Luau as a
-guest. See [docs/hosting_architecture.md](docs/hosting_architecture.md) for why,
-and for how the `aether` CLI and Dew share one pipeline.
+guest. [docs/hosting_architecture.md](docs/hosting_architecture.md) has why, and
+how the CLI and Dew share one pipeline.
 
-## Status
+## Conformance
 
-**0.0.1 — pre-alpha.** The API is not stable and nothing is published to a
-registry. Consumers depend on this repository by git commit:
-
-```toml
-[dependencies]
-Aether = { repo = "<owner>/aether", rev = "<full-sha>" }
-```
-
-pesde synthesises `0.0.0-<sha>` for a git source, so the commit is the identity and
-the version above is a statement about maturity rather than a resolution key. A
-`luau`- or `lune`-target consumer can depend on this `roblox`-target package: the
-whole source tree is copied and the generated redirect is an ordinary Luau file, it
-simply lands in `roblox_packages/` rather than `luau_packages/`.
+[`conformance/`](conformance) runs the same cases against this implementation and
+against Roblox itself, so "matches the engine" is a measurement rather than a
+claim. Each case records which of the two verified it, and the suite reports
+being behind Roblox separately from being wrong.
 
 ## Layout
 
 ```
 src/            the framework; src/Icon is a workspace member
-packages/       workspace members that are not the framework (virtual)
-hosts/          off-engine hosts — raster (Rust renderer)
+packages/       workspace members that are not the framework
+hosts/          raster, runtime, window, and the CLI
+conformance/    cases, and a runner for each implementation
 tests/          suites, and the structural gates under tests/gates
-stories/        visual cases
 ```
 
-## Running things
+## Status
 
-```sh
-pesde install
-lune run tests/run.luau                      # suites
-lune run tests/gates/all_gates.luau --run    # structural gates
+**0.0.1, pre-alpha.** The API is not stable and nothing is published to a
+registry. Consumers depend on this repository by commit:
+
+```toml
+[dependencies]
+Aether = { repo = "project-aether-ui/aether", rev = "<full-sha>" }
 ```
 
-## History
-
-Aether was developed inside the `spektr/essentials` monorepo as
-`pkgs/ui/framework/Aether` and graduated to its own repository once it had
-consumers that did not belong there. See `docs/graduation_followups.md` for
-what the split left unfinished.
+pesde synthesises `0.0.0-<sha>` for a git source, so the commit is the identity
+and the version above is a statement about maturity rather than a resolution key.
 
 ## Contributing
 
-- [writing.md](docs/contributing/writing.md) - how commits, pull requests and
-  release notes are written, and who each is written for.
+- [writing.md](docs/contributing/writing.md) - how commits, pull requests,
+  releases and this file are written.
 - [merging.md](docs/contributing/merging.md) - which merge strategy a branch
   gets, and why the branch prefix decides it.
 
