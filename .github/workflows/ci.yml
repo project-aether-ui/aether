@@ -1,0 +1,67 @@
+# Everything that can be checked without a Roblox client.
+#
+# WHAT THIS CANNOT DO, and it is the larger half: the conformance suite has a
+# second runner that builds each case inside Studio and reads the engine's own
+# layout back. That is the runner whose output is evidence. This one checks that
+# our implementation still agrees with what the engine was last observed saying,
+# which catches a regression and never catches the engine moving.
+#
+# So a green run here means "unchanged", not "correct". See conformance/README.md.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push cancels the first. These are long Rust builds and there is no
+# value in finishing a run for a commit that is already superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  luau:
+    name: suites, gates and conformance
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ROKIT, so CI runs the versions rokit.toml pins. A floating lune once
+      # moved JSON between modules mid-milestone; matching local exactly is the
+      # whole reason that file exists.
+      - uses: CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: pesde install
+      - run: lune run conformance/syntax_check.luau
+      - run: lune run tests/run.luau
+      - run: lune run tests/gates/all_gates.luau --run
+      - run: lune run conformance/run.luau
+
+  rust:
+    name: cargo test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # The raster feature is not default, and the tests that exercise painting,
+      # text and the display list all need it. Running without it passes while
+      # checking a fraction of what matters.
+      - run: cargo test --workspace --features aether_runtime/raster
+
+  format:
+    name: fmt and clippy
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --features aether_runtime/raster -- -D warnings
