@@ -67,6 +67,13 @@ Aether was developed inside the `spektr/essentials` monorepo as
 consumers that did not belong there. See `docs/graduation_followups.md` for
 what the split left unfinished.
 
+## Contributing
+
+- [writing.md](docs/contributing/writing.md) - how commits, pull requests and
+  release notes are written, and who each is written for.
+- [merging.md](docs/contributing/merging.md) - which merge strategy a branch
+  gets, and why the branch prefix decides it.
+
 ## License
 
 [MIT](LICENSE)
