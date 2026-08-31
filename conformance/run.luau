@@ -115,6 +115,53 @@ local function runCase(case: any): Result
 		end
 	end
 
+	--- RATIOS, for anything an implementation cannot be held to exactly.
+	---
+	--- Text measurement is a HOST SERVICE with a different provider per host: the
+	--- engine's own bounds in Roblox, a per-glyph table off-engine, a browser
+	--- cache on the web, real font metrics in Dew. No case can assert that a
+	--- string is 71.4 pixels wide, because that is true of one provider.
+	---
+	--- What every correct provider agrees on is the RELATIONSHIPS. Doubling
+	--- `TextSize` doubles the width. A wider string measures wider. Those hold
+	--- everywhere, and they are what a case about text can honestly assert.
+	for _, r in ipairs(case.ratios or {}) do
+		local of, to = byName[r.of], byName[r.to]
+		if not of or not to then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = `ratio needs '{r.of}' and '{r.to}'; one is missing from the display list`,
+				note = case.note,
+			}
+		end
+		local denominator = to[r.field]
+		if denominator == 0 then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = `ratio {r.of}.{r.field} / {r.to}.{r.field}: the denominator is zero`,
+				note = case.note,
+			}
+		end
+		local actual = of[r.field] / denominator
+		local slack = r.tolerance or 0.02
+		if math.abs(actual - r.expect) > slack then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = string.format(
+					"ratio %s.%s / %s.%s: expected %.3f +/- %.3f, got %.3f",
+					r.of, r.field, r.to, r.field, r.expect, slack, actual
+				),
+				note = case.note,
+			}
+		end
+	end
+
 	--- ABSENCE IS AN ASSERTION TOO. A case naming `expectAbsent` is claiming the
 	--- display list does NOT contain something — a node measured to nothing, or
 	--- one made invisible. Without this the field would be decoration, and a case

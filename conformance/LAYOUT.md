@@ -13,6 +13,7 @@ verified against the engine or marked as not.
 | **[verified]** | A conformance case observed this in Studio. The case name is given. |
 | **[reference]** | Recorded from the Luau implementation. It is what we do, not necessarily what Roblox does. |
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
+| **[verified-relationally]** | A case proves a ratio rather than a value, because the value is a property of the host. |
 
 Cases were last run against Roblox **0.736.0.7361346**, and each records the
 build that verified it. The property surface is generated from a reflection
@@ -150,7 +151,67 @@ Front-to-back order is `ZIndex`, then depth, then declaration order.
 **[reference]** No case covers it. A case asserting order rather than geometry
 would need the runner to compare sequences, which it does not yet do.
 
-## 7. What reaches the display list
+## 7. Text measurement
+
+**Text measurement is a host service, not a layout rule.** Layout asks how wide a
+string is and uses the answer; it does not decide what the answer is.
+
+That is not an implementation detail to be tidied away later. There are four
+providers and they give four answers:
+
+| Host | Provider |
+| :--- | :--- |
+| Roblox | the engine's own text bounds, exact |
+| Aether headless | a per-glyph advance table for a nominal humanist sans |
+| Web | the browser, through a cache it fills asynchronously |
+| Dew and the CLI | real font metrics, through skrifa |
+
+So **no case may assert that a string is 71.4 pixels wide.** That is true of one
+provider. A standard that fixed the number would be describing a font rather than
+describing layout, and would make every implementation with a different face
+non-conformant for being correct.
+
+### What is specifiable
+
+The relationships, which every correct provider agrees on.
+
+**[verified-relationally]** `text measurement is linear in TextSize` -- doubling
+the size doubles both the measured width and the line height, because an advance
+is a fraction of the em square and the em square is the size.
+
+**[verified-relationally]** `text measurement is per glyph, not per character` --
+`WWWW` and `llll` are the same length and nowhere near the same width. This rules
+out `#text * factor`, which reports a plausible width for every string while
+being wrong about all of them, and which passes any test that only checks a width
+is non-zero.
+
+Both are asserted as **ratios with tolerance** rather than as pixel values. That
+is the mechanism the suite offers for anything an implementation cannot be held
+to exactly, and text is the first thing to need it.
+
+### The contract layout depends on
+
+**Measurement must be synchronous.** `Layout.Solve` runs inside a frame and
+returns; it cannot await. A provider that must round-trip to answer cannot answer
+during the solve that needs it, which is why the web host answers from a cache
+and converges after the first frame that draws a given string rather than
+blocking on the browser.
+
+An implementation whose measurement is asynchronous has to make the same choice:
+answer approximately now, or do not answer at all. It may not make layout wait.
+
+### What is still unspecified
+
+- **Wrapping.** `TextWrapped` with a fixed width and `AutomaticSize.Y` should
+  give a height of line count times line height, but nothing here verifies where
+  the breaks fall, and break positions are where two providers diverge most.
+- **`TextScaled`**, which inverts the relationship: the size is chosen to fit the
+  box rather than the box being measured from the size.
+- **Line height.** The headless provider uses `1.2 x TextSize`. Whether Roblox
+  agrees is unverified, and it is exactly the kind of constant that is wrong by a
+  few percent everywhere without anyone noticing.
+
+## 8. What reaches the display list
 
 An element solved to zero width or height produces nothing to paint and is
 **absent** from the display list, rather than present with an empty rectangle.
@@ -171,8 +232,8 @@ honestly without opening Studio first.
 - The flex properties: `FlexMode`, `GrowRatio`, `ShrinkRatio`, `HorizontalFlex`,
   `VerticalFlex`, `ItemLineAlignment`.
 - `UIAspectRatioConstraint`, `UISizeConstraint`, `UITextSizeConstraint`.
-- Text measurement, which decides `AutomaticSize` on a `TextLabel` and is the
-  largest single omission here.
+- Text wrapping and `TextScaled`; see section 7 for what is now covered and what
+  is not.
 - `ScrollingFrame` canvas resolution and `AutomaticCanvasSize`.
 - `SizeConstraint`, which changes which parent axis a scale resolves against.
 
