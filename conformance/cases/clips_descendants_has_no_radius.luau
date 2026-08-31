@@ -11,14 +11,25 @@
 	Found by building a virtual window manager whose titlebars squared off the
 	corners of the cards they sat in.
 
-	The expectation below records the CURRENT behaviour so the gap is visible and
-	regressions are caught. When the display list grows a clip radius this case
-	becomes `roblox` and gains a `clipRadius` assertion.
+	THE ENGINE RUNNER REPORTED THIS AS AGREEING, and that is a flaw in the case
+	rather than evidence the gap is closed. What it asserts is the titlebar's
+	RECTANGLE, and the rectangle conforms — clipping to a rounded parent does not
+	move a child, it changes which of its pixels survive. The divergence is in the
+	display list's clip representation, which `AbsolutePosition` cannot see and
+	the engine runner therefore cannot measure.
+
+	So this case now carries what it can honestly assert, and the gap is recorded
+	beside it as something no geometric assertion will ever catch. Closing it
+	needs a clip radius in the display list AND a pixel-level comparison, which is
+	a different kind of runner.
 ]]
 return {
-	name = "clip rectangles carry no corner radius",
+	name = "a clipped child keeps its rectangle (the radius gap is invisible here)",
 	provenance = "divergent",
-	note = "Roblox rounds a clip to the parent's UICorner; the display list has no radius field",
+	note = "Roblox rounds a clip to the parent's UICorner; our display list carries a clip as a bare "
+		.. "rectangle with no radius. NOT DETECTABLE GEOMETRICALLY -- the rectangle below conforms, "
+		.. "and the engine runner confirmed it. Needs a clip radius in the display list and a "
+		.. "pixel-level runner to catch.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

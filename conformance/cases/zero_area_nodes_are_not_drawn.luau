@@ -10,7 +10,7 @@
 ]]
 return {
 	name = "a node with zero area is absent from the display list",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 100 },
 
 	tree = {

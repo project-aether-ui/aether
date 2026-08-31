@@ -7,7 +7,7 @@
 ]]
 return {
 	name = "scale resolves against the parent, not the surface",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 100 },
 
 	tree = {

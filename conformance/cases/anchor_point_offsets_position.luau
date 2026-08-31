@@ -9,7 +9,7 @@
 ]]
 return {
 	name = "anchor point shifts an element by a fraction of its own size",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 100 },
 
 	tree = {

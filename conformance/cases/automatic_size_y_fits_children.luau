@@ -9,7 +9,7 @@
 ]]
 return {
 	name = "AutomaticSize Y grows a frame to fit its children",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 200 },
 
 	tree = {

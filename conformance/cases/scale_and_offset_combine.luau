@@ -6,7 +6,7 @@
 ]]
 return {
 	name = "scale and offset combine additively",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 100 },
 
 	tree = {

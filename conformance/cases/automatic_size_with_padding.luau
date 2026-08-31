@@ -9,7 +9,7 @@
 ]]
 return {
 	name = "AutomaticSize includes UIPadding in the measured size",
-	provenance = "reference",
+	provenance = "roblox",
 	surface = { width = 200, height = 200 },
 
 	tree = {

@@ -11,9 +11,11 @@
 ]]
 return {
 	name = "UIListLayout stacks children and ignores their Position",
-	provenance = "asserted",
-	note = "Layout allocates slot 0 to First and First then ignores it, keeping its own Position. "
-		.. "Second and Third take slots 1 and 2 correctly, so the stacking works and the override does not.",
+	provenance = "roblox",
+	note = "VERIFIED IN STUDIO: the engine produces exactly this. Our implementation does not -- "
+		.. "Layout allocates slot 0 to First and First then ignores it, keeping its own Position, "
+		.. "while Second and Third take slots 1 and 2 correctly. So the stacking works and the "
+		.. "override does not. This is a genuine conformance bug in Layout.luau.",
 	surface = { width = 200, height = 100 },
 
 	tree = {
