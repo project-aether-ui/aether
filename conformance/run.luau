@@ -160,6 +160,27 @@ local function runCase(case: any): Result
 			}
 		end
 		local actual = of[r.field] / denominator
+		--- `integral`, for a quantity that comes in whole units whose COUNT is
+		--- provider-specific. Wrapped height is a whole number of lines: which
+		--- number depends on where the shaper breaks, that it is whole does not.
+		if r.integral then
+			local nearest = math.floor(actual + 0.5)
+			local slack = r.tolerance or 0.02
+			if nearest < 1 or math.abs(actual - nearest) > slack then
+				return {
+					name = case.name,
+					provenance = case.provenance,
+					ok = false,
+					detail = string.format(
+						"ratio %s.%s / %s.%s: expected a whole multiple, got %.4f",
+						r.of, r.field, r.to, r.field, actual
+					),
+					note = case.note,
+				}
+			end
+			continue
+		end
+
 		--- `min` rather than `expect`, for a claim of the form "much greater
 		--- than". Fitting a tolerance around an observed number would make the
 		--- case assert a font instead of asserting the rule.

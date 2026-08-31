@@ -18,10 +18,11 @@ local LONG = "The quick brown fox jumps over the lazy dog and keeps going well p
 
 return {
 	name = "TextWrapped grows the height past one line",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
 	requires = { "TextWrapped" },
-	note = "Aether implements no wrapping. Verify in Studio, then this is a roadmap item with a "
-		.. "verified expectation rather than a guess.",
+	note = "Engine: exactly 5.0000, so that string wraps to five lines at 200px and 18pt. Aether "
+		.. "implements no wrapping, so this is a roadmap item carrying a verified expectation.",
 	surface = { width = 400, height = 300 },
 
 	tree = {
@@ -57,9 +58,14 @@ return {
 
 	expect = {},
 	ratios = {
-		--- Two lines at the very least. The string is roughly four times the
-		--- width it is given, so any real implementation produces more, and one
-		--- that ignores wrapping produces exactly 1.0.
+		--- Two lines at the very least. An implementation ignoring `TextWrapped`
+		--- reports exactly 1.0.
 		{ of = "Wrapped", to = "Single", field = "h", min = 1.9 },
+		--- AND A WHOLE NUMBER OF THEM. The engine returned exactly 5.0000, which
+		--- is the stronger claim: wrapped height is line count times line height
+		--- with nothing added. WHICH count depends on where the shaper breaks and
+		--- is not specified; that it is a whole number is, and it rules out an
+		--- implementation that pads the last line or measures a partial one.
+		{ of = "Wrapped", to = "Single", field = "h", integral = true },
 	},
 }

@@ -13,7 +13,7 @@ verified against the engine or marked as not.
 | **[verified]** | A conformance case observed this in Studio. The case name is given. |
 | **[reference]** | Recorded from the Luau implementation. It is what we do, not necessarily what Roblox does. |
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
-| **[verified-relationally]** | A case proves a ratio rather than a value, because the value is a property of the host. |
+| **[verified-relationally]** | A case proves a ratio, a minimum or an integer multiple rather than a value, because the value is a property of the host. |
 
 Cases were last run against Roblox **0.736.0.7361346**, and each records the
 build that verified it. The property surface is generated from a reflection

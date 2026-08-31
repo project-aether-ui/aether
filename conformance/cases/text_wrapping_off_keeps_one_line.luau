@@ -15,10 +15,11 @@ local LONG = "The quick brown fox jumps over the lazy dog and keeps going well p
 
 return {
 	name = "TextWrapped off keeps a long string on one line",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
 	requires = { "TextWrapped" },
-	note = "The negative half of wrapping. Catches an implementation that grows height with text "
-		.. "length regardless of TextWrapped.",
+	note = "Engine: exactly 1.0000. The negative half of wrapping, and the case that catches an "
+		.. "implementation growing height with text length regardless of TextWrapped.",
 	surface = { width = 400, height = 300 },
 
 	tree = {

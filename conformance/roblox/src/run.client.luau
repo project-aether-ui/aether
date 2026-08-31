@@ -199,7 +199,14 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		end
 		local actual = field(of, r.field) / denominator
 		local verdict, bound
-		if r.min then
+		if r.integral then
+			local nearest = math.floor(actual + 0.5)
+			local slack = r.tolerance or 0.02
+			verdict = if nearest >= 1 and math.abs(actual - nearest) <= slack
+				then "within"
+				else "OUTSIDE"
+			bound = `a whole multiple, nearest {nearest}`
+		elseif r.min then
 			verdict = if actual >= r.min then "within" else "OUTSIDE"
 			bound = string.format("at least %.3f", r.min)
 		else
