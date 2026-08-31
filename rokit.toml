@@ -8,6 +8,7 @@
 
 [tools]
 lune = "lune-org/lune@0.10.4"
+
 rojo = "rojo-rbx/rojo@7.6.1"
 run-in-roblox = "rojo-rbx/run-in-roblox@0.3.0"
 
@@ -15,3 +16,12 @@ run-in-roblox = "rojo-rbx/run-in-roblox@0.3.0"
 # Rust build step, and `zune.net.http` serves the frame transport for the web
 # host. Its API is a `zune` GLOBAL, not requires, and its aliases are its own.
 zune = "Scythe-Technology/zune@0.5.8"
+
+# PESDE IS NOT HERE, and cannot be. Its releases are tagged
+# `v0.7.3+registry.0.2.3`, and rokit cannot resolve a version carrying build
+# metadata -- `rokit add pesde-pkg/pesde` fails before it downloads anything.
+#
+# So CI installs it from the release archive directly, pinned to the same 0.7.3
+# this repository is developed against. If that version moves, move it in
+# .github/workflows/ci.yml too; there is no single place to change, which is the
+# cost of the tag format and not a choice.
