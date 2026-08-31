@@ -195,9 +195,22 @@ local function automaticAxes(value: any): (boolean, boolean)
 end
 
 --- Solve one element against the box its parent offers it.
-local function solveRect(Scene: any, node: any, parent: Rect, host: any?): Rect
+---
+--- `laidOut` marks an element whose parent has already decided where it goes —
+--- a `UIListLayout` child. Its own `Position` is then IGNORED rather than
+--- resolved inside the slot it was given.
+---
+--- Verified in Studio: a list child cannot position itself. Before this, the
+--- slot was passed as the child's containing box and the child's own Position
+--- offset it inside — indistinguishable from correct for the overwhelming
+--- majority of children, which set no Position at all, and wrong for every one
+--- that does.
+local function solveRect(Scene: any, node: any, parent: Rect, host: any?, laidOut: boolean?): Rect
 	local sxs, sxo, sys, syo = readUDim2(Scene.Raw(node, "Size"))
 	local pxs, pxo, pys, pyo = readUDim2(Scene.Raw(node, "Position"))
+	if laidOut then
+		pxs, pxo, pys, pyo = 0, 0, 0, 0
+	end
 
 	local width = parent.Width * sxs + sxo
 	local height = parent.Height * sys + syo
@@ -666,7 +679,7 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		end
 	end
 
-	local function visit(node: any, parentBox: Rect, clip: Rect?, depth: number)
+	local function visit(node: any, parentBox: Rect, clip: Rect?, depth: number, laidOut: boolean?)
 		if Scene.Raw(node, "Visible") == false then
 			return
 		end
@@ -737,7 +750,7 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		end
 
 		local firstIndex = #out + 1
-		local rect = solveRect(Scene, node, parentBox, host)
+		local rect = solveRect(Scene, node, parentBox, host, laidOut)
 		order += 1
 		local entry = {
 			Node = node,
@@ -835,7 +848,8 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 						then { X = box.X + cursor, Y = box.Y, Width = box.Width, Height = box.Height }
 						else { X = box.X, Y = box.Y + cursor, Width = box.Width, Height = box.Height }
 					local before = #out
-					visit(child, slot, childClip, depth + 1)
+					--- `true`: the slot IS this child's position. See solveRect.
+					visit(child, slot, childClip, depth + 1, true)
 					--- Advance by what the child actually resolved to, so a stack of
 					--- differently-sized rows lays out correctly.
 					if #out > before then
