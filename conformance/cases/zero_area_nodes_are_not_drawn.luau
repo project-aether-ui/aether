@@ -28,5 +28,5 @@ return {
 	},
 	--- Absence is the half of this case that matters; presence alone would pass
 	--- against an implementation that drew the flat node anyway.
-	expectAbsent = { "Visible" },
+	expectAbsent = { "Flat" },
 }
