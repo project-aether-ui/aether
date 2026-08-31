@@ -66,6 +66,22 @@ saves them finding out the hard way.
 "Removing `debug` on reputation broke vide, whose `flags.luau` calls `debug.info`
 on its first line" is the sentence that stops it happening again.
 
+**Name a commit, do not cite its hash.**
+A bare SHA in prose is opaque: "the cause is in ee149c7" makes a reader run
+`git show` to learn what any sentence could have said directly. It is also
+fragile, since any history rewrite turns it into a dangling reference, and worse
+across repositories where it cannot be resolved at all.
+
+Write what the other commit did. "The layer-root fix is upstream" survives a
+rebase and needs no lookup.
+
+The exception is a trailer, where the format carries the subject alongside the
+hash and a tool reads it:
+
+```
+Fixes: 1234567890ab ("the subject line")
+```
+
 Skip the body when there genuinely is not one. `chore(assets): update the tray
 icon` is complete.
 

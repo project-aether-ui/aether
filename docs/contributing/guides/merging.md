@@ -15,8 +15,8 @@ notes, and it only stays useful if each merge contributes one entry.
 | `fix/` | defect repair | squash |
 | `spike/` | R&D experiment | usually not merged at all |
 
-The taxonomy already encodes the decision, because it already declares how many
-goals a branch contains.
+The taxonomy in [branching.md](branching.md) already encodes the decision,
+because it already declares how many goals a branch contains.
 
 **A `feat/` or `fix/` branch has one observable goal.**
 One goal collapses to one commit without losing anything. Its internal history is

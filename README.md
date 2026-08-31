@@ -82,10 +82,9 @@ and the version above is a statement about maturity rather than a resolution key
 
 ## Contributing
 
-- [writing.md](docs/contributing/writing.md) - how commits, pull requests,
-  releases and this file are written.
-- [merging.md](docs/contributing/merging.md) - which merge strategy a branch
-  gets, and why the branch prefix decides it.
+[CONTRIBUTING.md](CONTRIBUTING.md), and
+[docs/contributing/guidelines.md](docs/contributing/guidelines.md) for how work
+is branched, written and landed.
 
 ## License
 
