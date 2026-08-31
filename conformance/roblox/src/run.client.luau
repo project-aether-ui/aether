@@ -188,6 +188,14 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		local function field(g: GuiObject, f: string): number
 			local pos = g.AbsolutePosition - origin
 			local size = g.AbsoluteSize
+			if f == "textHeight" then
+				--- `TextBounds.Y`, the height of the rendered block. Off-engine the
+				--- same field is the display list's `textSize`. They are
+				--- proportional rather than equal, so only ratios over this field
+				--- mean anything on both runners.
+				local label = g :: any
+				return if label.TextBounds then label.TextBounds.Y else 0
+			end
 			if f == "w" then return size.X elseif f == "h" then return size.Y
 			elseif f == "x" then return pos.X else return pos.Y end
 		end

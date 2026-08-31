@@ -138,6 +138,22 @@ local function runCase(case: any): Result
 	--- What every correct provider agrees on is the RELATIONSHIPS. Doubling
 	--- `TextSize` doubles the width. A wider string measures wider. Those hold
 	--- everywhere, and they are what a case about text can honestly assert.
+	--- `textHeight` is proportional to the size text is RENDERED at, which is
+	--- what `TextScaled` changes and what no geometric field reports.
+	---
+	--- IT IS NOT THE SAME QUANTITY ON BOTH RUNNERS. Here it is the display
+	--- list's `textSize`, the size a painter is told to draw at. In the engine it
+	--- is `TextBounds.Y`, the height of the rendered block, which is that size
+	--- times a line height. They are proportional, so a RATIO over them agrees
+	--- and an absolute value does not -- which is why `expect` never names this
+	--- field and only `ratios` may.
+	local function readField(node: any, field: string): number?
+		if field == "textHeight" then
+			return node.textSize
+		end
+		return node[field]
+	end
+
 	for _, r in ipairs(case.ratios or {}) do
 		local of, to = byName[r.of], byName[r.to]
 		if not of or not to then
@@ -149,8 +165,8 @@ local function runCase(case: any): Result
 				note = case.note,
 			}
 		end
-		local denominator = to[r.field]
-		if denominator == 0 then
+		local denominator = readField(to, r.field)
+		if denominator == nil or denominator == 0 then
 			return {
 				name = case.name,
 				provenance = case.provenance,
@@ -159,7 +175,7 @@ local function runCase(case: any): Result
 				note = case.note,
 			}
 		end
-		local actual = of[r.field] / denominator
+		local actual = (readField(of, r.field) or 0) / denominator
 		--- `integral`, for a quantity that comes in whole units whose COUNT is
 		--- provider-specific. Wrapped height is a whole number of lines: which
 		--- number depends on where the shaper breaks, that it is whole does not.

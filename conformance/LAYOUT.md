@@ -263,10 +263,35 @@ diverge most: the same string, the same width and the same nominal font can brea
 differently on different rasterisers. A standard fixing them would be describing
 one text shaper.
 
-### What is still unspecified
+### TextScaled
 
-- **`TextScaled`**, which inverts the relationship: the size is chosen to fit the
-  box rather than the box being measured from the size.
+`TextScaled` inverts the relationship. Everywhere else the box is measured from
+the text; here the text is chosen to fit the box, and `TextSize` stops being the
+answer.
+
+**It is hard to observe, and that is the interesting part.** The element's size
+is whatever the tree set, so no geometric field reports what changed. What
+changed is the size the text is RENDERED at, which Roblox exposes as `TextBounds`
+and the display list carries as `textSize`.
+
+Those are proportional rather than equal -- one is a font size, the other that
+size times a line height -- so the suite reads them through a derived
+`textHeight` field and **only ratios over it are meaningful**. An absolute
+assertion on `textHeight` would be comparing a font size against a block height.
+
+**[asserted]** `TextScaled chooses the text size from the box` -- the same string
+in boxes of 1x and 2x height renders at 1x and 2x. An implementation ignoring
+`TextScaled` honours `TextSize` in both and reports 1.0.
+
+**Aether implements none of this.** `TextScaled` appears in one comment and is
+read by nothing, so the case is gated behind `requires`.
+
+**[unverified]** What happens when `TextScaled` and `AutomaticSize` are both set
+on the same axis. Each wants the other to decide, which is the same shape as the
+scale-under-AutomaticSize cycle in section 3 -- and that one turned out to have a
+specific answer nobody guessed, so this one probably does too.
+
+### What is still unspecified
 - **Line height.** The headless provider uses `1.2 x TextSize`. Whether Roblox
   agrees is unverified, and it is exactly the kind of constant that is wrong by a
   few percent everywhere without anyone noticing.
