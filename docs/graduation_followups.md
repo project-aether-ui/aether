@@ -150,26 +150,39 @@ configuration, which no conformance case covers. That test is the only reason th
 over-correction was caught, which is a point in favour of keeping unit assertions
 that conformance does not duplicate.
 
-### What is still open
+### What is still open: we resolve against the wrong thing
 
-One reading is unexplained. `automatic_size_scale_child_without_a_layout` (childless,
-`{1,0, 0.5,20}`, no layout) measures **30** in Studio where the rule above gives 120,
-and 30 matches no closed form. It is exactly the second step of an iteration on the
-degenerate cycle:
+`automatic_size_scale_child_without_a_layout` was held for **120 frames** and the
+engine still returns **30**. It settles there. The convergence explanation offered
+for the first reading was wrong, and the number has a plainer cause.
 
-    H0 = 0   H1 = 0.5(0) + 20 = 20   H2 = 0.5(20) + 20 = 30   H3 = 35 ... -> 40
+**A scale child resolves against the content size counting offsets only, not
+against the space offered.** Take the subtree's extent ignoring every scale, then
+resolve the child against that:
 
-so it is more likely a frame the runner sampled than a value the engine settled on.
-The fixed point is `offset / (1 - scale)` = 40.
+| case | C (offsets only) | `s x C + o` | `max` | engine |
+|---|---|---|---|---|
+| childless, no layout | 20 | 30 | **30** | 30 |
+| with content | 80 | 60 | **80** | 80 |
+| full scale, content | 90 | 90 | **90** | 90 |
+| full scale, childless | 0 | 0 | **0** | unmeasurable, warns |
 
-The case is `divergent` rather than `roblox` deliberately: recording 30 as the
-standard would commit the implementation to reproducing an iteration count, which
-is a race and not a rule.
+One rule, four readings, including the unit-test configuration that conformance
+does not cover. It also explains why the current implementation looks right: when
+there IS content behind the child the content dominates the max, so passing
+through reaches the same number by a different route. Only the childless case
+separates them, and that is the one we get wrong.
 
-**The experiment that settles it:** run that case again holding more frames before
-reading the rectangles. Walking 30 -> 35 -> 37.5 means convergence and the answer is
-40. Sitting at 30 however long you wait means 30 is real, our 120 is wrong, and the
-measured branch resolves against the offset rather than the offered space.
+`grow()` uses the offered space unconditionally, which is correct **only under a
+UIListLayout** -- both verified 120-and-60 readings have one. Closing the gap means
+resolving against the content-derived size when there is no layout. That is a
+rework of `grow()`, not another condition on the line, which is why it is recorded
+as a documented gap rather than attempted in passing.
+
+**The weakest part of this is the layout branch.** It rests on two readings that
+share one scale and one offset. A case with a UIListLayout and a different scale
+would test whether the layout really switches the resolution to the offered space
+or whether something else distinguishes those two.
 
 ---
 

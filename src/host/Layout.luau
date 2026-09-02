@@ -640,12 +640,22 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			--- alone immediately broke the full-scale childless case above. A rule that
 			--- fits every case you have is not thereby the rule.
 			---
-			--- ONE READING IS STILL UNEXPLAINED: a childless `{1,0, 0.5,20}` under no
-			--- layout measures 30 in Studio where this produces 120. See
-			--- conformance/cases/automatic_size_scale_child_without_a_layout.luau --
-			--- 30 is the second step of an iteration converging on 40, so it may be a
-			--- sampled frame rather than a settled value. Do not encode it without a
-			--- second engine reading.
+			--- WHAT THIS STILL GETS WRONG, and it is known rather than suspected: a
+			--- childless `{1,0, 0.5,20}` under no layout measures 30 in Studio, held
+			--- for 120 frames, where this produces 120.
+			---
+			--- The engine resolves a scale child against the CONTENT SIZE COUNTING
+			--- OFFSETS ONLY, not against the space offered. Here that content is the
+			--- child's own 20, so `0.5 x 20 + 20 = 30`. The same rule reproduces every
+			--- other reading -- 80, 90, and the unmeasurable case -- because whenever
+			--- there IS content behind the child, the content dominates the max and
+			--- passing through lands on the same number by a different route.
+			---
+			--- So `offered` is right only under a UIListLayout, which is where both
+			--- verified 120-and-60 readings come from. Closing the gap means resolving
+			--- against the content-derived size when there is no layout, which is a
+			--- rework of this function rather than another condition on this line.
+			--- See conformance/cases/automatic_size_scale_child_without_a_layout.luau.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
