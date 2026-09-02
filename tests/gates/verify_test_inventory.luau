@@ -1,52 +1,61 @@
 --!strict
 --[[
-	verify_test_inventory — every test file on disk is REACHABLE by something
-	that actually runs it.
+	verify_test_inventory -- a file that LOOKS like a test either runs or is named.
 
 	WHY (ms-44 M1)
-	A test nobody runs is worse than no test: it reads as coverage in a review,
-	it is cited as evidence in a sprint file, and it is silently dark. This repo
-	has paid for that lesson twice already, in two different shapes:
+	A test nobody runs is worse than no test: it reads as coverage in a review, it
+	is cited as evidence, and it is silently dark. This repository has paid for
+	that lesson repeatedly -- eight suites that returned an uninvoked function and
+	passed on exit code, a run-in-roblox tier dead in its bootstrap for nine days,
+	and thirty-three suites unrunnable for months behind a `.luaurc` alias into a
+	repository they no longer sat inside.
 
-	  * **ms-43 M30** — eight suites RETURNED an uninvoked function. The runner
-	    judges by exit code, so they passed without executing a single assertion.
-	    One of them had been calling functions M15 deleted, and ms-43 cited it as
-	    evidence for the M25 fix. The fix was real; the test had never run.
-	  * **ms-44 M1** — the entire run-in-roblox tier (24 specs) died in its
-	    bootstrap from 7937d2e (2026-07-25) until this milestone, because ms-41
-	    O2 made unclaimed-namespace registration fatal and no gate spawns
-	    `tests/support/runner/run_tests.luau`. Nine days dark, invisible to every
-	    automated path.
+	WHAT THIS GATE USED TO BE, and why it could not stay
+	It checked the MONOREPO's layout: testkit's `Discover` out of `pkgs/`, and an
+	assertion that `tests/engine/prism` still scanned for `.spec.luau` files.
+	Neither the package nor the engine tier came across at graduation, so the gate
+	failed for a reason that had nothing to do with this repository's tests, and
+	sat in `all_gates.BLOCKED` with an accurate description of a question nobody
+	had answered. A permanently blocked gate is silent failure in slow motion.
 
-	Both are the same class: REACHABILITY IS UNCHECKED. M30 fixed its eight
-	instances by hand and left the class open. This closes the class.
+	WHAT IT CANNOT BE HERE, which is the load-bearing part
+	The obvious rewrite is "every `*.test.luau` is found by the runner". That is
+	worthless. `tests/run.luau` walks the whole repository for exactly the
+	patterns in `tests/suites.luau`, so every `*.test.luau` outside `excluded` is
+	discovered BY CONSTRUCTION. The gate could never fail; it would print a green
+	number that reads identically to the number it would print with the runner
+	switched off entirely. Reachability for that one filename shape is closed by
+	the runner, and a gate is the wrong instrument for a closed question.
 
-	WHAT COUNTS AS REACHED
-	A test file is reached if some runner or gate names its path, or if a host
-	loads it by discovery:
+	WHAT IS ACTUALLY STILL OPEN, and what this checks
+	Three things, each with a way to happen and no other alarm on it:
 
-	  runner      tests/run.luau's SUITES table names the path
-	  gate        a tests/gates/*.luau or scripts/*.luau names the path
-	  engine      tests/engine/prism/specs/*.spec.luau — init.luau requires every
-	              `.spec` ModuleScript under itself, and
-	              tests/engine/default.project.json mounts that host, so discovery
-	              reaches them
+	  1. NAMING DRIFT. `Foo.spec.luau`, `foo_test.luau`, `Foo.test.lua` -- one
+	     keystroke, or one habit from another repository, away from a suite;
+	     matching no runner pattern; sitting in the tree looking exactly like
+	     coverage. This is what the old engine tier leaves behind: its `.spec.luau`
+	     convention is gone and the muscle memory for it is not.
+	  2. A SUITE SILENCED BY CONFIGURATION. `tests/suites.luau` decides what the
+	     runner skips. Adding one of ours to `excluded` takes a suite dark with no
+	     other symptom, so the census walks PAST that list and reports what it hid.
+	  3. A SUITE THAT NEVER REPORTS. A file the runner executes that never calls
+	     `T.run` exits 0 having asserted nothing, which is the ms-43 M30 failure
+	     exactly. Static and cheap; the runtime half is testkit refusing a run that
+	     registered no tests.
 
-	WHAT THIS DOES NOT CATCH, stated because a gate whose limits are unstated
-	gets trusted past them:
+	WHAT THIS DOES NOT CATCH, stated because a gate whose limits are unstated gets
+	trusted past them:
 
-	  * Reachable is not RUN. A gate that names a path but is itself never
-	    invoked still counts as a reference here. Chasing that fully means
-	    executing the graph, which is the runner's job, not a static gate's.
-	  * Reached is not RUN, as above. Reached is, however, no longer "might be
-	    vacuous": every suite in the repo runs on testkit as of ms-44, and testkit
-	    fails a run whose declared tests all went unexecuted with no filter to
-	    explain it. Non-vacuity is enforced AT RUNTIME, by the thing that runs the
-	    tests, which is where it belongs — a static gate can only ever guess at it.
-	    The census below is now a weak second opinion, kept because it is free.
+	  * Reached is not RUN, and a static gate cannot close that. What can, and now
+	    does, is `Testkit.run` exiting non-zero on an empty registry -- enforced by
+	    the thing that runs the tests, which is where it belongs. The old version
+	    of this gate CLAIMED that check already existed here. It did not: the
+	    testkit it was inherited from had one and `tests/testkit.luau` did not.
+	  * An assertion that cannot fail. Nothing here reads what a test asserts.
 ]]
 
 local fs = require("@lune/fs")
+local Suites = require("../suites")
 
 local failures = 0
 local function fail(msg: string)
@@ -54,210 +63,135 @@ local function fail(msg: string)
 	print("FAIL  " .. msg)
 end
 
---- Directories that are vendored, generated, or otherwise not ours.
-local function isVendored(path: string): boolean
-	return string.find(path, "roblox_packages", 1, true) ~= nil
-		or string.find(path, "luau_packages", 1, true) ~= nil
-		or string.find(path, "/.pesde/", 1, true) ~= nil
-end
-
---- Every file under `root` matching `pred`, depth-first, vendored trees skipped.
-local function walk(root: string, pred: (string) -> boolean, out: { string })
-	if not fs.isDir(root) then
-		return
-	end
-	for _, name in ipairs(fs.readDir(root)) do
-		local path = root .. "/" .. name
-		if not isVendored(path) then
-			if fs.isDir(path) then
-				walk(path, pred, out)
-			elseif pred(path) then
-				table.insert(out, path)
-			end
-		end
-	end
-end
-
--- ── The census ────────────────────────────────────────────────────────────────
-
-local tests: { string } = {}
--- Package-level lune suites. After ms-44 M3 these live in <pkg>/tests/ rather
--- than <pkg>/src/, so the walk deliberately spans the whole package.
-for _, root in ipairs({ "src", "packages", "hosts" }) do
-	walk(root, function(p)
-		return string.match(p, "%.test%.luau$") ~= nil
-	end, tests)
-end
--- Central lune suites. One file per suite since the ms-44 layout change; the old shape
--- was `tests/src/<Name>/run_lune_tests.luau`, 26 files sharing one name.
-walk("tests", function(p)
-	return string.match(p, "%.test%.luau$") ~= nil
-end, tests)
--- Engine-tier specs. They used to be scattered inside lune suite directories, which is
--- why the walk above once looked for them; they now live with the host that loads them.
-walk("tests/engine", function(p)
-	return string.match(p, "%.spec%.luau$") ~= nil
-end, tests)
-
-table.sort(tests)
-
--- ── Who can reach them ────────────────────────────────────────────────────────
-
---- Comments are stripped before matching, and that is load-bearing rather than
---- tidiness. On this gate's first run `tests/src/RollbackContinuousPhysics` came
---- back REACHED because scripts/netcode_gates.luau:102 names its path in a
---- prose comment ("proof: tests/src/..."). A comment is documentation that a
---- suite ought to be run; it is not something that runs it. Counting it would
---- have made this gate certify the exact situation it exists to find.
 local stripComments = require("./source_scan").stripComments
 
---- Every file that might NAME a test path. Read once; a substring match against
---- these bodies is what "reached" means.
-local referrers: { { name: string, body: string } } = {}
-local function addReferrer(path: string)
-	if fs.isFile(path) then
-		table.insert(referrers, { name = path, body = stripComments(fs.readFile(path)) })
-	end
-end
+-- The premise, checked rather than assumed ------------------------------------
+--
+-- This gate compares the runner's answer against a broader census, which means
+-- something only while the runner takes its answer from the same file. It did
+-- not, once: `tests/suites.luau` declared roots that `tests/run.luau` had
+-- stopped reading, and the header claiming they shared one home was false for as
+-- long as that lasted. The old gate died of that exact class -- asserting a
+-- mechanism that had gone away -- so this one checks its own.
 
-addReferrer("tests/run.luau")
-for _, dir in ipairs({ "tests/verify", "scripts", "scripts/hooks", "scripts/lib" }) do
-	if fs.isDir(dir) then
-		for _, name in ipairs(fs.readDir(dir)) do
-			local p = dir .. "/" .. name
-			if fs.isFile(p) and string.match(name, "%.luau$") then
-				addReferrer(p)
-			end
-		end
-	end
-end
-
---- `tests/engine/prism/init.luau` requires every `.spec` ModuleScript beneath itself, and
---- tests/engine/default.project.json mounts that host into ServerScriptService — so a spec
---- is reached by DISCOVERY, with no path naming it anywhere. Verified structurally rather
---- than assumed: if either half of that mechanism goes away, specs stop being
---- reachable and this must stop claiming they are.
----
---- The mount is matched by its `$path` VALUE, which is project-file-relative and therefore
---- moves when the project file does — it was `"engine/prism"` while the project sat at
---- tests/, and is `"prism"` now that it sits beside the host (ms-44). Matching the value is
---- what makes this gate notice a move at all, rather than certifying a mount that no longer
---- resolves.
-local PROJECT = "tests/engine/default.project.json"
-local engineHostScans = fs.isFile("tests/engine/prism/init.luau")
-	and string.find(fs.readFile("tests/engine/prism/init.luau"), "%.spec", 1, true) ~= nil
-local engineHostMounted = fs.isFile(PROJECT)
-	and string.find(fs.readFile(PROJECT), '"$path": "prism"', 1, true) ~= nil
-local engineDiscovery = engineHostScans and engineHostMounted
-
-if not engineDiscovery then
+local RUNNER = "tests/run.luau"
+if not fs.isFile(RUNNER) then
+	fail(RUNNER .. " is gone; this gate has nothing to compare against")
+elseif not string.find(stripComments(fs.readFile(RUNNER)), 'require("./suites")', 1, true) then
 	fail(
-		"the engine host no longer discovers specs (tests/engine/prism/init.luau's `.spec` scan or "
-			.. PROJECT
-			.. "'s prism mount is gone) — every *.spec.luau is now unreachable"
+		RUNNER
+			.. " no longer reads tests/suites.luau, so the patterns this gate checks are not the "
+			.. "ones it runs. Repoint the runner, or delete this gate; do not leave the two apart."
 	)
 end
 
---- ms-44 M3: the runner DISCOVERS suites rather than listing them, so "named by
---- tests/run.luau" stopped meaning anything — this gate briefly reported 40 files
---- unreached the moment the table was deleted, which is the gate correctly noticing its
---- own premise had expired. "Reached" now means DISCOVERY FINDS IT, computed from the
---- same `tests/suite_config.luau` the runner uses so the two cannot drift.
-local SuiteConfig = require("../suites")
-local Discover = require("../../pkgs/testkit/core/src/Discover")
-local discovered: { [string]: boolean } = {}
-for _, s in ipairs(Discover.suites(SuiteConfig)) do
-	discovered[s.path] = true
+-- The census ------------------------------------------------------------------
+--
+-- Deliberately WIDER than the runner's walk, in both directions: it descends
+-- into what `Suites.excluded` hides, and it matches names the runner would not
+-- run. A census identical to the runner's can only ever agree with it.
+
+--- Vendored or generated. NOT read from `Suites.excluded`, on purpose: the whole
+--- point is to see what that list hides, so this is the smaller fixed set of
+--- trees that are nobody's business here.
+local NOT_OURS = { "roblox_packages", "luau_packages", ".pesde", "target", "node_modules", ".git" }
+
+local candidates: { string } = {}
+local function walk(dir: string)
+	for _, entry in ipairs(fs.readDir(dir)) do
+		local path = `{dir}/{entry}`
+		if table.find(NOT_OURS, entry) then
+			continue
+		end
+		if fs.isDir(path) then
+			walk(path)
+		elseif string.match(entry, "%.luau?$") then
+			table.insert(candidates, path)
+		end
+	end
+end
+walk(".")
+table.sort(candidates)
+
+local function matchesAny(path: string, patterns: { string }): boolean
+	for _, pattern in ipairs(patterns) do
+		if string.match(path, pattern) then
+			return true
+		end
+	end
+	return false
 end
 
-local function reachedBy(testPath: string): string?
-	if discovered[testPath] then
-		return "runner (discovery)"
-	end
-	if string.match(testPath, "%.spec%.luau$") and engineDiscovery then
-		return "engine (discovery)"
-	end
-	for _, r in ipairs(referrers) do
-		if string.find(r.body, testPath, 1, true) then
-			if r.name == "tests/run.luau" then
-				return "runner"
-			end
-			return r.name
+--- The directory name that stops `tests/run.luau` descending to this path, if any.
+local function runnerSkips(path: string): string?
+	for segment in string.gmatch(path, "[^/]+") do
+		if table.find(Suites.excluded, segment) then
+			return segment
 		end
 	end
 	return nil
 end
 
--- ── Assertion census ──────────────────────────────────────────────────────────
---
--- Informational. Counted the same way scripts/orientation.luau counts (ms-43 M123):
--- bare `assert(` substrings.
---
--- This used to carry a real caveat: three physics suites reported through their own
--- `check(...)` vocabulary and legitimately scored zero, so zero meant "this proxy
--- cannot see this suite's assertions" rather than "this suite asserts nothing" — an
--- ambiguity that made the number unusable as a gate. ms-44 put every suite on testkit,
--- those three included, and the zero-assert list went empty.
---
--- It stays INFORMATIONAL anyway. The number is a proxy, and the real signal is testkit's
--- runtime vacuity check, which knows what actually executed instead of counting
--- substrings. Promoting a proxy once it happens to read clean is how a gate starts
--- asserting something it cannot see.
-local function assertionsIn(path: string): number
-	local n = 0
-	for _ in string.gmatch(fs.readFile(path), "assert%(") do
-		n += 1
-	end
-	return n
-end
+-- The three checks ------------------------------------------------------------
 
--- ── Report ────────────────────────────────────────────────────────────────────
+local suites: { string } = {}
+local misnamed: { string } = {}
+local hidden: { string } = {}
 
-local unreached: { string } = {}
-local zeroAssert: { string } = {}
-local byRoute: { [string]: number } = {}
-local totalAssertions = 0
+for _, path in ipairs(candidates) do
+	local isSuite = matchesAny(path, Suites.patterns)
+	local looksLikeOne = matchesAny(path, Suites.alsoTestShaped)
+	local skippedBy = runnerSkips(path)
 
-for _, path in ipairs(tests) do
-	local route = reachedBy(path)
-	if route then
-		local key = if route == "runner (discovery)" or route == "engine (discovery)" then route else "gate"
-		byRoute[key] = (byRoute[key] or 0) + 1
-	else
-		table.insert(unreached, path)
-	end
-
-	local n = assertionsIn(path)
-	totalAssertions += n
-	if n == 0 then
-		table.insert(zeroAssert, path)
+	if isSuite then
+		if skippedBy then
+			table.insert(hidden, `{path} (hidden by "{skippedBy}")`)
+		else
+			table.insert(suites, path)
+		end
+	elseif looksLikeOne and not skippedBy then
+		table.insert(misnamed, path)
 	end
 end
 
-print(`test inventory: {#tests} file(s), {totalAssertions} assertion(s)`)
-for _, key in ipairs({ "runner (discovery)", "gate", "engine (discovery)" }) do
-	if byRoute[key] then
-		print(`  reached via {key}: {byRoute[key]}`)
-	end
-end
-
-if #zeroAssert > 0 then
-	print("")
-	print(
-		`NOTE  {#zeroAssert} test file(s) show zero bare \`assert(\` calls — either genuinely `
-			.. `assertion-free or using their own vocabulary. Runtime counts settle it in ms-44 M2:`
-	)
-	for _, p in ipairs(zeroAssert) do
-		print("      " .. p)
-	end
-end
-
-for _, p in ipairs(unreached) do
+for _, path in ipairs(misnamed) do
 	fail(
-		`{p}: UNREACHED — discovery does not find it and no gate names it. Put it under a root in `
-			.. `tests/suite_config.luau with a matching name, name it from a verify_* gate, or delete it. A test nobody runs reads as coverage and is not.`
+		`{path}: DARK -- it is named like a test, matches no pattern in tests/suites.luau, and so `
+			.. `nothing runs it. Rename it to *.test.luau, or delete it. A test nobody runs reads as `
+			.. `coverage and is not.`
 	)
 end
+
+for _, entry in ipairs(hidden) do
+	fail(
+		`{entry}: a suite of ours sits under a directory tests/suites.luau tells the runner to `
+			.. `skip. Silencing a suite is a decision, and it does not get to be a quiet one.`
+	)
+end
+
+--- A suite the runner EXECUTES that never reports. It exits 0 having asserted
+--- nothing, which is how eight suites passed in ms-43 M30 while returning an
+--- uninvoked function. Comments are stripped first, so a suite that only
+--- MENTIONS `run` in prose does not count as calling it.
+local silent: { string } = {}
+for _, path in ipairs(suites) do
+	if not string.find(stripComments(fs.readFile(path)), "%.run%(") then
+		table.insert(silent, path)
+	end
+end
+
+for _, path in ipairs(silent) do
+	fail(
+		`{path}: never calls a runner. It is executed as its own process and exits 0 whatever its `
+			.. `tests would have done -- add the T.run(...) call that reports them.`
+	)
+end
+
+-- Report ----------------------------------------------------------------------
+
+print(`test inventory: {#suites} suite(s) the runner executes, {#candidates} luau file(s) scanned`)
+print(`  runner patterns:  {table.concat(Suites.patterns, "  ")}`)
+print(`  also test-shaped: {table.concat(Suites.alsoTestShaped, "  ")}`)
 
 print("")
 if failures > 0 then
@@ -265,6 +199,6 @@ if failures > 0 then
 	local process = require("@lune/process")
 	process.exit(1)
 else
-	print(`VERIFY TEST INVENTORY: PASS ({#tests} test files, all reachable)`)
+	print(`VERIFY TEST INVENTORY: PASS ({#suites} suites, nothing dark)`)
 end
 return true

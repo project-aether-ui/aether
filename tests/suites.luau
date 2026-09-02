@@ -1,29 +1,63 @@
 --!strict
 --[[
-	Where this repo keeps its lune suites — ONE table, read by both the runner and the gate.
+	What counts as a suite, and what the runner skips -- ONE table, read by both
+	`tests/run.luau` and `verify_test_inventory`.
 
 	WHY IT IS ITS OWN FILE (inherited from spektr/essentials, ms-44 M3)
-	`tests/run.luau` discovers suites from these roots; `verify_test_inventory` must check
-	the SAME set, or the two drift in the worst possible way — the gate would certify a
-	layout the runner no longer scans, and nobody would find out until a suite went dark.
+	The runner decides what runs; the gate decides what SHOULD run. If those two
+	answers come from two places they drift in the worst possible direction -- the
+	gate certifies a layout the runner no longer scans, and nobody finds out until
+	a suite goes dark.
 
-	This is also the file that makes testkit's portability real: every path, pattern and
-	root specific to THIS repo lives here, and `spektr/testkit` mentions none of it. That
-	property is what let Aether graduate out of the monorepo without touching the runner —
-	only this table changed.
+	IT HAD ALREADY DRIFTED. This file declared `roots = { "src", "tests",
+	"packages", "hosts" }` and the runner had stopped reading it, scanning the
+	whole repository instead. The claim in this header was false for as long as
+	that lasted -- the failure this file exists to prevent, committed by the file
+	that prevents it. `verify_test_inventory` now checks that the runner still
+	requires this module, so the claim is enforced rather than asserted in prose.
 
-	    monorepo    roots = { "pkgs", "tests/lune", "tests/gates" }
-	    here        roots = { "src", "tests", "packages", "hosts" }
+	THERE IS NO `roots` ANY MORE. A root list is a way for a suite to go dark by
+	being written outside it: nothing fails, the file simply is never looked at.
+	The runner walks the repository and skips `excluded`, so a new directory is
+	covered the day it appears rather than the day someone remembers this file.
 ]]
 
 return {
-	--- Directories the runner walks.
+	--- Directory NAMES the runner does not descend into, matched at any depth.
 	---
-	--- `src` is listed because suites still sit beside the code they cover; the monorepo
-	--- had the same arrangement and the same standing intent to move them under `tests/`.
-	--- Narrowing this before they move would make suites vanish from the runner silently.
-	roots = { "src", "tests", "packages", "hosts" },
+	--- Every one is vendored or generated. A dependency's own suites are its
+	--- business and pass or fail on its terms, not ours.
+	---
+	--- ADDING ANYTHING OF OURS HERE IS A GATE FAILURE, not a configuration
+	--- change: `verify_test_inventory` walks past this list and reports every
+	--- suite it hid. Silencing a suite has to be visible.
+	excluded = { "roblox_packages", "luau_packages", ".pesde", "target", "node_modules", ".git" },
 
-	--- A file is a lune suite when its BASENAME matches one of these.
+	--- A file is a suite when its path matches one of these, and the runner
+	--- executes it as its own process.
 	patterns = { "%.test%.luau$" },
+
+	--- Naming conventions that LOOK like tests and that the runner does not run.
+	---
+	--- Read only by `verify_test_inventory`, which fails on any file matching one
+	--- of these. That is the whole of what a gate can still catch here: the runner
+	--- scans the entire repository for `patterns`, so a `*.test.luau` is reachable
+	--- by construction and checking it would be a green number that reads the same
+	--- with the runner switched off. A `Foo.spec.luau` is not reachable, and would
+	--- sit in the tree looking exactly like coverage.
+	---
+	--- The wrong EXTENSION is on the list for the same reason: `Foo.test.lua` is
+	--- one keystroke from a suite and invisible to every pattern above.
+	---
+	--- Deliberately NOT `[Tt]ests?%.luau$`: `src/HitTest.luau` is a source module
+	--- and would be reported as a dark test forever. A gate that cries wolf is a
+	--- gate people learn to pass with an exception list.
+	alsoTestShaped = {
+		"%.spec%.luau$",
+		"%.spec%.lua$",
+		"%.test%.lua$",
+		"%.tests%.luau$",
+		"_test%.luau$",
+		"/test_[^/]*%.luau$",
+	},
 }

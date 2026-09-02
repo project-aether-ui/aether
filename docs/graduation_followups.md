@@ -84,18 +84,55 @@ What the silence had been hiding, once they ran:
 
 ---
 
-## 6. verify_test_inventory is blocked on LAYOUT, not testkit — OPEN
+## 6. verify_test_inventory -- ANSWERED, and the answer was not the obvious one
 
-The blocker was recorded as "testkit is not reachable by commit". That is
-resolved and was never the whole story. The gate requires testkit's `Discover`
-from `pkgs/testkit/core/src`, and its first assertion is that
-`tests/engine/prism` still scans for `.spec.luau` files. Neither the directory
-nor the file convention exists in this repository.
+The blocker was recorded as "testkit is not reachable by commit". That was
+resolved and was never the whole story: the gate required testkit's `Discover`
+from `pkgs/testkit/core/src`, and its first assertion was that
+`tests/engine/prism` still scanned for `.spec.luau` files. Neither the directory
+nor the file convention came across at graduation.
 
-What a test inventory should assert HERE is a different question with a different
-answer: 33 `*.test.luau` suites discovered by `tests/run.luau`, no specs, no
-engine mount. Left blocked with an accurate reason rather than rewritten to
-assert something else while keeping the old name.
+**The obvious rewrite is worthless, and that is the finding.** "Every
+`*.test.luau` is found by the runner" cannot fail. `tests/run.luau` walks the
+whole repository for exactly the patterns in `tests/suites.luau`, so every suite
+outside `excluded` is discovered BY CONSTRUCTION. A gate asserting it would print
+a green number identical to the one it prints with the runner switched off.
+Reachability for that filename shape is closed by the runner, and a gate is the
+wrong instrument for a closed question.
+
+What is still open is narrower, and the gate now asks only that:
+
+  1. **Naming drift.** `Foo.spec.luau`, `foo_test.luau`, `Foo.test.lua`. The
+     engine tier's `.spec.luau` convention is gone; the muscle memory is not.
+     Such a file matches no runner pattern and sits in the tree looking exactly
+     like coverage. `tests/suites.luau` lists these shapes as `alsoTestShaped`.
+  2. **A suite silenced by configuration.** `excluded` decides what the runner
+     skips, so the census walks PAST it and reports anything of ours it hid.
+     Silencing a suite is a decision and does not get to be a quiet one.
+  3. **A suite that never reports.** A file the runner executes that never calls
+     `T.run` exits 0 having asserted nothing, which is the ms-43 M30 failure
+     exactly.
+
+**Two things were found while writing it, both of the milestone's own class.**
+
+`tests/suites.luau` claimed in its header to be the one home read by the runner
+and the gate. The runner had stopped reading it and was scanning `.` directly, so
+the claim had been false for as long as that was true -- the failure the file
+exists to prevent, committed by the file that prevents it. The runner reads it
+again, and the gate now CHECKS that it does, so the claim is enforced instead of
+asserted in prose.
+
+The old gate's own comment said non-vacuity was "enforced AT RUNTIME, by the
+thing that runs the tests". That was true of the testkit it was inherited from
+and not of `tests/testkit.luau`, where `run` on an empty registry printed
+`0 passed` and returned 0 -- the same shape a green suite prints. `Testkit.run`
+now exits non-zero when nothing registered.
+
+**Each of the four checks was made to fail on purpose before the gate came out of
+`BLOCKED`.** A gate that has never been seen to fail is not known to work, which
+is the whole complaint against the one it replaces.
+
+`M.BLOCKED` is now empty.
 
 ---
 
@@ -214,21 +251,23 @@ monorepo along with the web host.
 deleted with it. Both are worth having and both come back, repointed at `aether`
 once that CLI exists. See `docs/hosting_architecture.md`.
 
-## 4. `verify_test_inventory` still checks for an engine host
+## 4. `verify_test_inventory` still checks for an engine host -- RESOLVED
 
-It asserts that `tests/engine/prism/init.luau` scans for `.spec.luau` files. There
-is no engine tier in this repo. The engine-discovery branch needs removing or the
-gate needs a "no engine tier" mode.
+Folded into §6. The engine-discovery branch is gone rather than given a "no
+engine tier" mode: there is no engine tier to have a mode about, and a branch
+kept for a host that does not exist is a branch nobody can test.
 
 ---
 
-## Gate status at extraction
+## Gate status
 
 ```
-PASS  verify_cycles, verify_property_names, verify_use_before_declaration,
-      verify_reactive_scopes, verify_autosize_cycles, verify_tests_not_shipped,
-      verify_no_versioned_vendor_paths, verify_require_paths
-FAIL  verify_test_inventory           (§2, §4)
+PASS  verify_cycles, verify_require_paths, verify_property_names,
+      verify_use_before_declaration, verify_reactive_scopes,
+      verify_autosize_cycles, verify_test_inventory, verify_tests_not_shipped,
+      verify_no_versioned_vendor_paths
+
+      9 of 9. M.BLOCKED is empty -- see §6 for what the last entry became.
 
 (verify_frame_checks and verify_headless_is_portable were deleted with the zune
 host -- see §3, and all_gates.luau for the terms of their return.)

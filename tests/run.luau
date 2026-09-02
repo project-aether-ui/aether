@@ -21,20 +21,29 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
 
+--- WHAT COUNTS AS A SUITE IS NOT DECIDED HERE. `verify_test_inventory` has to
+--- check the same answer, and the two lived apart long enough for this file to
+--- stop reading the config that claimed to own them both.
+local Suites = require("./suites")
+
 local filter = process.args[1]
 
---- Every `*.test.luau`, excluding installed packages: a dependency's own suites
---- are its business and pass or fail on its terms, not ours.
+--- Every file matching `Suites.patterns`, skipping `Suites.excluded`.
 local function discover(dir: string, found: { string })
 	for _, entry in ipairs(fs.readDir(dir)) do
 		local path = `{dir}/{entry}`
-		if entry == "roblox_packages" or entry == ".pesde" or entry == "target" then
+		if table.find(Suites.excluded, entry) then
 			continue
 		end
 		if fs.isDir(path) then
 			discover(path, found)
-		elseif string.match(entry, "%.test%.luau$") then
-			table.insert(found, path)
+		else
+			for _, pattern in ipairs(Suites.patterns) do
+				if string.match(path, pattern) then
+					table.insert(found, path)
+					break
+				end
+			end
 		end
 	end
 	return found

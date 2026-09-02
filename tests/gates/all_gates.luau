@@ -79,20 +79,16 @@ M.GATES = {
 --- Each entry is a debt with a name. Emptying this table is the goal; adding to
 --- it should feel expensive.
 M.BLOCKED = {
-	--- NOT the testkit blocker any more, which is resolved: the suites run and
-	--- tests/testkit.luau replaces the alias. What remains is that this gate
-	--- checks a MONOREPO LAYOUT. It requires testkit's `Discover` from
-	--- `pkgs/testkit/core/src`, and its first assertion is that
-	--- `tests/engine/prism` still scans for `.spec.luau` files -- a directory and
-	--- a file convention Aether does not have and did not bring with it.
+	--- EMPTY, and it is meant to stay that way.
 	---
-	--- Deciding what a test inventory should mean HERE is the actual work, and it
-	--- is not the same question: this repository has 33 `*.test.luau` suites
-	--- discovered by tests/run.luau and no specs at all. Left blocked with an
-	--- accurate reason rather than quietly rewritten to assert something else.
-	["tests/gates/verify_test_inventory.luau"] = "checks the monorepo's layout: it requires "
-		.. "testkit's Discover from pkgs/ and asserts tests/engine/prism scans for specs, neither "
-		.. "of which exists here. See docs/graduation_followups.md.",
+	--- The last entry was `verify_test_inventory`, blocked because it checked the
+	--- MONOREPO's layout: testkit's `Discover` out of `pkgs/`, and an assertion
+	--- that `tests/engine/prism` scanned for `.spec.luau` files. Neither exists
+	--- here. It has been rewritten to ask what a test inventory means in THIS
+	--- repository -- a file named like a test that no pattern runs, a suite hidden
+	--- by `tests/suites.luau`, a suite that never calls a runner -- and each of
+	--- those three was checked by breaking it on purpose before the entry came
+	--- out. A gate that has never been seen to fail is not known to work.
 }
 
 --- Executed only when this file is RUN, not when it is required. `process.args` is empty
