@@ -82,6 +82,22 @@ function Testkit.run(label: string): number
 	local cases = pending
 	pending = {}
 
+	--- A SUITE THAT REGISTERED NOTHING IS A FAILURE, not a pass.
+	---
+	--- Without this, `run` on an empty registry printed "0 passed" and returned
+	--- 0, which is the same shape as a green suite and reads as one in a log.
+	--- Every way a suite goes dark short of a load error ends here: a `test`
+	--- call moved inside a branch that is never taken, a `describe` body that
+	--- errors before registering, a file whose registrations were deleted with
+	--- the code they covered.
+	---
+	--- `verify_test_inventory` used to claim this check existed, inherited from a
+	--- testkit that had it. It was not true of this one.
+	if #cases == 0 then
+		print(`{label}: NO TESTS REGISTERED: a suite that registers nothing cannot pass`)
+		process.exit(1)
+	end
+
 	for _, case in ipairs(cases) do
 		local ok, err = pcall(case.fn)
 		if not ok then
