@@ -381,9 +381,19 @@ for _, r in ipairs(results) do
 end
 
 local verified = 0
+--- EVERY `asserted` CASE IS AN OPEN QUESTION, INCLUDING THE ONES THAT PASS.
+---
+--- This used to count only the asserted cases the implementation DISAGREED with,
+--- so a suite carrying four unverified beliefs that we happen to match reported
+--- "0 open questions" -- which reads as "everything here is verified" and is the
+--- opposite of true. Agreeing with a guess is not evidence; the same guess is
+--- what both runners are reading.
+local unverified = 0
 for _, r in ipairs(results) do
 	if r.provenance == "roblox" then
 		verified += 1
+	elseif r.provenance == "asserted" and r.note ~= "unsupported" then
+		unverified += 1
 	end
 end
 
@@ -391,8 +401,16 @@ print("")
 print(
 	`CONFORMANCE: {#results - failed - open - skipped} of {#results - skipped} passing `
 		.. `({verified} verified against Roblox, {divergent} documented gaps, `
-		.. `{open} open questions, {skipped} unsupported)`
+		.. `{unverified} open questions, {skipped} unsupported)`
 )
+
+if unverified > 0 then
+	print(
+		`  {unverified} case(s) state a belief nobody has checked in Studio`
+			.. (if open > 0 then `, {open} of which this implementation disagrees with` else "")
+			.. ". See conformance/README.md for how to verify one."
+	)
+end
 
 if failed > 0 then
 	process.exit(1)
