@@ -179,18 +179,22 @@ ONLY, then the parent takes the larger of the two:
 | full scale, 90 of content | 90 | 90 | **90** | 90 |
 | full scale, childless | 0 | 0 | **0** | unmeasurable, warns |
 
-### What is still open
+### CLOSED
 
-One gap remains, and it is the childless no-layout row above. `grow()` resolves
-against the offered space whenever there is no content, giving 120 where the engine
-gives 30. Every case WITH content hides it, because the content dominates the max
-and passing through reaches the same number by another route -- only the childless
-case separates them.
+`grow()` now sweeps twice when there is no layout: once counting offsets only to
+find the content size, once resolving the scale children against it. Under a layout
+the base is the offered box and a single sweep still answers it.
 
-Closing it means computing the offsets-only content size first, which is a second
-pass over the subtree rather than another condition on the existing line. That is
-the one piece of this still worth calling a rework; everything else turned out to
-be precedence.
+All twenty conformance cases are verified against the engine. The AutomaticSize
+scale question that ran through this milestone is finished.
+
+**What made it hard is worth keeping.** Four rules fitted the evidence in turn --
+"skip scale children", "scale magnitude decides", "content decides", "content and
+scale together" -- and each one fitted every case that existed when it was written.
+The cases that ended it were not the ones confirming a rule but the ones built so a
+wrong rule could not survive them: a childless scale child, a half-scale child with
+content, a quarter scale under a layout. Each was written to split two readings that
+agreed everywhere else, and each one moved the answer.
 
 ---
 

@@ -30,18 +30,23 @@
 	and one offset; treat "a layout switches the resolution to the offered space"
 	as the least-verified part of this.
 
-	WHY THIS STAYS `divergent`. We produce 120 here because grow() resolves a
-	childless scale child against the offered space whether or not there is a
-	layout. Closing it means resolving against the content-derived size instead,
-	which is a rework of grow() and not a condition change. Documented as a gap
-	until that happens, so the number is not silently forgotten.
+	CLOSED. grow() now sweeps the subtree twice when there is no layout: once
+	counting offsets only to find C, and once resolving the scale children against
+	it. Under a layout the base is the offered box and one sweep still answers it.
+
+	This case is the only one that could have found it. Every configuration WITH
+	content behind the child hides the difference, because the content dominates the
+	max and passing through arrives at the same number by another route -- 80 and 90
+	are right either way. Only a childless scale child separates "resolve against
+	the content" from "resolve against the space offered".
 ]]
 return {
 	name = "AutomaticSize with a Scale child and NO layout",
-	provenance = "divergent",
-	note = "Engine 0.736.0.7361346 settles at h = 30 over 120 frames; we produce 120. The engine "
-		.. "resolves the scale against the offset-only content size (0.5 x 20 + 20), not against "
-		.. "the offered space. Closing this is a rework of grow(), not a condition change.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "The engine resolves the scale against the offset-only content size (0.5 x 20 + 20), "
+		.. "not against the offered space. grow() now measures that size in a first sweep and "
+		.. "resolves against it in a second, so this case closed the last AutomaticSize gap.",
 
 	--- KEPT AT 120 DELIBERATELY. It is the evidence that 30 is settled rather than
 	--- sampled, and dropping back to the default would throw that away.
@@ -62,6 +67,6 @@ return {
 	},
 
 	expect = {
-		{ name = "Auto", x = 0, y = 0, w = 100, h = 120 },
+		{ name = "Auto", x = 0, y = 0, w = 100, h = 30 },
 	},
 }

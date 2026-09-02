@@ -590,9 +590,6 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		---
 		--- Entries are in DFS order, so a parent always sets the figure its
 		--- children read before they are reached.
-		local right, bottom = -math.huge, -math.huge
-		local inheritX: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
-		local inheritY: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
 		--- Immediate children resolve scale against the offered box; deeper
 		--- descendants keep the old behaviour. Verified evidence covers one level
 		--- of nesting and nothing below it, and inventing a rule past the data is
@@ -602,6 +599,17 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		--- direct children and computes the content size itself, so a descendant
 		--- behind one of them never reaches this measurement.
 		local hasLayout = listLayoutOf(Scene, entry.Node) ~= nil
+
+		--- ONE SWEEP, TWO QUESTIONS. `baseX`/`baseY` is what an immediate scale child
+		--- resolves against; `nil` means "count offsets only, as if every scale were
+		--- zero". Under a layout that base is the offered box and one sweep answers
+		--- it. Without one the base is the content itself, which has to be measured
+		--- before it can be resolved against -- hence a sweep to find it and a second
+		--- to use it.
+		local function sweep(baseX: number?, baseY: number?): (number, number)
+			local right, bottom = -math.huge, -math.huge
+			local inheritX: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
+			local inheritY: { [number]: number } = { [out[from + 1] and out[from + 1].Depth or 0] = 0 }
 
 		for i = from + 1, #out do
 			local item = out[i]
@@ -655,21 +663,22 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			--- which is what makes it a rule rather than arithmetic that happens to fit
 			--- one number.
 			---
-			--- WHAT THIS STILL GETS WRONG: a childless `{1,0, 0.5,20}` under NO layout
-			--- measures 30 in Studio, held for 120 frames, where this produces 120. The
-			--- engine resolves it against the content size counting OFFSETS ONLY -- here
-			--- the child's own 20, so `0.5 x 20 + 20 = 30` -- and not against the space
-			--- offered. Every case with content behind the child hides this, because the
-			--- content dominates and passing through lands on the same number by another
-			--- route. Closing it means computing that offsets-only size first, which is a
-			--- second pass over the subtree rather than another condition here.
-			--- See conformance/cases/automatic_size_scale_child_without_a_layout.luau.
+			--- WITHOUT A LAYOUT THE BASE IS THE CONTENT, not the offered box, and that
+			--- is what the two sweeps above are for. A childless `{1,0, 0.5,20}` measures
+			--- 30 in the engine: the offsets-only content is the child's own 20, and
+			--- `0.5 x 20 + 20 = 30`. Resolving against the 200 on offer gave 120.
+			---
+			--- ONLY A CHILDLESS SCALE CHILD COULD HAVE FOUND THAT. Where there is
+			--- content the content dominates the max, so resolving against it and
+			--- passing through arrive at the same number by different routes -- 80 and
+			--- 90 are right either way. Three rules fitted every case for as long as the
+			--- only cases were ones that could not tell them apart.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
 					inheritX[d + 1] = gotX
 				elseif d == childDepth and xs < 1 and (hasLayout or not hasContent) then
-					right = math.max(right, r.X + (offered.Width * xs + xo) + gotX)
+					right = math.max(right, r.X + (if baseX then baseX * xs + xo else xo) + gotX)
 					inheritX[d + 1] = gotX
 				else
 					inheritX[d + 1] = gotX + ownR
@@ -680,12 +689,29 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 					bottom = math.max(bottom, r.Y + r.Height + gotY)
 					inheritY[d + 1] = gotY
 				elseif d == childDepth and ys < 1 and (hasLayout or not hasContent) then
-					bottom = math.max(bottom, r.Y + (offered.Height * ys + yo) + gotY)
+					bottom = math.max(bottom, r.Y + (if baseY then baseY * ys + yo else yo) + gotY)
 					inheritY[d + 1] = gotY
 				else
 					inheritY[d + 1] = gotY + ownB
 				end
 			end
+			end
+
+			return right, bottom
+		end
+
+		local right, bottom
+		if hasLayout then
+			right, bottom = sweep(offered.Width, offered.Height)
+		else
+			--- The offsets-only pass. Padding is deliberately NOT folded into the base:
+			--- no reading covers a scale child beside a UIPadding, and guessing there is
+			--- how the earlier rules went wrong.
+			local offX, offY = sweep(nil, nil)
+			right, bottom = sweep(
+				if offX ~= -math.huge then offX - box.X else 0,
+				if offY ~= -math.huge then offY - box.Y else 0
+			)
 		end
 
 		local rect = entry.Rect
