@@ -598,6 +598,10 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 		--- of nesting and nothing below it, and inventing a rule past the data is
 		--- how the first attempt at this got it wrong.
 		local childDepth = out[from + 1] and out[from + 1].Depth or 0
+		--- A UILISTLAYOUT CHANGES WHAT A SCALE CHILD RESOLVES AGAINST. It stacks the
+		--- direct children and computes the content size itself, so a descendant
+		--- behind one of them never reaches this measurement.
+		local hasLayout = listLayoutOf(Scene, entry.Node) ~= nil
 
 		for i = from + 1, #out do
 			local item = out[i]
@@ -640,27 +644,31 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			--- alone immediately broke the full-scale childless case above. A rule that
 			--- fits every case you have is not thereby the rule.
 			---
-			--- WHAT THIS STILL GETS WRONG, and it is known rather than suspected: a
-			--- childless `{1,0, 0.5,20}` under no layout measures 30 in Studio, held
-			--- for 120 frames, where this produces 120.
+			--- UNDER A LAYOUT, CONTENT DOES NOT GET A VOTE. A `{1,0, 0.5,20}` child
+			--- over 80 of content measures 120 with a UIListLayout present and 80
+			--- without, so the layout overrides the content rule rather than combining
+			--- with it. That is what `hasLayout` buys on the line below, and it was an
+			--- assumption in the other direction until the case was read: this passed a
+			--- child with content through without consulting the layout at all.
 			---
-			--- The engine resolves a scale child against the CONTENT SIZE COUNTING
-			--- OFFSETS ONLY, not against the space offered. Here that content is the
-			--- child's own 20, so `0.5 x 20 + 20 = 30`. The same rule reproduces every
-			--- other reading -- 80, 90, and the unmeasurable case -- because whenever
-			--- there IS content behind the child, the content dominates the max and
-			--- passing through lands on the same number by a different route.
+			--- The layout branch is verified at three scales now (0.25, 0.5 twice),
+			--- which is what makes it a rule rather than arithmetic that happens to fit
+			--- one number.
 			---
-			--- So `offered` is right only under a UIListLayout, which is where both
-			--- verified 120-and-60 readings come from. Closing the gap means resolving
-			--- against the content-derived size when there is no layout, which is a
-			--- rework of this function rather than another condition on this line.
+			--- WHAT THIS STILL GETS WRONG: a childless `{1,0, 0.5,20}` under NO layout
+			--- measures 30 in Studio, held for 120 frames, where this produces 120. The
+			--- engine resolves it against the content size counting OFFSETS ONLY -- here
+			--- the child's own 20, so `0.5 x 20 + 20 = 30` -- and not against the space
+			--- offered. Every case with content behind the child hides this, because the
+			--- content dominates and passing through lands on the same number by another
+			--- route. Closing it means computing that offsets-only size first, which is a
+			--- second pass over the subtree rather than another condition here.
 			--- See conformance/cases/automatic_size_scale_child_without_a_layout.luau.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
 					inheritX[d + 1] = gotX
-				elseif d == childDepth and not hasContent and xs < 1 then
+				elseif d == childDepth and xs < 1 and (hasLayout or not hasContent) then
 					right = math.max(right, r.X + (offered.Width * xs + xo) + gotX)
 					inheritX[d + 1] = gotX
 				else
@@ -671,7 +679,7 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 				if ys == 0 then
 					bottom = math.max(bottom, r.Y + r.Height + gotY)
 					inheritY[d + 1] = gotY
-				elseif d == childDepth and not hasContent and ys < 1 then
+				elseif d == childDepth and ys < 1 and (hasLayout or not hasContent) then
 					bottom = math.max(bottom, r.Y + (offered.Height * ys + yo) + gotY)
 					inheritY[d + 1] = gotY
 				else

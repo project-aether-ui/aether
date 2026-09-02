@@ -21,8 +21,10 @@
 ]]
 return {
 	name = "AutomaticSize with a quarter-Scale child under a layout",
-	provenance = "asserted",
-	note = "Separates 'a UIListLayout resolves against the offered space' from 'the content rule "
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "ANSWERED: the engine returns 70, so a layout really does resolve against the offered "
+		.. "space and 0.5 was not doing the work. Separates 'a UIListLayout resolves against the offered space' from 'the content rule "
 		.. "holds under a layout too'. Both verified layout cases use scale 0.5, where the two "
 		.. "readings are confounded; 0.25 splits them 70 against 25.",
 	surface = { width = 200, height = 200 },

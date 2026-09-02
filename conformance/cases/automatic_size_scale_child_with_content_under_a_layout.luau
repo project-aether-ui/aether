@@ -15,15 +15,23 @@
 	    if content still wins under a layout    Auto =  80  (pass through to Inner)
 	    if a layout forces the offered space    Auto = 120  (0.5 x 200 + 20)
 
-	`asserted` at the first, which is what is implemented -- grow() passes a child
-	with content through without consulting the layout at all. If the engine says
-	120, that assumption is wrong and the layout takes precedence over content,
-	which changes the order the rework has to apply them in.
+	ANSWERED: 120. The layout takes precedence. grow() passed a child with content
+	through without consulting the layout at all, which was an assumption in the
+	wrong direction and is now a condition rather than an omission.
+
+	This also settles the order for anything built on top: resolve against the
+	offered space when a layout is present, and only fall back to the content when
+	there is none. A layout stacks the direct children and computes the content
+	size itself, so a descendant behind one of them never reaches the measurement
+	-- which is why "the layout wins" and "content is ignored" are the same
+	statement here rather than two.
 ]]
 return {
 	name = "AutomaticSize with a Scale child that has content, under a layout",
-	provenance = "asserted",
-	note = "Tests the two established rules against each other for the first time. Content wins "
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "ANSWERED, AGAINST THE PREDICTION: the engine returns 120, so a layout OVERRIDES the "
+		.. "content rule rather than deferring to it. grow() had the precedence backwards. Tests the two established rules against each other for the first time. Content wins "
 		.. "without a layout; a layout resolves against the offered space without content. "
 		.. "Which takes precedence when both apply is unknown and decides the rework's order.",
 	surface = { width = 200, height = 200 },
@@ -49,6 +57,6 @@ return {
 	},
 
 	expect = {
-		{ name = "Auto", x = 0, y = 0, w = 100, h = 80 },
+		{ name = "Auto", x = 0, y = 0, w = 100, h = 120 },
 	},
 }

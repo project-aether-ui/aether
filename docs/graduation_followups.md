@@ -150,39 +150,47 @@ configuration, which no conformance case covers. That test is the only reason th
 over-correction was caught, which is a point in favour of keeping unit assertions
 that conformance does not duplicate.
 
-### What is still open: we resolve against the wrong thing
+### The rule, as it now stands on eight readings
 
-`automatic_size_scale_child_without_a_layout` was held for **120 frames** and the
-engine still returns **30**. It settles there. The convergence explanation offered
-for the first reading was wrong, and the number has a plainer cause.
+**With a UIListLayout**, a scale-sized child resolves against the space OFFERED to
+the parent, and content behind it is ignored. Verified at three scales, which is
+what makes it a rule rather than arithmetic that fits one number:
 
-**A scale child resolves against the content size counting offsets only, not
-against the space offered.** Take the subtree's extent ignoring every scale, then
-resolve the child against that:
+| | resolved | engine |
+|---|---|---|
+| `0.25` scale | `0.25 x 200 + 20` | 70 |
+| `0.5` scale | `0.5 x 200 + 20` | 120 |
+| `0.5` under an 80-tall grandparent | `0.5 x 80 + 20` | 60 |
+| `0.5` **with 80 of content behind it** | `0.5 x 200 + 20` | **120** |
 
-| case | C (offsets only) | `s x C + o` | `max` | engine |
+That last one answered against the prediction. `grow()` passed a child with content
+through without consulting the layout at all, so the precedence was backwards. A
+layout stacks the direct children and computes the content size itself, so a
+descendant behind one of them never reaches the measurement -- "the layout wins"
+and "content is ignored" are one statement, not two.
+
+**Without a layout**, the child resolves against the content size counting OFFSETS
+ONLY, then the parent takes the larger of the two:
+
+| | C | `s x C + o` | max | engine |
 |---|---|---|---|---|
-| childless, no layout | 20 | 30 | **30** | 30 |
-| with content | 80 | 60 | **80** | 80 |
-| full scale, content | 90 | 90 | **90** | 90 |
+| childless | 20 | 30 | **30** | 30 |
+| 80 of content | 80 | 60 | **80** | 80 |
+| full scale, 90 of content | 90 | 90 | **90** | 90 |
 | full scale, childless | 0 | 0 | **0** | unmeasurable, warns |
 
-One rule, four readings, including the unit-test configuration that conformance
-does not cover. It also explains why the current implementation looks right: when
-there IS content behind the child the content dominates the max, so passing
-through reaches the same number by a different route. Only the childless case
-separates them, and that is the one we get wrong.
+### What is still open
 
-`grow()` uses the offered space unconditionally, which is correct **only under a
-UIListLayout** -- both verified 120-and-60 readings have one. Closing the gap means
-resolving against the content-derived size when there is no layout. That is a
-rework of `grow()`, not another condition on the line, which is why it is recorded
-as a documented gap rather than attempted in passing.
+One gap remains, and it is the childless no-layout row above. `grow()` resolves
+against the offered space whenever there is no content, giving 120 where the engine
+gives 30. Every case WITH content hides it, because the content dominates the max
+and passing through reaches the same number by another route -- only the childless
+case separates them.
 
-**The weakest part of this is the layout branch.** It rests on two readings that
-share one scale and one offset. A case with a UIListLayout and a different scale
-would test whether the layout really switches the resolution to the offered space
-or whether something else distinguishes those two.
+Closing it means computing the offsets-only content size first, which is a second
+pass over the subtree rather than another condition on the existing line. That is
+the one piece of this still worth calling a rework; everything else turned out to
+be precedence.
 
 ---
 
