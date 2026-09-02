@@ -89,10 +89,19 @@ end
 --- Thirty frames rather than three is kept anyway: fonts genuinely do load
 --- asynchronously in Roblox, half a second costs nothing, and it removes one
 --- variable from any future measurement.
-local function settle(needsText: boolean)
-	for _ = 1, (if needsText then 30 else 3) do
+---
+--- A CASE MAY ASK FOR MORE. Three frames is enough for a layout that resolves
+--- in one pass, and is NOT enough for one that iterates: a frame whose height
+--- feeds its child's height and back has to walk to its answer, and three
+--- heartbeats catch it mid-walk. A case that reads a value it cannot explain
+--- should set `settleFrames` and be run again -- if the number moves, the first
+--- reading was a sample rather than an answer.
+local function settle(needsText: boolean, override: number?): number
+	local frames = override or (if needsText then 30 else 3)
+	for _ = 1, frames do
 		RunService.Heartbeat:Wait()
 	end
+	return frames
 end
 
 local function round(n: number): number
@@ -123,7 +132,7 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 	surface.Parent = screen
 
 	build(case.tree, surface)
-	settle(measuresText(case.tree))
+	local heldFrames = settle(measuresText(case.tree), case.settleFrames)
 
 	local origin = surface.AbsolutePosition
 	local byName: { [string]: GuiObject } = {}
@@ -256,7 +265,9 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 
 	if mismatch then
 		disagreed += 1
-		results[#results + 1] = `\nDISAGREES  {case.name}  [{case.provenance}]`
+		--- THE FRAME COUNT TRAVELS WITH THE DISAGREEMENT. A reading nobody can
+		--- reproduce without knowing how long the engine was given is not evidence.
+		results[#results + 1] = `\nDISAGREES  {case.name}  [{case.provenance}]  ({heldFrames} frames held)`
 		--- STAMP THE BUILD INTO THE PASTE. An expectation is only true of the
 		--- Roblox that produced it, and Roblox ships continuously. Re-running this
 		--- later against a newer build and getting a different number is not a bug

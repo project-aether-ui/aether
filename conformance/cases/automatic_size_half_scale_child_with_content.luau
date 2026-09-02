@@ -24,7 +24,7 @@ return {
 	name = "AutomaticSize with a half-Scale child that HAS content",
 	provenance = "roblox",
 	verifiedAgainst = "0.736.0.7361346",
-	note = "Separated 'scale magnitude decides' from 'content behind the child decides'. The "
+	note = "CONFIRMED in a second engine run after the fix landed: agrees. Separated 'scale magnitude decides' from 'content behind the child decides'. The "
 		.. "engine chose content: 80, not 120. This is what replaced the scale-magnitude "
 		.. "discriminator in grow().",
 	surface = { width = 200, height = 200 },

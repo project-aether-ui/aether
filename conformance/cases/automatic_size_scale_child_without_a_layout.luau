@@ -37,6 +37,16 @@ return {
 	note = "Engine 0.736.0.7361346 returned h = 30; we produce 120. 30 is the second step of a "
 		.. "fixed-point iteration converging on 40, so it is probably a sampled frame rather "
 		.. "than a settled value. Needs a re-read with more frames held before it becomes roblox.",
+	--- THE WHOLE POINT OF THIS CASE NOW. The runner settles a non-text case for
+	--- three heartbeats, and 30 is exactly H2 of the iteration below -- so the
+	--- default sample lands mid-walk by construction. 120 frames is two seconds,
+	--- which is far past where a converging series is still moving.
+	---
+	--- If the reading comes back 40, it converged and 30 was a sample. If it comes
+	--- back 30 after 120 frames, the engine settled there and this implementation
+	--- is wrong.
+	settleFrames = 120,
+
 	surface = { width = 200, height = 200 },
 
 	tree = {
