@@ -99,7 +99,7 @@ assert something else while keeping the old name.
 
 ---
 
-## 7. Does the scale rule generalise to scale 1? — ANSWERED: NO
+## 7. What decides whether a scale-sized child is measured? — ANSWERED
 
 It does not, and the way this was gotten wrong is the part worth keeping.
 
@@ -121,30 +121,55 @@ does not extend to a third by argument, and that "the tests must be stale" is th
 most comfortable available explanation for a failure — so it is the one that most
 needs evidence behind it. The conformance case cost a few minutes and caught it.
 
+### ANSWERED, and the discriminator was wrong
+
+Both queued cases came back against the prediction, which is the outcome the
+previous note called "green by luck". They were right to be queued.
+
+| case | predicted | engine |
+|---|---|---|
+| `automatic_size_half_scale_child_with_content` | 120 | **80** |
+| `automatic_size_scale_child_without_a_layout` | 120 | **30** |
+
+The first is decisive: a HALF-scale child with content behind it is passed through
+exactly as the full-scale one was. Scale magnitude was never the rule. It fitted
+three cases because the only full-scale case was also the only one with content.
+
+**The rule is a conjunction, and each half alone is demonstrably wrong.** A
+scale-sized child is measured only if it has no content AND asks for less than the
+whole axis:
+
+- content behind it wins whenever there is any (90, and 80)
+- no content, partial scale resolves against the offered space (120, and 60)
+- no content, full scale resolves to nothing: `H = 1 x H + 0` holds for every `H`,
+  so the element keeps its authored size and `Warnings()` reports the axis
+
+Replacing `xs < 1` with the content test alone passed all of conformance and
+immediately broke `testUnmeasurableAxisIsReported` in the suite — the third
+configuration, which no conformance case covers. That test is the only reason the
+over-correction was caught, which is a point in favour of keeping unit assertions
+that conformance does not duplicate.
+
 ### What is still open
 
-`>= 1` FITS the three verified cases; it is not known to be the rule. Four things
-differ between them, and the discriminator was chosen as the likeliest rather than
-the proven one:
+One reading is unexplained. `automatic_size_scale_child_without_a_layout` (childless,
+`{1,0, 0.5,20}`, no layout) measures **30** in Studio where the rule above gives 120,
+and 30 matches no closed form. It is exactly the second step of an iteration on the
+degenerate cycle:
 
-| | verified pass-through | verified available-space |
-|---|---|---|
-| scale | 1 | 0.5 |
-| UIListLayout | no | yes, both |
-| content behind the child | yes | no |
-| axis | X | Y |
+    H0 = 0   H1 = 0.5(0) + 20 = 20   H2 = 0.5(20) + 20 = 30   H3 = 35 ... -> 40
 
-Two `asserted` cases separate the first two candidates, and both currently agree
-with the implementation:
+so it is more likely a frame the runner sampled than a value the engine settled on.
+The fixed point is `offset / (1 - scale)` = 40.
 
-- `automatic_size_scale_child_without_a_layout` — partial scale, no layout.
-  Predicts 120; a UIListLayout-based rule predicts 20.
-- `automatic_size_half_scale_child_with_content` — partial scale with content
-  behind it. Predicts 120; a content-based rule predicts 80.
+The case is `divergent` rather than `roblox` deliberately: recording 30 as the
+standard would commit the implementation to reproducing an iteration count, which
+is a race and not a rule.
 
-If either comes back against the prediction, the discriminator in `grow()` is
-wrong and the suite is green by luck. Prefer changing that one condition over
-adding a second mechanism beside it.
+**The experiment that settles it:** run that case again holding more frames before
+reading the rectangles. Walking 30 -> 35 -> 37.5 means convergence and the answer is
+40. Sitting at 30 however long you wait means 30 is real, our 120 is wrong, and the
+measured branch resolves against the offset rather than the offered space.
 
 ---
 

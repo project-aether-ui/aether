@@ -13,8 +13,13 @@
 	of its gate for it, ms-44 M3 made `tests/suite_config.luau` shared between the runner
 	and the inventory gate for it, and this is the third.
 
-	RUN DIRECTLY to execute every gate:  lune run tests/gates/all_gates.luau
+	RUN DIRECTLY to execute every gate:  lune run tests/gates/all_gates.luau --run
 	REQUIRE to read the list:            require("./all_gates").GATES
+
+	`--run` IS NOT OPTIONAL, and this line said it was. Without the flag the file
+	is a module: it returns its list, prints nothing, and exits 0. Following the
+	instruction as written gave a silent pass for every gate in it, which is the
+	one result a gate runner must never produce by accident.
 ]]
 
 local fs = require("@lune/fs")

@@ -1,34 +1,42 @@
 --!strict
 --[[
-	IS IT THE SCALE, OR IS IT THE UILISTLAYOUT?
+	THE ONE READING NO RULE EXPLAINS. The engine returned 30.
 
-	Two cases established that a `{1,0, 0.5,20}` child resolves against the space
-	available to its parent (120 on a 200-tall surface, 60 under an 80-tall
-	grandparent). A third established that a `fromScale(1, 1)` child does not --
-	measurement passes through it to the content behind.
+	This case was written to separate "the scale magnitude decides" from "a
+	UIListLayout decides", predicting 120 for the first and 20 for the second. The
+	engine said neither, and its sibling case answered the question anyway: content
+	behind the child decides (see automatic_size_half_scale_child_with_content).
+	Under that rule this child has no content, so it is measured, and measuring it
+	gives `0.5 x 200 + 20 = 120`. We produce 120. The engine produced 30.
 
-	`Layout.luau` discriminates on the scale magnitude, which fits all three. But
-	BOTH available-space cases contain a UIListLayout and the pass-through case
-	does not, so the layout fits them equally well: a UIListLayout computes content
-	size itself, and could plausibly resolve a child's scale where a plain parent
-	measuring its own children would not.
+	WHY 30 LOOKS LIKE A SAMPLE RATHER THAN AN ANSWER. This is the degenerate cycle:
+	the parent's height depends on the child's and the child's on the parent's,
+	with no content to break it. Iterating from zero:
 
-	This is the first case with a partial scale and NO layout.
+	    H0 = 0    H1 = 0.5(0)  + 20 = 20    H2 = 0.5(20) + 20 = 30
+	    H3 = 35   H4 = 37.5    ...          -> 40, the fixed point of H = 0.5H + 20
 
-	    if the scale magnitude is the rule    Auto = 120  (0.5 x 200 + 20)
-	    if the UIListLayout is the rule       Auto =  20  (pass-through: the child
-	                                                       has no content, so only
-	                                                       its offset remains)
+	30 is exactly H2. A value that lands on the second step of a converging series,
+	and matches no closed-form rule, is more likely a frame the runner sampled than
+	a number the engine settled on. The fixed point would be 40 = offset / (1 - scale).
 
-	`asserted` at the first, which is what is implemented. If the engine says 20,
-	the discriminator in grow() is wrong and it is only luck that the suite is
-	green.
+	THE EXPERIMENT THAT SETTLES IT: run this case again holding more frames before
+	reading the rectangles. If it walks 30 -> 35 -> 37.5, it is convergence and the
+	answer is 40. If it sits at 30 however long you wait, 30 is real, our 120 is
+	wrong, and the measured branch needs to resolve against the offset rather than
+	the offered space.
+
+	`divergent` UNTIL THEN, and deliberately not `roblox`: recording 30 as the
+	standard would commit the implementation to reproducing a specific iteration
+	count, which is a race rather than a rule. Do not encode it without the second
+	reading.
 ]]
 return {
 	name = "AutomaticSize with a Scale child and NO layout",
-	provenance = "asserted",
-	note = "Separates 'scale magnitude decides' from 'a UIListLayout decides'. Both verified "
-		.. "available-space cases have a layout; the verified pass-through case does not.",
+	provenance = "divergent",
+	note = "Engine 0.736.0.7361346 returned h = 30; we produce 120. 30 is the second step of a "
+		.. "fixed-point iteration converging on 40, so it is probably a sampled frame rather "
+		.. "than a settled value. Needs a re-read with more frames held before it becomes roblox.",
 	surface = { width = 200, height = 200 },
 
 	tree = {

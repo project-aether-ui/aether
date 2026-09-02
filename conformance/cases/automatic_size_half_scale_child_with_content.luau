@@ -1,30 +1,32 @@
 --!strict
 --[[
-	DOES CONTENT BEHIND A PARTIAL SCALE CHILD COUNT TOO?
+	ANSWERED: CONTENT DECIDES, NOT THE SCALE MAGNITUDE.
 
-	The verified pass-through case has content behind the face (a 90-wide Inner)
-	and the verified available-space cases have none. So "a scale-sized child with
-	children is passed through, one without is resolved" fits the evidence just as
-	well as the scale magnitude does -- and would mean `Layout.luau` discriminates
-	on the wrong property while still passing every case.
+	The engine returns 80 -- the height of the Inner behind the child -- and not
+	the 120 that resolving `0.5 x 200 + 20` against the available space would give.
+	So a HALF-scale child with content behind it is passed through exactly as the
+	full-scale one was, and `Layout.luau` was discriminating on the wrong property
+	while still passing every case that existed.
 
-	This puts content behind a 0.5-scale child, where the two hypotheses split:
+	The rule this establishes, across all four cases that fit it:
 
-	    if the scale magnitude is the rule    Auto = 120  (0.5 x 200 + 20; the
-	                                                       80 of content is behind
-	                                                       a measured child and is
-	                                                       not reached)
-	    if having content is the rule         Auto =  80  (pass-through to Inner)
+	    a scale-sized child WITHOUT content   measured, `offered x scale + offset`
+	    a scale-sized child WITH content      passed through to what is behind it
 
-	`asserted` at the first, which is what is implemented. Note that both readings
-	are defensible: the engine has to break the cycle somewhere, and "resolve the
-	child" and "measure its content" are the only two places to break it.
+	which is the cycle broken at the only two places it can be broken. The scale
+	magnitude never mattered; `>= 1` fitted the three cases available because the
+	one full-scale case happened to be the one with content.
+
+	See automatic_size_scale_child_without_a_layout for the single reading this
+	rule does not explain.
 ]]
 return {
 	name = "AutomaticSize with a half-Scale child that HAS content",
-	provenance = "asserted",
-	note = "Separates 'scale magnitude decides' from 'the presence of content behind the child "
-		.. "decides'. The verified pass-through case has content; the available-space cases do not.",
+	provenance = "roblox",
+	verifiedAgainst = "0.736.0.7361346",
+	note = "Separated 'scale magnitude decides' from 'content behind the child decides'. The "
+		.. "engine chose content: 80, not 120. This is what replaced the scale-magnitude "
+		.. "discriminator in grow().",
 	surface = { width = 200, height = 200 },
 
 	tree = {
@@ -47,6 +49,6 @@ return {
 	},
 
 	expect = {
-		{ name = "Auto", x = 0, y = 0, w = 100, h = 120 },
+		{ name = "Auto", x = 0, y = 0, w = 100, h = 80 },
 	},
 }

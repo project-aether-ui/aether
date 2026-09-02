@@ -606,39 +606,51 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 			local d = item.Depth
 			local gotX, gotY = inheritX[d] or 0, inheritY[d] or 0
 			local _, _, ownR, ownB = paddingOf(Scene, item.Node)
+			--- The flat list is in depth order, so the next entry being deeper is
+			--- exactly "this node has children".
+			local hasContent = out[i + 1] ~= nil and out[i + 1].Depth > d
 
-			--- A PARTLY SCALE-SIZED CHILD IS MEASURED. A FULLY SCALE-SIZED ONE IS
-			--- PASSED THROUGH. Both halves are verified in Studio, and they were
-			--- established in that order at the cost of getting the second wrong
-			--- first.
+			--- A SCALE-SIZED CHILD IS MEASURED ONLY IF IT HAS NO CONTENT AND ASKS
+			--- FOR LESS THAN THE WHOLE AXIS. Both halves are needed; each one alone
+			--- was tried and was wrong.
 			---
-			--- The cycle is real — the parent's size depends on the child and the
-			--- child's on the parent — and skipping the child entirely was one way
-			--- to break it. That is not Roblox's way: a `{1,0, 0.5,20}` child of an
-			--- auto-sizing frame on a 200-tall surface makes the frame 120 tall,
-			--- which is `0.5 × 200 + 20`. The scale resolves against the space the
-			--- auto-sizing element was OFFERED, and the element fits the result.
-			--- Skipping produced 0, so the frame collapsed out of the display list.
+			--- The cycle is real -- the parent's size depends on the child and the
+			--- child's on the parent -- and there are only two places to break it:
+			--- resolve the child, or measure past it to what it contains.
 			---
-			--- Generalising THAT to scale 1 was the mistake. A face sized
-			--- `fromScale(1, 1)` over 90 of content measures 90, not the 200 on
-			--- offer — the engine passes measurement through it to the content
-			--- behind, then places the face at whatever the parent grew to. It is
-			--- the difference between a partial constraint on the axis and asking
-			--- for all of it, which is the degenerate case of the cycle and has no
-			--- solution but the content.
+			--- CONTENT WINS WHEN THERE IS ANY. A `fromScale(1,1)` face over 90 of
+			--- content measures 90 rather than the 200 on offer, and a `{1,0, 0.5,20}`
+			--- face over 80 of content measures 80 rather than 120. The face is then
+			--- placed at whatever the parent grew to.
 			---
-			--- WHY `>= 1` IS A FIT AND NOT YET A RULE. Four things differ between
-			--- the verified cases — scale magnitude, a UIListLayout, grandchildren,
-			--- and the axis — and this discriminates on the first because it is the
-			--- likeliest, not because the others are ruled out. Two `asserted` cases
-			--- are queued to separate them. Prefer changing this line over adding a
-			--- second mechanism beside it when they are answered.
+			--- WITHOUT CONTENT, A PARTIAL SCALE RESOLVES against the space the
+			--- auto-sizing element was OFFERED: `{1,0, 0.5,20}` on a 200-tall surface
+			--- makes the frame 120, and 60 under an 80-tall grandparent. Skipping the
+			--- child instead produced 0 and collapsed it out of the display list.
+			---
+			--- WITHOUT CONTENT, A FULL SCALE RESOLVES TO NOTHING. `H = 1 x H + 0` is
+			--- true of every H, so there is no size to derive and the element keeps
+			--- what it was authored with. That is the "collapsed to its padding"
+			--- symptom, and it is reported through Warnings() rather than left silent.
+			---
+			--- NEITHER CONDITION IS THE RULE ON ITS OWN, and both were believed to be
+			--- in turn. `xs < 1` alone passed every case that existed because the only
+			--- full-scale case was also the only one with content; the half-scale case
+			--- with content then separated them. Replacing it with the content test
+			--- alone immediately broke the full-scale childless case above. A rule that
+			--- fits every case you have is not thereby the rule.
+			---
+			--- ONE READING IS STILL UNEXPLAINED: a childless `{1,0, 0.5,20}` under no
+			--- layout measures 30 in Studio where this produces 120. See
+			--- conformance/cases/automatic_size_scale_child_without_a_layout.luau --
+			--- 30 is the second step of an iteration converging on 40, so it may be a
+			--- sampled frame rather than a settled value. Do not encode it without a
+			--- second engine reading.
 			if growX then
 				if xs == 0 then
 					right = math.max(right, r.X + r.Width + gotX)
 					inheritX[d + 1] = gotX
-				elseif d == childDepth and xs < 1 then
+				elseif d == childDepth and not hasContent and xs < 1 then
 					right = math.max(right, r.X + (offered.Width * xs + xo) + gotX)
 					inheritX[d + 1] = gotX
 				else
@@ -649,7 +661,7 @@ function Layout.Solve(Scene: any, root: any, viewport: Rect, host: any?): { Solv
 				if ys == 0 then
 					bottom = math.max(bottom, r.Y + r.Height + gotY)
 					inheritY[d + 1] = gotY
-				elseif d == childDepth and ys < 1 then
+				elseif d == childDepth and not hasContent and ys < 1 then
 					bottom = math.max(bottom, r.Y + (offered.Height * ys + yo) + gotY)
 					inheritY[d + 1] = gotY
 				else
