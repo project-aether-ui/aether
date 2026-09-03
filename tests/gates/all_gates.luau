@@ -67,6 +67,7 @@ M.GATES = {
 	"tests/gates/verify_test_inventory.luau",
 	"tests/gates/verify_tests_not_shipped.luau",
 	"tests/gates/verify_no_versioned_vendor_paths.luau",
+	"tests/gates/verify_framework_boundaries.luau",
 }
 
 --- Gates that fail for a reason outside this repository, and why.
