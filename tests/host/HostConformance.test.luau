@@ -14,7 +14,7 @@
 	and every test written against it inherited the error). Only running the same assertions
 	against the real thing catches the second.
 
-	So: under lune this exercises `Aether.Host.Headless`; mounted into a Roblox place it
+	So: under lune this exercises `Aether.Host.LuauDataModel`; mounted into a Roblox place it
 	exercises real vide. Every assertion below is something BOTH must satisfy — where the
 	host is knowingly shallower (no layout, no spring dynamics, no rendering) there is simply
 	no assertion, and Headless.luau states those limits.
@@ -51,7 +51,7 @@ else
 	--- half the host still supplies itself — `create` over mock instances against
 	--- `create` over real Instances.
 	local Aether = require("../../src/api")
-	local host = Aether.Host.Headless.new()
+	local host = Aether.Host.LuauDataModel.new()
 	vide = host
 	classOf = host.classOf
 end

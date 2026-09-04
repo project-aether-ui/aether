@@ -59,7 +59,7 @@ local function measure(text: string, _size: number): (number, number)
 end
 
 local function fixture()
-	local host = Aether.Host.Headless.new()
+	local host = Aether.Host.LuauDataModel.new()
 	host.Text.SetProvider(measure, "LayoutAutomaticSize suite")
 	return host, host.Vocabulary, host.create
 end

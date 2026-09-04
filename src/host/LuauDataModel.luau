@@ -1,6 +1,30 @@
 --!strict
 --[[
-	Aether · host/Headless — Layer 2.5 resolver for "no engine at all".
+	Aether · host/LuauDataModel — Layer 2.5 resolver for "no engine at all".
+
+	WHAT THIS IS, AND WHAT IT IS NOT. Renamed from `Headless.luau` on 2026-09-04,
+	for two reasons. The first is that "headless" already means something else in
+	this framework — a headless PRIMITIVE is behaviour without styling, which is
+	most of what `src/primitives/` is, and the collision was ours. The second
+	matters more.
+
+	**THIS IS jsdom, NOT A BROWSER.** It is a test double for a DataModel. You
+	would not call a JavaScript app running under jsdom a browser experience, and
+	nothing here is a description of how a DataModel is supposed to behave.
+
+	    IMPLEMENTATIONS OF THE STANDARD   Roblox (C++)      Dew (Rust)
+	    THIS                              a test double, and downstream of both
+
+	**ITS SHAPE FOLLOWS THE APPLICATION HOSTS, NEVER THE REVERSE.** If this file
+	and a real host disagree, this file is wrong by definition. Do not read it to
+	learn what a DataModel does, do not implement against it, and do not cite it in
+	a conformance case as evidence of anything — the suite already encodes this,
+	which is why `provenance = "reference"` means *recorded from the Luau
+	implementation, regression only: says we have not changed, not that we are
+	right*. Only the engine promotes a case.
+
+	It archives out of this repository to `OSS/luau-datamodel/` under ADR-002 and
+	Dew's roadmap step N. It is deliberately not anybody's priority.
 
 	This is a HOST, not a shim. It supplies exactly the seven modules vide cannot
 	load outside Roblox — `create`, `apply`, `defaults`, `mount`, `cleanup`,
@@ -10,7 +34,7 @@
 
 	WHAT THAT CHANGES versus testkit's VideShim, which this replaces:
 
-	    VideShim                        Headless
+	    VideShim                        LuauDataModel
 	    ------------------------------  ------------------------------------
 	    effect runs ONCE, no tracking   effect IS vide's effect: tracks + re-runs
 	    derive re-evaluates on read     derive IS vide's derive: memoised
@@ -387,7 +411,7 @@ InstanceMT.methods = {
 	end,
 
 	Clone = function(self: any): any
-		error("MockInstance:Clone is not implemented by Aether.Host.Headless", 2)
+		error("MockInstance:Clone is not implemented by Aether.Host.LuauDataModel", 2)
 	end,
 }
 
@@ -397,7 +421,7 @@ function Headless.new(): any
 	local core = VideCore.load()
 	if not core then
 		error(
-			"Aether.Host.Headless: no installed vide reachable. Run `pesde install` in "
+			"Aether.Host.LuauDataModel: no installed vide reachable. Run `pesde install` in "
 				.. "the repository root, or add this version to VideCore.CANDIDATE_ROOTS.",
 			2
 		)

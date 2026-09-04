@@ -35,7 +35,7 @@
 --- so `./Roblox` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
 local RobloxHost = require("./Roblox")
-local HeadlessHost = require("./Headless")
+local LuauDataModelHost = require("./LuauDataModel")
 local VideCore = require("./VideCore")
 
 export type Bounds = { X: number, Y: number, Width: number, Height: number }
@@ -159,7 +159,7 @@ export type Host = {
 local Host = {}
 
 Host.Roblox = RobloxHost
-Host.Headless = HeadlessHost
+Host.LuauDataModel = LuauDataModelHost
 Host.VideCore = VideCore
 
 local detected: Host? = nil
@@ -177,7 +177,7 @@ function Host.detect(vide: any?): Host
 	if RobloxHost.available() then
 		detected = RobloxHost.new(vide) :: any
 	else
-		detected = HeadlessHost.new() :: any
+		detected = LuauDataModelHost.new() :: any
 	end
 	return detected :: Host
 end

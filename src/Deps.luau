@@ -53,7 +53,7 @@ else
 	--- The reactive core, unmodified, plus mock instances for the seven modules
 	--- that need an engine. VideCore.luau carries the measurement and the reason
 	--- the split lands exactly there.
-	vide = require("./host/Headless").new()
+	vide = require("./host/LuauDataModel").new()
 end
 
 --- Read a source WITHOUT subscribing the enclosing reactive scope to it.

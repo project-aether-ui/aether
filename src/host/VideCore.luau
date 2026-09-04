@@ -21,7 +21,7 @@
 	The split falls precisely on Layer 2 (pure reactive protocol) versus Layer 2.5
 	(host resolver). So we do NOT patch vide, and we do NOT reimplement its graph:
 	we take the 16 reachable modules AS THEY SHIP and let each host supply the
-	seven it cannot reach. `Aether.Host.Headless` builds them over mock instances,
+	seven it cannot reach. `Aether.Host.LuauDataModel` builds them over mock instances,
 	`Aether.Host.Roblox` takes vide's own.
 
 	WHAT THIS BUYS OVER A SHIM. testkit's VideShim substituted the WHOLE of vide,

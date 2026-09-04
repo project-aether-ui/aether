@@ -1,7 +1,7 @@
 --!strict
 --!tier math
 --[=[
-	Aether.Host.Headless — the Layer 2.5 resolver that replaced testkit's VideShim.
+	Aether.Host.LuauDataModel — the Layer 2.5 resolver that replaced testkit's VideShim.
 
 	Two things are being pinned here, and they fail for different reasons.
 
@@ -18,7 +18,7 @@
 	is load-bearing for ~30 files — so it is pinned, not left to convention.
 ]=]
 local T = require("@testkit")
-local Headless = require("../../src/host/Headless")
+local Headless = require("../../src/host/LuauDataModel")
 local VideCore = require("../../src/host/VideCore")
 
 local function testCoreIsRealVide()

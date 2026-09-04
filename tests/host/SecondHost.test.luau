@@ -21,7 +21,7 @@ local Aether = require("../../src/api")
 local Layout = require("../../src/host/Layout")
 local Svg = require("../../src/host/Svg")
 
-local host = Aether.Host.Headless.new()
+local host = Aether.Host.LuauDataModel.new()
 local V = host.Vocabulary
 local Scene = host.Scene
 

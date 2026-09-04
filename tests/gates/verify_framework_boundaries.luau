@@ -71,7 +71,7 @@ local RUST_NOT_MOVED_YET: { string } = {}
 --- the standard: archived rather than deleted, moved rather than copied, and
 --- Aether does not depend on it afterwards.
 local DATAMODEL_NOT_MOVED_YET = {
-	"src/host/Headless.luau",
+	"src/host/LuauDataModel.luau",
 }
 
 --- Anything under here is vendored or generated and is nobody's business.

@@ -50,7 +50,7 @@ end
 --- never exercising it.
 function Roblox.new(vide: any): any
 	if not Roblox.available() then
-		error("Aether.Host.Roblox requires the Roblox engine; use Aether.Host.Headless off-engine.", 2)
+		error("Aether.Host.Roblox requires the Roblox engine; use Aether.Host.LuauDataModel off-engine.", 2)
 	end
 	if type(vide) ~= "table" then
 		error("Aether.Host.Roblox.new(vide) requires the vide module.", 2)

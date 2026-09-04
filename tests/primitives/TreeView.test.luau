@@ -13,7 +13,7 @@
 	VirtualList tracks props.Items inside a vide `effect`, and testkit's VideShim
 	ran effects ONCE with no dependency tracking, so a post-construction expansion
 	could not propagate and asserting on it would only have confirmed the shim.
-	Aether.Host.Headless runs vide's real effect, so the re-render is now
+	Aether.Host.LuauDataModel runs vide's real effect, so the re-render is now
 	observable headlessly and is asserted directly.
 ]=]
 local T = require("@testkit")

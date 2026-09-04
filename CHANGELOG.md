@@ -47,7 +47,7 @@ The first version of Aether as a standalone repository.
   `tests/gates/verify_framework_boundaries.luau` now allows no Rust at all: a
   stray `.rs` or a new `Cargo.toml` anywhere in this tree fails the gate on the
   commit that adds it. Its allowlist is down from 4 entries to 1 —
-  `src/host/Headless.luau`, which archives to `OSS/luau-datamodel/` under ADR-002.
+  `src/host/LuauDataModel.luau`, which archives to `OSS/luau-datamodel/` under ADR-002.
 - **The zune host.** It put Luau in charge of the process and reached native code
   through `zune.ffi`, which cannot be sandboxed: a runtime that hands a guest
   `dlopen` has no security boundary, and nothing above it can create one. Both
