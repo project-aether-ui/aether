@@ -29,6 +29,25 @@ The first version of Aether as a standalone repository.
 
 ### Removed
 
+- **The Rust workspace — `hosts/raster`, `hosts/runtime`, `hosts/window`,
+  `Cargo.toml` and `Cargo.lock` — moved to Dew** (`Dew/crates/`), per ADR-004.
+  Measured before it moved: `pesde.toml` ships `src/**`, so no Rust here ever
+  reached a Luau consumer, and the three crates had exactly two dependents — Dew
+  and aether-cli, both hosts, one of them retiring. They were Dew's rendering
+  stack living in the framework's repository, left from when the zune experiment
+  and the CLI needed them, and the layout was being read as the decision: adding
+  an image node to the display list looked like changing a public framework
+  contract when it is a host editing its own renderer.
+
+  **Nothing a consumer installs changes.** `includes` was already `src/**`.
+  aether-cli keeps its pin at `a01a034` and is untouched; it is frozen by ADR-002
+  until it is archived.
+
+  The `rust` and `fmt` CI jobs went with them, and
+  `tests/gates/verify_framework_boundaries.luau` now allows no Rust at all: a
+  stray `.rs` or a new `Cargo.toml` anywhere in this tree fails the gate on the
+  commit that adds it. Its allowlist is down from 4 entries to 1 —
+  `src/host/Headless.luau`, which archives to `OSS/luau-datamodel/` under ADR-002.
 - **The zune host.** It put Luau in charge of the process and reached native code
   through `zune.ffi`, which cannot be sandboxed: a runtime that hands a guest
   `dlopen` has no security boundary, and nothing above it can create one. Both

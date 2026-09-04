@@ -56,10 +56,19 @@ else hangs off.
                                             │
                                   ┌─────────▼──────────┐
                                   │  SHARED RUST CORE  │
-                                  │  hosts/runtime     │
-                                  │  hosts/raster      │
+                                  │  Dew/crates/runtime│
+                                  │  Dew/crates/raster │
                                   └────────────────────┘
 ```
+
+**THE SHARED RUST CORE IS NOT IN THIS REPOSITORY, and this document described it
+as if it were until ADR-004 said otherwise.** `hosts/raster`, `hosts/runtime` and
+`hosts/window` lived here because the zune experiment and the CLI needed them,
+and the layout was then read as the decision: adding an image node to the display
+list looked like changing a public framework contract when it is a host editing
+its own renderer. They are Dew's, they live in `Dew/crates/`, and everything
+below about what the core does and how the two shells differ is unchanged by
+where it sits.
 
 A Roblox author downloads none of this. They depend on the Luau package and the
 engine is their host — which is the whole point of `Host.detect()` and the reason
@@ -69,7 +78,7 @@ the Roblox branch must never learn about desktop concerns.
 
 The pipeline is shared. The shell is not.
 
-| | `hosts/runtime` (shared) | `aether` CLI | Dew |
+| | the shared core | `aether` CLI | Dew |
 | :-- | :-- | :-- | :-- |
 | Luau VM + require resolution | ✅ | | |
 | Mount Aether, solve, emit `Live.Frame` | ✅ | | |
@@ -91,7 +100,7 @@ which capabilities to inject — not by using a different pipeline.
 
 ### The rule that keeps this honest
 
-`hosts/runtime` is **deny-by-default**, including for the CLI. The CLI grants
+The shared core is **deny-by-default**, including for the CLI. The CLI grants
 itself a permissive set explicitly rather than inheriting an unrestricted VM.
 One code path, exercised by both, so the boundary Dew depends on is not a path
 only Dew ever takes.

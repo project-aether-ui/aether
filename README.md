@@ -44,11 +44,13 @@ Both entry points are under twenty lines. That ratio is the point.
 | :--- | :--- |
 | Roblox | the engine itself |
 | Headless | mock instances over vide's own reactive core |
-| `hosts/raster` | `vello_hybrid` or `vello_cpu`, presenting to a window |
+| Dew | `vello_cpu` or `vello_hybrid`, presenting to a window |
 
 The off-engine hosts are Rust-owned: Rust holds the process and embeds Luau as a
-guest. [docs/hosting_architecture.md](docs/hosting_architecture.md) has why, and
-how the CLI and Dew share one pipeline.
+guest. That Rust is THEIRS, not this repository's -- the rasteriser, the runtime
+and the window layer live in Dew (ADR-004), and this package ships `src/**` and
+nothing else. [docs/hosting_architecture.md](docs/hosting_architecture.md) has
+why, and how the CLI and Dew share one pipeline.
 
 ## Conformance
 
@@ -62,10 +64,15 @@ being behind Roblox separately from being wrong.
 ```
 src/            the framework; src/Icon is a workspace member
 packages/       workspace members that are not the framework
-hosts/          raster, runtime and window; the CLI is its own repository
 conformance/    cases, and a runner for each implementation
 tests/          suites, and the structural gates under tests/gates
 ```
+
+**No Rust.** `hosts/` held a three-crate Cargo workspace -- raster, runtime and
+window -- until ADR-004 measured what it was: Dew's rendering stack, in the
+framework's repository, reaching no Luau consumer. It lives in Dew now, and
+`tests/gates/verify_framework_boundaries.luau` fails on the commit that brings
+any of it back.
 
 ## Status
 

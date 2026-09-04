@@ -42,17 +42,21 @@ end
 
 --- Rust that has not moved to Dew yet. ADR-004 consequence one.
 ---
---- These are the whole Cargo workspace. `hosts/runtime` splits on the way out:
---- the painter, rasteriser, window and VM hosting become Dew's, while
---- `session.rs`, `driver.rs` and `frame.rs`'s decoding half retire with
---- `Headless.luau` -- they exist to consume what `Live.luau` emits, and
---- Aether-on-Dew will build DataModel instances instead, exactly as it does on
---- Roblox.
-local RUST_NOT_MOVED_YET = {
-	"Cargo.toml",
-	"Cargo.lock",
-	"hosts",
-}
+--- EMPTY, AND IT IS THE FIRST LIST HERE TO REACH THAT. `Cargo.toml`,
+--- `Cargo.lock` and the whole of `hosts/` -- raster, runtime and window -- moved
+--- to `Dew/crates/` in milestone 2's first sprint. This repository owns no Rust,
+--- which is the sentence section 2 below has been able to make since it was
+--- written and could not check against anything.
+---
+--- The list stays as a list rather than being deleted with its entries: the loop
+--- below is what turns a stray `.rs` or a new `Cargo.toml` into a failure on the
+--- commit that adds it, and it needs something to be allowed by.
+---
+--- `session.rs`, `driver.rs` and `frame.rs`'s decoding half went WITH the move
+--- and are Dew's now. They exist to consume what `Live.luau` emits, so they
+--- retire when `Headless.luau` does -- in Dew, on Dew's schedule. Moving is not
+--- deleting.
+local RUST_NOT_MOVED_YET: { string } = {}
 
 --- Files implementing a DataModel rather than consuming one.
 ---

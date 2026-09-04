@@ -61,47 +61,23 @@ jobs:
       - run: lune run tests/gates/all_gates.luau --run
       - run: lune run conformance/run.luau
 
-  rust:
-    name: cargo test
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
-      # THE RUST TESTS NEED VIDE. They load the framework's own Luau through an
-      # embedded VM, and `Deps` resolves the reactive core from `roblox_packages`
-      # -- so without this they fail with "no installed vide reachable", which
-      # reads as a Rust problem and is a missing install.
-      - name: Install pesde
-        shell: pwsh
-        run: |
-          # PWSH, NOT BASH. A bash step writing $HOME/.pesde-bin into
-          # GITHUB_PATH writes a POSIX path, which later pwsh steps cannot
-          # resolve -- so pesde installed correctly and was still "not
-          # recognized" one step later.
-          $url = "https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-windows-x86_64.zip"
-          Invoke-WebRequest -Uri $url -OutFile pesde.zip
-          Expand-Archive -Path pesde.zip -DestinationPath "$env:RUNNER_TEMP/pesde" -Force
-          "$env:RUNNER_TEMP/pesde" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-      - run: pesde install
-
-      # The raster feature is not default, and the tests that exercise painting,
-      # text and the display list all need it. Running without it passes while
-      # checking a fraction of what matters.
-      - run: cargo test --workspace --features aether_runtime/raster
-
-  format:
-    name: fmt
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all --check
-
-      # CLIPPY IS NOT HERE. It reports thirty-two warnings today, and a job that
-      # is red on its first run teaches everyone to ignore the badge. Triage
-      # them, then add it.
+# THE `rust` AND `fmt` JOBS ARE GONE, AND SO IS THE RUST THEY RAN.
+#
+# ADR-004: `hosts/raster`, `hosts/runtime` and `hosts/window` were Dew's
+# rendering stack living in the framework's repository -- `pesde.toml` ships
+# `src/**`, so none of it ever reached a Luau consumer -- and they moved to
+# `Dew/crates/` in milestone 2's first sprint. There is no `Cargo.toml` in this
+# repository for `cargo test` or `cargo fmt` to find, and a job pointed at one
+# would fail on every push.
+#
+# `tests/gates/verify_framework_boundaries.luau`, which the `luau` job above
+# already runs, is what keeps it that way: a stray `.rs` or a new `Cargo.toml`
+# anywhere in this tree fails the gate on the commit that adds it.
+#
+# WHAT WENT WITH THEM, so it is not looked for here later: the `pesde install`
+# those two jobs needed (the Rust tests loaded the framework's Luau through an
+# embedded VM and resolved vide from `roblox_packages`), and the clippy job that
+# was never added -- its own note read "It reports thirty-two warnings today, and
+# a job that is red on its first run teaches everyone to ignore the badge.
+# Triage them, then add it." Those thirty-two are Dew's to triage now, and are
+# named and counted in `Dew/crates/*/Cargo.toml`.

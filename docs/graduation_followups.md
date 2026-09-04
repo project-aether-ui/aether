@@ -11,10 +11,18 @@ Aether lives at **github.com/project-aether-ui/aether**, in its own organisation
 rather than under `SpektrLabs`. That org is Roblox-focused, and this framework's
 whole claim is that it is not.
 
-Dew pins it by commit and builds. Both halves come from the one revision: the
-Rust crates through Cargo, and the Luau source through
-`aether_runtime::luau_source_root()`, which reports the checkout Cargo already
-made — so there is no second, unpinned dependency on the same thing.
+Dew pins it by commit and builds. That pin used to be a CARGO pin, and both
+halves came from the one revision: the Rust crates through Cargo, and the Luau
+source through `aether_runtime::luau_source_root()`, which reported the checkout
+Cargo had already made.
+
+**There are no longer two halves.** ADR-004 moved the three crates into Dew, so
+the only thing Dew takes from here is Luau — and it takes it the way it takes
+vide, as a pesde git dependency pinned by commit in `Dew/pesde.toml`. Same
+property, one dependency instead of two: `installed_package("aether")` reports
+the checkout pesde made. What the note below says about a pinned checkout
+carrying the framework and none of its dependencies is unchanged and still the
+reason `Capabilities.aliases` exists.
 
 TWO THINGS THAT HAD TO BE TRUE FIRST, and both are worth remembering:
 
