@@ -24,17 +24,24 @@
 	     coupling that currently stops Layer 2 algorithms from running off-engine:
 	     they read `AbsolutePosition` off a GuiObject directly.
 
-	SELECTION IS BY ENVIRONMENT, never by configuration. `Host.detect()` returns
-	the Roblox host when `game` is an Instance and the headless host otherwise.
-	There is no flag to force the wrong one, because every bug in this area has
-	been a path that silently took the wrong branch.
+	SELECTION IS BY CAPABILITY, never by configuration. `Host.detect()` returns
+	the DataModel host when the environment supplies a DataModel this framework can
+	drive, and the Luau test double otherwise. There is no flag to force the wrong
+	one, because every bug in this area has been a path that silently took the
+	wrong branch.
+
+	IT USED TO SELECT BY VENDOR -- `typeof(game) == "Instance"` -- and
+	DataModel.luau carries the argument for why that changed on 2026-09-04. The
+	short version is ADR-001's: there are two implementations of the standard,
+	Roblox in C++ and Dew in Rust, and a framework that runs on any conforming host
+	should not decide by looking for the name of one of them.
 ]]
 
 --- NOT `host/init.luau`. Lune resolves a DIRECTORY require by loading init.luau
 --- but resolving that file's own relative requires from the CALLER's directory,
---- so `./Roblox` looked for a sibling of whoever required the folder. As a named
+--- so `./DataModel` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
-local RobloxHost = require("./Roblox")
+local DataModelHost = require("./DataModel")
 local LuauDataModelHost = require("./LuauDataModel")
 local VideCore = require("./VideCore")
 
@@ -119,6 +126,16 @@ export type Scene = {
 
 export type Host = {
 	Name: string,
+	--- WHICH ENVIRONMENT SUPPLIED THE HOST SERVICES, and not a second name for
+	--- the host. `Name` says what is being driven -- "DataModel", or
+	--- "LuauDataModel" for the test double -- and is the same on every
+	--- environment providing one, which is the whole claim. This says where
+	--- `Text` and `Clock` came from: "Roblox", "Dew", or "Luau".
+	---
+	--- IT EXISTS TO BE ASSERTED. Which branch `detect` took is invisible in a
+	--- rendered tree -- both hosts draw the same widget correctly -- so a suite
+	--- that wants to know has to be told by name rather than shown pixels.
+	Environment: string,
 
 	-- Reactive core (Layer 2)
 	source: any,
@@ -158,7 +175,7 @@ export type Host = {
 
 local Host = {}
 
-Host.Roblox = RobloxHost
+Host.DataModel = DataModelHost
 Host.LuauDataModel = LuauDataModelHost
 Host.VideCore = VideCore
 
@@ -174,8 +191,8 @@ function Host.detect(vide: any?): Host
 	if detected then
 		return detected
 	end
-	if RobloxHost.available() then
-		detected = RobloxHost.new(vide) :: any
+	if DataModelHost.available() then
+		detected = DataModelHost.new(vide) :: any
 	else
 		detected = LuauDataModelHost.new() :: any
 	end

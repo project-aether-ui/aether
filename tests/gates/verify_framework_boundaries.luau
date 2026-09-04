@@ -65,7 +65,7 @@ local RUST_NOT_MOVED_YET: { string } = {}
 --- it are the framework working as intended. What is forbidden is IMPLEMENTING
 --- one, and the marker for that is mock-instance machinery.
 ---
---- `Headless.luau` is 1198 lines against `Roblox.luau`'s 390 and implements
+--- `LuauDataModel.luau` is 1235 lines against `DataModel.luau`'s 709 and implements
 --- `Instance.new`, `AbsolutePosition`, `AbsoluteSize`, property-changed firing and
 --- geometry resolution. ADR-002 moves it to `OSS/luau-datamodel/` as a jsdom for
 --- the standard: archived rather than deleted, moved rather than copied, and

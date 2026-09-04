@@ -22,7 +22,14 @@
 	(host resolver). So we do NOT patch vide, and we do NOT reimplement its graph:
 	we take the 16 reachable modules AS THEY SHIP and let each host supply the
 	seven it cannot reach. `Aether.Host.LuauDataModel` builds them over mock instances,
-	`Aether.Host.Roblox` takes vide's own.
+	`Aether.Host.DataModel` takes vide's own.
+
+	AND THAT SECOND HALF IS NOT FREE OFF-ENGINE, measured on Dew 2026-09-04. The
+	line quoted above reads `game and typeof or ...`, so `game` is not a NAME the
+	blocked modules need -- it is the GATE they reach the four names through. With
+	`game` nil the fallback require runs, `test/` is absent from the shipped
+	artifact, and all seven fail to load however real the four globals are. See
+	Dew's milestone 2 sprint 8 record for the measurement.
 
 	WHAT THIS BUYS OVER A SHIM. testkit's VideShim substituted the WHOLE of vide,
 	including the pure core that never needed substituting, and its substitute was

@@ -620,7 +620,20 @@ function Headless.new(): any
 
 	local host: any = {}
 
-	host.Name = "Headless"
+	--- THE NAME THE FILE ALREADY HAS. It stayed "Headless" through the 2026-09-04
+	--- rename, which renamed the module and its export and left the string behind
+	--- -- and "Headless" means a primitive without styling everywhere else in this
+	--- tree, which is the collision that rename existed to end.
+	---
+	--- IT IS ALSO EVIDENCE NOW. `Host.detect` chooses between this and the
+	--- DataModel host, both draw the same widget correctly, and a suite asking
+	--- which one ran reads `Name`. A name that does not match the module is a
+	--- misleading answer to the one question this field is for.
+	host.Name = "LuauDataModel"
+
+	--- No environment supplied these; this host IS the environment. `Vocabulary`
+	--- is Lune's, `Clock` is simulated, and `Text` is the bundled advance table.
+	host.Environment = "Luau"
 
 	-- ---- Layer 2: the reactive core, unmodified, straight from vide ----
 	host.source = core.source

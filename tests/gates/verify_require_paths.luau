@@ -175,7 +175,7 @@ end
 --- What happened: a regex tidying unrelated lines out of Aether's Deps matched
 --- `	-- .*?` under DOTALL and swallowed the `vide = require(packages.vide)`
 --- line with them. Sixty-two suites and six gates stayed green, because not one
---- of them executes that branch. It surfaced as "Aether.Host.Roblox.new(vide)
+--- of them executes that branch. It surfaced as "Aether.Host.DataModel.new(vide)
 --- requires the vide module" on the first Studio launch, taking down every
 --- consumer of Aether with it.
 ---

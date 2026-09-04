@@ -140,6 +140,25 @@ The first version of Aether as a standalone repository.
 
 ### Changed
 
+- **`src/host/Roblox.luau` is `src/host/DataModel.luau`, and it selects by
+  capability rather than by vendor.** ADR-001's own consequences list asked for
+  the rename: the file is the DataModel host, and Roblox is one environment
+  providing that model. The two `game:GetService` lookups in it moved behind
+  `Host.Text` and `Host.Clock`, seams the `Host` interface already declared, and
+  they are now the only lines in the file that name an environment. `Host.Roblox`
+  is `Host.DataModel`; there is no third host and ADR-001 forbids one.
+- **`RobloxHost.available()` was `typeof(game) == "Instance"` and is now a
+  conformance probe.** It builds an instance, reads its class and name back,
+  parents a child, looks it up by name, round-trips a `UDim2` with its offsets
+  intact, and tears the tree down. `Host.DataModel.conforms(environment)` is the
+  same probe over a supplied environment, so `tests/host/HostSelection.test.luau`
+  can run it against a faithful non-Roblox host and against five ways of being
+  unfaithful. What a conforming host must be is a question for the standard; this
+  is the proposal and Dew's milestone 2 sprint 8 record carries the argument.
+- **`Host` gained `Environment`**, and the Luau test double reports its `Name` as
+  `LuauDataModel` rather than the `Headless` the earlier rename left behind. Both
+  hosts draw a correct widget, so which one ran is invisible in a render and has
+  to be readable by name.
 - The public table moved to `src/api.luau`; `init.luau` forwards to it. The root
   was unreachable by a string alias: pointing one at `src` loads `init.luau` but
   keeps `src` as its identity, so every `./x` inside resolved one level too high,
