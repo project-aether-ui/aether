@@ -27,6 +27,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch sibling luau-datamodel test double
+        run: git clone --depth 1 https://github.com/project-aether-ui/luau-datamodel.git ../luau-datamodel
 
       # ROKIT, so CI runs the versions rokit.toml pins. A floating lune once
       # moved JSON between modules mid-milestone; matching local exactly is the
@@ -52,15 +54,7 @@ jobs:
 
       - run: pesde install
       - run: lune run conformance/syntax_check.luau
-      # THE 33 SUITES RUN UNDER DEW (ADR-002).
-      #
-      # Under ADR-002, LuauDataModel retired to OSS/luau-datamodel/ and Aether
-      # hosts nothing of its own. The test suites execute against Dew's native
-      # DataModel host via `dew test`, which runs against Dew's runtime VM rather
-      # than Lune.
-      #
-      # What checks this framework in standalone CI: the structural gates and
-      # the conformance suite against Roblox.
+      - run: lune run tests/run.luau
       - run: lune run tests/gates/all_gates.luau --run
       - run: lune run conformance/run.luau
 
