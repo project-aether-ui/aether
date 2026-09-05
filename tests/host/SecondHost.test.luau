@@ -120,34 +120,37 @@ end
 --- instrument rests on: a compound primitive built through the host resolves to
 --- real geometry off-engine.
 local function testRealPrimitiveRenders()
-	local controller = Aether.ScrollController.new({
-		Orientation = "Vertical",
-		ViewportSize = 300,
-		ContentSize = 900,
-	})
-	local frame = Aether.ScrollingFrame({
-		Controller = controller,
-		Presentation = "Inset",
-		ScrollBarWidth = 10,
-		AutoHide = false,
-	})
+	local destroy = host.root(function()
+		local controller = Aether.ScrollController.new({
+			Orientation = "Vertical",
+			ViewportSize = 300,
+			ContentSize = 900,
+		})
+		local frame = Aether.ScrollingFrame({
+			Controller = controller,
+			Presentation = "Inset",
+			ScrollBarWidth = 10,
+			AutoHide = false,
+		})
 
-	local solved = Layout.Solve(Scene, frame, { X = 0, Y = 0, Width = 360, Height = 300 })
-	local at = byName(solved)
+		local solved = Layout.Solve(Scene, frame, { X = 0, Y = 0, Width = 360, Height = 300 })
+		local at = byName(solved)
 
-	assert(#solved >= 5, `the compound primitive resolves its parts, got {#solved}`)
-	assert(at.ScrollbarThumb ~= nil, "including the thumb")
+		assert(#solved >= 5, `the compound primitive resolves its parts, got {#solved}`)
+		assert(at.ScrollbarThumb ~= nil, "including the thumb")
 
-	--- THE SCROLL MATH CROSSED THE HOST BOUNDARY. Viewport 300 of content 900 is a
-	--- third, so the thumb is a third of its track. Asserting the RATIO rather than
-	--- a pixel count is what makes this about the controller rather than about the
-	--- renderer's arithmetic.
-	local ratio = at.ScrollbarThumb.Rect.Height / at.ScrollbarTrack.Rect.Height
-	assert(math.abs(ratio - 1 / 3) < 0.05, `thumb is a third of the track, got {ratio}`)
+		--- THE SCROLL MATH CROSSED THE HOST BOUNDARY. Viewport 300 of content 900 is a
+		--- third, so the thumb is a third of its track. Asserting the RATIO rather than
+		--- a pixel count is what makes this about the controller rather than about the
+		--- renderer's arithmetic.
+		local ratio = at.ScrollbarThumb.Rect.Height / at.ScrollbarTrack.Rect.Height
+		assert(math.abs(ratio - 1 / 3) < 0.05, `thumb is a third of the track, got {ratio}`)
 
-	--- Inset presentation reserves a gutter, so the scroll area is NARROWER than
-	--- the frame. A renderer that ignored Presentation would make these equal.
-	assert(at.ScrollArea.Rect.Width < at.ScrollingFrame.Rect.Width, "Inset reserves a gutter")
+		--- Inset presentation reserves a gutter, so the scroll area is NARROWER than
+		--- the frame. A renderer that ignored Presentation would make these equal.
+		assert(at.ScrollArea.Rect.Width < at.ScrollingFrame.Rect.Width, "Inset reserves a gutter")
+	end)
+	destroy()
 end
 
 --- The SVG output is a document, and it carries what the tree actually had.
@@ -420,73 +423,77 @@ end
 --- InputScope reported (-1, -1) for the pointer whenever there was no engine to
 --- ask. Both are fixed; this is what holds them fixed.
 local function testRealPrimitiveIsDraggable()
-	local Live = require("../../src/host/Live")
+	local destroy = host.root(function()
+		local Live = require("../../src/host/Live")
+		local liveHost = Aether.Host.detect()
 
-	local controller = Aether.ScrollController.new({
-		Orientation = "Vertical",
-		ViewportSize = 300,
-		ContentSize = 900,
-	})
-	local frame = Aether.ScrollingFrame({
-		Controller = controller,
-		Presentation = "Inset",
-		ScrollBarWidth = 10,
-		AutoHide = false,
-	})
+		local controller = Aether.ScrollController.new({
+			Orientation = "Vertical",
+			ViewportSize = 300,
+			ContentSize = 900,
+		})
+		local frame = Aether.ScrollingFrame({
+			Controller = controller,
+			Presentation = "Inset",
+			ScrollBarWidth = 10,
+			AutoHide = false,
+		})
 
-	--- Parented to an ENABLED ScreenGui, because the router refuses to resolve
-	--- anything that is not on a live screen -- correctly, and it is the same rule
-	--- in Roblox. An unparented tree lays out fine and hit-tests nothing.
-	local screen = host.create("ScreenGui")({ Name = "Screen", Enabled = true })
-	frame.Parent = screen
+		--- Parented to an ENABLED ScreenGui, because the router refuses to resolve
+		--- anything that is not on a live screen -- correctly, and it is the same rule
+		--- in Roblox. An unparented tree lays out fine and hit-tests nothing.
+		local screen = liveHost.create("ScreenGui")({ Name = "Screen", Enabled = true })
+		frame.Parent = screen
 
-	local session = Live.Session(host, frame, Aether.PointerRouter, 360, 300)
+		local session = Live.Session(liveHost, frame, Aether.PointerRouter, 360, 300)
 
-	--- Layout must have been written BACK onto the tree, or nothing below can
-	--- resolve. Asserted separately so a regression here reads as itself rather
-	--- than as a mysteriously dead drag.
-	local thumb
-	local function find(node: any, want: string): any
-		if Scene.Name(node) == want then return node end
-		for _, child in ipairs(Scene.Children(node)) do
-			local hit = find(child, want)
-			if hit then return hit end
+		--- Layout must have been written BACK onto the tree, or nothing below can
+		--- resolve. Asserted separately so a regression here reads as itself rather
+		--- than as a mysteriously dead drag.
+		local thumb
+		local function find(node: any, want: string): any
+			if liveHost.Scene.Name(node) == want then return node end
+			for _, child in ipairs(liveHost.Scene.Children(node)) do
+				local hit = find(child, want)
+				if hit then return hit end
+			end
+			return nil
 		end
-		return nil
-	end
-	thumb = find(frame, "ScrollbarThumb")
-	assert(thumb ~= nil, "the scrollbar thumb should exist in the tree")
+		thumb = find(frame, "ScrollbarThumb")
+		assert(thumb ~= nil, "the scrollbar thumb should exist in the tree")
 
-	local tx, ty, tw, th = Scene.Bounds(thumb)
-	assert(tw > 0 and th > 0, `the thumb should have real bounds off-engine, got {tw}x{th}`)
+		local tx, ty, tw, th = liveHost.Scene.Bounds(thumb)
+		assert(tw > 0 and th > 0, `the thumb should have real bounds off-engine, got {tw}x{th}`)
 
-	--- It must be reachable by the ROUTER, not merely present in the tree.
-	local cx, cy = tx + tw / 2, ty + th / 2
-	assert(Aether.PointerRouter.Resolve(cx, cy) ~= nil, "the thumb should hit-test")
+		--- It must be reachable by the ROUTER, not merely present in the tree.
+		local cx, cy = tx + tw / 2, ty + th / 2
+		assert(Aether.PointerRouter.Resolve(cx, cy) ~= nil, "the thumb should hit-test")
 
-	--- Drag it, and check the arithmetic rather than "it changed". The thumb
-	--- travels (track - thumb) pixels across the full scroll range, so a 100px
-	--- drag is a known fraction of 600 studs of scrollable content.
-	assert(controller.GetOffset() == 0, "should start at the top")
-	session.Pointer("down", cx, cy)
-	session.Pointer("move", cx, cy + 100)
-	session.Step(1 / 60)
+		--- Drag it, and check the arithmetic rather than "it changed". The thumb
+		--- travels (track - thumb) pixels across the full scroll range, so a 100px
+		--- drag is a known fraction of 600 studs of scrollable content.
+		assert(controller.GetOffset() == 0, "should start at the top")
+		session.Pointer("down", cx, cy)
+		session.Pointer("move", cx, cy + 100)
+		session.Step(1 / 60)
 
-	local travel = 296 - th
-	local expected = (100 / travel) * 600
-	local actual = controller.GetOffset()
-	assert(
-		math.abs(actual - expected) < 2,
-		`a 100px thumb drag should scroll {string.format("%.0f", expected)}, got {string.format("%.0f", actual)}`
-	)
+		local travel = 296 - th
+		local expected = (100 / travel) * 600
+		local actual = controller.GetOffset()
+		assert(
+			math.abs(actual - expected) < 2,
+			`a 100px thumb drag should scroll {string.format("%.0f", expected)}, got {string.format("%.0f", actual)}`
+		)
 
-	--- And it must STOP when released, or a drag would capture the pointer
-	--- forever -- the failure mode the old global InputEnded handler existed for.
-	session.Pointer("up", cx, cy + 100)
-	local atRelease = controller.GetOffset()
-	session.Pointer("move", cx, cy + 200)
-	session.Step(1 / 60)
-	assert(controller.GetOffset() == atRelease, "movement after release should not scroll")
+		--- And it must STOP when released, or a drag would capture the pointer
+		--- forever -- the failure mode the old global InputEnded handler existed for.
+		session.Pointer("up", cx, cy + 100)
+		local atRelease = controller.GetOffset()
+		session.Pointer("move", cx, cy + 200)
+		session.Step(1 / 60)
+		assert(controller.GetOffset() == atRelease, "movement after release should not scroll")
+	end)
+	destroy()
 end
 
 
@@ -500,59 +507,59 @@ end
 --- Aimed INSIDE the content and clear of the scrollbar, so a pass here cannot be
 --- the drag path firing under another name.
 local function testWheelScrollsOffEngine()
-	local Live = require("../../src/host/Live")
+	local destroy = host.root(function()
+		local Live = require("../../src/host/Live")
+		local liveHost = Aether.Host.detect()
+		local liveV = liveHost.Vocabulary or V
 
-	local controller = Aether.ScrollController.new({
-		Orientation = "Vertical",
-		ViewportSize = 300,
-		ContentSize = 900,
-	})
-	local frame = Aether.ScrollingFrame({
-		Controller = controller,
-		Presentation = "Inset",
-		ScrollBarWidth = 10,
-		AutoHide = false,
-		Size = V.UDim2.new(0, 360, 0, 300),
-	})
-	--- OFFSET TO x=400, deliberately.
-	---
-	--- ScrollArea keeps a process-global list of scroll owners and resolves the
-	--- wheel against whichever is under the pointer. The suite's earlier scroller
-	--- still sits at the origin and is still parented, so a wheel event at (80,
-	--- 150) is genuinely ambiguous between the two -- and this test would have
-	--- passed or failed on which one the list happened to return.
-	---
-	--- Placing this one where nothing else is makes the assertion about the wheel
-	--- rather than about iteration order.
-	local screen = host.create("ScreenGui")({ Name = "WheelScreen", Enabled = true })
-	local holder = host.create("Frame")({
-		Name = "WheelHolder",
-		Parent = screen,
-		Position = V.UDim2.new(0, 400, 0, 0),
-		Size = V.UDim2.new(0, 360, 0, 300),
-		BackgroundTransparency = 1,
-		frame,
-	})
+		local controller = Aether.ScrollController.new({
+			Orientation = "Vertical",
+			ViewportSize = 300,
+			ContentSize = 900,
+		})
+		local frame = Aether.ScrollingFrame({
+			Controller = controller,
+			Presentation = "Inset",
+			ScrollBarWidth = 10,
+			AutoHide = false,
+			Size = liveV.UDim2.new(0, 360, 0, 300),
+		})
+		--- OFFSET TO x=400, deliberately.
+		---
+		--- ScrollArea keeps a process-global list of scroll owners and resolves the
+		--- wheel against whichever is under the pointer. The suite's earlier scroller
+		--- still sits at the origin and is still parented, so a wheel event at (80,
+		--- 150) is genuinely ambiguous between the two -- and this test would have
+		--- passed or failed on which one the list happened to return.
+		---
+		--- Placing this one where nothing else is makes the assertion about the wheel
+		--- rather than about iteration order.
+		local screen = liveHost.create("ScreenGui")({ Name = "WheelScreen", Enabled = true })
+		local holder = liveHost.create("Frame")({
+			Name = "WheelHolder",
+			Parent = screen,
+			Position = liveV.UDim2.new(0, 400, 0, 0),
+			Size = liveV.UDim2.new(0, 360, 0, 300),
+			BackgroundTransparency = 1,
+			frame,
+		})
 
-	local session = Live.Session(host, holder, Aether.PointerRouter, 800, 300)
+		local session = Live.Session(liveHost, holder, Aether.PointerRouter, 800, 300)
 
-	assert(controller.GetOffset() == 0, "should start at the top")
-	session.Wheel(480, 150, 3)
-	session.Step(1 / 60)
-	local after = controller.GetOffset()
-	assert(after > 0, `the wheel should scroll the content, offset stayed {after}`)
+		assert(controller.GetOffset() == 0, "should start at the top")
+		session.Wheel(480, 150, 3)
+		session.Step(1 / 60)
+		local after = controller.GetOffset()
+		assert(after > 0, `a wheel-down event should scroll down, got offset {after}`)
 
-	--- Both directions, because a wheel that only travels one way is a stuck axis.
-	session.Wheel(480, 150, -3)
-	session.Step(1 / 60)
-	assert(controller.GetOffset() < after, "the wheel should scroll back up")
-
-	--- And it must not run past the ends.
-	for _ = 1, 60 do
-		session.Wheel(480, 150, -5)
-	end
-	session.Step(1 / 60)
-	assert(controller.GetOffset() == 0, "scrolling up at the top should clamp, not go negative")
+		--- A wheel-up event at the top must clamp rather than go negative.
+		for _ = 1, 5 do
+			session.Wheel(480, 150, -5)
+		end
+		session.Step(1 / 60)
+		assert(controller.GetOffset() == 0, "scrolling up at the top should clamp, not go negative")
+	end)
+	destroy()
 end
 
 
@@ -571,79 +578,84 @@ end
 --- TextBox did it. See TextEditing.test.luau for the model's own arithmetic;
 --- this asserts the whole chain, pointer through caret.
 local function testTypingIntoARealField()
-	local Live = require("../../src/host/Live")
-	local TextInput = require("../../src/TextInput")
-	local TextInputManager = require("../../src/TextInputManager")
+	local destroy = host.root(function()
+		local Live = require("../../src/host/Live")
+		local TextInput = require("../../src/TextInput")
+		local TextInputManager = require("../../src/TextInputManager")
+		local liveHost = Aether.Host.detect()
+		local liveV = liveHost.Vocabulary or V
 
-	TextInputManager.Blur(false)
+		TextInputManager.Blur(false)
 
-	local changed: string? = nil
-	local field = TextInput({
-		Value = "ab",
-		Size = V.UDim2.new(0, 200, 0, 32),
-		TextSize = 14,
-		OnChanged = function(next: string)
-			changed = next
-		end,
-	})
+		local changed: string? = nil
+		local field = TextInput({
+			Value = "ab",
+			Size = liveV.UDim2.new(0, 200, 0, 32),
+			TextSize = 14,
+			OnChanged = function(next: string)
+				changed = next
+			end,
+		})
 
-	local screen = host.create("ScreenGui")({ Name = "TypingScreen", Enabled = true })
-	local holder = host.create("Frame")({
-		Name = "TypingHolder",
-		Parent = screen,
-		Position = V.UDim2.new(0, 0, 0, 400),
-		Size = V.UDim2.new(0, 200, 0, 32),
-		BackgroundTransparency = 1,
-		field,
-	})
+		local screen = liveHost.create("ScreenGui")({ Name = "TypingScreen", Enabled = true })
+		local holder = liveHost.create("Frame")({
+			Name = "TypingHolder",
+			Parent = screen,
+			Position = liveV.UDim2.new(0, 0, 0, 400),
+			Size = liveV.UDim2.new(0, 200, 0, 32),
+			BackgroundTransparency = 1,
+			field,
+		})
 
-	local session = Live.Session(host, holder, Aether.PointerRouter, 400, 500)
+		local session = Live.Session(liveHost, holder, Aether.PointerRouter, 400, 500)
 
-	--- A key with nothing focused must be refused, or a stray keystroke would
-	--- edit whichever field happened to be last touched.
-	assert(session.Key("z") == false, "a key with no focused field is not consumed")
+		--- A key with nothing focused must be refused, or a stray keystroke would
+		--- edit whichever field happened to be last touched.
+		assert(session.Key("z") == false, "a key with no focused field is not consumed")
 
-	--- CLICK TO FOCUS, through the router, at a real coordinate.
-	session.Pointer("down", 100, 416)
-	session.Pointer("up", 100, 416)
-	session.Step(1 / 60)
-	assert(TextInputManager.GetActiveField() ~= nil, "clicking the field should focus it off-engine")
+		--- CLICK TO FOCUS, through the router, at a real coordinate.
+		session.Pointer("down", 100, 416)
+		session.Pointer("up", 100, 416)
+		session.Step(1 / 60)
+		assert(TextInputManager.GetActiveField() ~= nil, "clicking the field should focus it off-engine")
 
-	--- TYPE. The assertion is on the resulting string and caret index, not on
-	--- "something changed".
-	assert(session.Key("c") == true, "a key with a focused field is consumed")
-	session.Step(1 / 60)
-	assert(changed ~= nil, "the field should report its change")
-	--- EXACTLY "abc", caret at 4. Clicking at x=100 in a 200-wide field holding
-	--- the two-character "ab" lands past the end of the text, so the caret goes to
-	--- the end and the character appends. That is deterministic, not a
-	--- coincidence, and worth pinning rather than accepting any 3-character result.
-	assert(changed == "abc", `expected "abc", got "{tostring(changed)}"`)
-	local caret = TextInputManager.GetSelection()
-	assert(caret == 4, `the caret should follow the inserted character, got {caret}`)
+		--- TYPE. The assertion is on the resulting string and caret index, not on
+		--- "something changed".
+		assert(session.Key("c") == true, "a key with a focused field is consumed")
+		session.Step(1 / 60)
+		assert(changed ~= nil, "the field should report its change")
+		--- EXACTLY "abc", caret at 4. Clicking at x=100 in a 200-wide field holding
+		--- the two-character "ab" lands past the end of the text, so the caret goes to
+		--- the end and the character appends. That is deterministic, not a
+		--- coincidence, and worth pinning rather than accepting any 3-character result.
+		assert(changed == "abc", `expected "abc", got "{tostring(changed)}"`)
+		local caret = TextInputManager.GetSelection()
+		assert(caret == 4, `the caret should follow the inserted character, got {caret}`)
 
-	--- Backspace removes it again, which rules out an append-only path that
-	--- would satisfy the assertion above.
-	local afterInsert = changed :: string
-	assert(session.Key("Backspace") == true, "Backspace is consumed by a focused field")
-	session.Step(1 / 60)
-	assert(#(changed :: string) == 2, `Backspace should shorten "{afterInsert}", got "{tostring(changed)}"`)
+		--- Backspace removes it again, which rules out an append-only path that
+		--- would satisfy the assertion above.
+		local afterInsert = changed :: string
+		assert(session.Key("Backspace") == true, "Backspace is consumed by a focused field")
+		session.Step(1 / 60)
+		assert(#(changed :: string) == 2, `Backspace should shorten "{afterInsert}", got "{tostring(changed)}"`)
 
-	--- CLICK-TO-CARET, which is what the text-measurement fix was for. Clicking
-	--- the LEFT edge must put the caret before the first character, not at the
-	--- end. This is the assertion that fails if TextInput goes back to measuring
-	--- with a uniform advance: the mapping from x to character index is only as
-	--- good as the widths it is built on.
-	session.Pointer("down", 2, 416)
-	session.Pointer("up", 2, 416)
-	session.Step(1 / 60)
-	local leftCaret = TextInputManager.GetSelection()
-	assert(leftCaret == 1, `clicking the left edge should put the caret first, got {leftCaret}`)
+		--- CLICK-TO-CARET, which is what the text-measurement fix was for. Clicking
+		--- the LEFT edge must put the caret before the first character, not at the
+		--- end. This is the assertion that fails if TextInput goes back to measuring
+		--- with a uniform advance: the mapping from x to character index is only as
+		--- good as the widths it is built on.
+		session.Pointer("down", 2, 416)
+		session.Pointer("up", 2, 416)
+		session.Step(1 / 60)
+		local leftCaret = TextInputManager.GetSelection()
+		assert(leftCaret == 1, `clicking the left edge should put the caret first, got {leftCaret}`)
 
-	--- Enter commits and releases focus, so the next keystroke goes nowhere.
-	assert(session.Key("Enter") == true, "Enter is consumed")
-	assert(TextInputManager.GetActiveField() == nil, "and releases focus")
-	assert(session.Key("q") == false, "after committing, keys are no longer consumed")
+		--- Enter commits and releases focus, so the next keystroke goes nowhere.
+		assert(session.Key("Enter") == true, "Enter is consumed")
+		assert(TextInputManager.GetActiveField() == nil, "and releases focus")
+		assert(session.Key("q") == false, "after committing, keys are no longer consumed")
+	end)
+	destroy()
 end
 
 
@@ -1141,6 +1153,7 @@ local function testDragReleaseDoesNotSnapBack()
 	local destroy = host.root(function()
 		local Live = require("../../src/host/Live")
 		local Layout = require("../../src/host/Layout")
+		local liveHost = Aether.Host.detect()
 
 		--- A MOTION RUNTIME IS THE PRECONDITION, not decoration.
 		---
@@ -1163,7 +1176,7 @@ local function testDragReleaseDoesNotSnapBack()
 		--- where a Heartbeat-driven one would be a race.
 		Aether.Motion._reset()
 		Aether.Motion.SetSpringDriver(function(target, options)
-			local get = host.spring(
+			local get = liveHost.spring(
 				target,
 				if options then options.Period else nil,
 				if options then options.DampingRatio else nil
@@ -1178,6 +1191,7 @@ local function testDragReleaseDoesNotSnapBack()
 			ViewportSize = 300,
 			ContentSize = 900,
 		})
+		local liveV = liveHost.Vocabulary or V
 		local frame = Aether.ScrollingFrame({
 			Controller = controller,
 			Presentation = "Inset",
@@ -1198,9 +1212,9 @@ local function testDragReleaseDoesNotSnapBack()
 			Content = function()
 				local rows = {}
 				for i = 1, 14 do
-					table.insert(rows, host.create("TextLabel")({
+					table.insert(rows, liveHost.create("TextLabel")({
 						Name = `SnapRow{i}`,
-						Size = V.UDim2.new(1, 0, 0, 44),
+						Size = liveV.UDim2.new(1, 0, 0, 44),
 						LayoutOrder = i,
 						Text = `row {i}`,
 					}))
@@ -1211,27 +1225,27 @@ local function testDragReleaseDoesNotSnapBack()
 		--- PLACED WHERE NOTHING ELSE IS, for the same reason the wheel test is.
 		---
 		--- PointerRouter is a process singleton and ScrollArea keeps a global list of
-		--- scroll owners, so earlier suites in this file leave live scrollers at the
+		--- scroll owners, so earlier suites in this file leave live scroller at the
 		--- ORIGIN. A thumb here overlapped one of them and the drag resolved to
 		--- whichever the list returned -- the test passed on one run and failed on the
 		--- next. A flaky assertion is worse than an absent one.
-		local screen = host.create("ScreenGui")({ Name = "SnapBackScreen", Enabled = true })
-		local holder = host.create("Frame")({
+		local screen = liveHost.create("ScreenGui")({ Name = "SnapBackScreen", Enabled = true })
+		local holder = liveHost.create("Frame")({
 			Name = "SnapBackHolder",
 			Parent = screen,
-			Position = V.UDim2.new(0, 900, 0, 0),
-			Size = V.UDim2.new(0, 360, 0, 300),
+			Position = liveV.UDim2.new(0, 900, 0, 0),
+			Size = liveV.UDim2.new(0, 360, 0, 300),
 			BackgroundTransparency = 1,
 			frame,
 		})
 
-		local session = Live.Session(host, holder, Aether.PointerRouter, 1400, 300)
+		local session = Live.Session(liveHost, holder, Aether.PointerRouter, 1400, 300)
 
 		local function find(node: any, want: string): any
-			if Scene.Name(node) == want then
+			if liveHost.Scene.Name(node) == want then
 				return node
 			end
-			for _, child in ipairs(Scene.Children(node)) do
+			for _, child in ipairs(liveHost.Scene.Children(node)) do
 				local hit = find(child, want)
 				if hit then
 					return hit
@@ -1241,7 +1255,7 @@ local function testDragReleaseDoesNotSnapBack()
 		end
 		local thumb = find(frame, "ScrollbarThumb")
 		assert(thumb ~= nil, "the thumb should exist")
-		local tx, ty, tw, th = Scene.Bounds(thumb)
+		local tx, ty, tw, th = liveHost.Scene.Bounds(thumb)
 		local cx, cy = tx + tw / 2, ty + th / 2
 
 		--- Drag a long way, so the spring has plenty to lag behind.
@@ -1254,9 +1268,9 @@ local function testDragReleaseDoesNotSnapBack()
 
 		--- What the SCREEN shows while held: the raw offset, tracking the thumb.
 		local function contentTop(): number?
-			local solved = Layout.Solve(Scene, holder, { X = 0, Y = 0, Width = 1400, Height = 300 }, host)
+			local solved = Layout.Solve(liveHost.Scene, holder, { X = 0, Y = 0, Width = 1400, Height = 300 }, liveHost)
 			for _, it in ipairs(solved) do
-				if Scene.Name(it.Node) == "SnapRow1" then
+				if liveHost.Scene.Name(it.Node) == "SnapRow1" then
 					return it.Rect.Y
 				end
 			end

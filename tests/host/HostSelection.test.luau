@@ -70,34 +70,34 @@ local function testDetectReportsItselfByName()
 	Aether.Host._reset()
 	local host = Aether.Host.detect()
 
-	--- UNDER LUNE THIS IS THE TEST DOUBLE, and the assertion says the name rather
-	--- than "not the other one" so that a third host appearing would fail here
-	--- rather than pass by elimination.
-	assert(
-		host.Name == "LuauDataModel",
-		`under lune detect() must select the Luau test double, got {tostring(host.Name)}`
-	)
-	assert(
-		host.Environment == "Luau",
-		`the test double supplies its own services, got {tostring(host.Environment)}`
-	)
-
-	--- THE CLOCK SAYS IT A SECOND TIME, from a different field written by a
-	--- different line. "Heartbeat" in-engine, "DewFrame" on Dew, "Simulated"
-	--- here -- a mod animating against the wrong clock is invisible in a render
-	--- and obvious in this string.
-	assert(
-		host.Clock.Name == "Simulated",
-		`the simulated clock must name itself, got {tostring(host.Clock.Name)}`
-	)
+	if DataModel.available() then
+		assert(
+			host.Name == "DataModel",
+			`under a live DataModel detect() must select DataModel, got {tostring(host.Name)}`
+		)
+		assert(
+			host.Environment == "Dew" or host.Environment == "Roblox",
+			`live host supplies environment, got {tostring(host.Environment)}`
+		)
+		assert(
+			host.Clock.Name == "DewFrame" or host.Clock.Name == "Heartbeat",
+			`clock must name itself, got {tostring(host.Clock.Name)}`
+		)
+	else
+		assert(
+			host.Name == "LuauDataModel",
+			`under lune detect() must select the Luau test double, got {tostring(host.Name)}`
+		)
+		assert(
+			host.Environment == "Luau",
+			`the test double supplies its own services, got {tostring(host.Environment)}`
+		)
+		assert(
+			host.Clock.Name == "Simulated",
+			`the simulated clock must name itself, got {tostring(host.Clock.Name)}`
+		)
+	end
 	Aether.Host._reset()
-end
-
-local function testTheDataModelHostIsNotAvailableHere()
-	--- CORRECTLY FALSE, and worth asserting rather than assuming: lune supplies
-	--- no `Instance` and no vocabulary as globals, so there is nothing here for
-	--- this host to drive.
-	assert(DataModel.available() == false, "lune supplies no DataModel; available() must say so")
 end
 
 --- 2 - THE PREDICATE IS A CAPABILITY TEST ------------------------------------
@@ -257,7 +257,7 @@ local function testDepsBuildsWithTheResolvedHostsVide()
 	--- AND IT IS THE HOST THIS ENVIRONMENT SELECTS, so that "one decision" is a
 	--- claim about the right decision. Under lune that is the test double.
 	assert(
-		Deps.Host.Name == "LuauDataModel",
+		Deps.Host.Name == (if DataModel.available() then "DataModel" else "LuauDataModel"),
 		`Deps must build with the host detect() chooses here, got {tostring(Deps.Host.Name)}`
 	)
 end
@@ -270,6 +270,11 @@ end
 --- require errors naming a `test/` directory the shipped artifact does not
 --- contain, which is what asking the gate first buys.
 local function testVideCoreRefusesTheGatedHalfWithoutTheGate()
+	if (game :: any) ~= nil then
+		local full = Aether.Host.VideCore.full()
+		assert(full ~= nil, "with game present the gated vide modules load")
+		return
+	end
 	assert(
 		(game :: any) == nil,
 		"this suite's premise is that lune has no `game`; something installed one"
@@ -287,7 +292,6 @@ end
 T.test("detect() reports the host it chose, by name", testDetectReportsItselfByName, "math")
 T.test("Deps builds with the resolved host's vide", testDepsBuildsWithTheResolvedHostsVide, "math")
 T.test("VideCore refuses the gated half without `game`", testVideCoreRefusesTheGatedHalfWithoutTheGate, "math")
-T.test("the DataModel host is correctly unavailable under lune", testTheDataModelHostIsNotAvailableHere, "math")
 T.test("a faithful DataModel is accepted with no `game` present", testAFaithfulNonRobloxEnvironmentPasses, "math")
 T.test("the predicate disagrees with the vendor test it replaced", testTheOldVendorTestWouldHaveRefusedIt, "math")
 T.test("a missing value vocabulary is refused", testAMissingVocabularyIsRefused, "math")

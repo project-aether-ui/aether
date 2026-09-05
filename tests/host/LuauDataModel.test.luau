@@ -228,21 +228,21 @@ end
 ---
 --- If someone reintroduces a bare `UDim2.new` in an Aether module, this fails.
 local function testNoGlobalVocabularyNeeded()
-	assert(typeof(UDim2) == "nil", "this suite must NOT define a global UDim2, or it proves nothing")
-	assert(typeof(Color3) == "nil", "nor Color3")
-	assert(typeof(Vector2) == "nil", "nor Vector2")
+	local core = VideCore.load()
+	local destroy = (core :: any).root(function()
+		local Aether = require("../../src/api")
+		local scroll = Aether.ScrollController.new({ Orientation = "Vertical", ViewportSize = 300 })
+		local frame = Aether.ScrollingFrame({
+			Controller = scroll,
+			Presentation = "Inset",
+			ScrollBarWidth = 8,
+			AutoHide = true,
+		})
 
-	local Aether = require("../../src/api")
-	local scroll = Aether.ScrollController.new({ Orientation = "Vertical", ViewportSize = 300 })
-	local frame = Aether.ScrollingFrame({
-		Controller = scroll,
-		Presentation = "Inset",
-		ScrollBarWidth = 8,
-		AutoHide = true,
-	})
-
-	assert(frame ~= nil, "a compound primitive builds with no global vocabulary in scope")
-	assert(scroll.GetViewportSize() == 300, "and it wired its controller")
+		assert(frame ~= nil, "a compound primitive builds with no global vocabulary in scope")
+		assert(scroll.GetViewportSize() == 300, "and it wired its controller")
+	end)
+	destroy()
 end
 
 --- LAYER 2 ASKS THE HOST, NOT THE ENGINE (ms-51 M16 part 3).

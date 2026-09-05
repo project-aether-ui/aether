@@ -177,6 +177,14 @@ local function dewServices(): Services?
 		return nil
 	end
 
+	local dewClock = dew.Clock
+	local step = function(_dt: number) end
+	if type(dewClock.Step) == "function" then
+		step = function(dt: number)
+			dewClock.Step(dt)
+		end
+	end
+
 	return {
 		Environment = "Dew",
 		Measure = dew.Text.Measure,
@@ -184,7 +192,7 @@ local function dewServices(): Services?
 			Name = dew.Clock.Name,
 			OnFrame = dew.Clock.OnFrame,
 			Now = dew.Clock.Now,
-			Step = function(_dt: number) end,
+			Step = step,
 		},
 	}
 end
@@ -705,6 +713,16 @@ function DataModel.new(vide: any?): any
 		return typeof(target) == "Instance"
 	end
 
+	--- Ask a target what it IS, honouring closure, ClassName, and superclass checks.
+	local function askIsA(target: any, class: string): boolean?
+		local isA = (target :: any).IsA
+		if type(isA) ~= "function" then
+			return nil
+		end
+		local ok, result = pcall(isA, target, class)
+		return if ok then result == true else nil
+	end
+
 	host.Scene = {
 		--- DEAD, AND LEFT ALONE DELIBERATELY. `Host.Scene` declares `Name` twice --
 		--- once as a string and once as `(target) -> string?` -- and the function
@@ -762,6 +780,19 @@ function DataModel.new(vide: any?): any
 			if isInstance(target) then
 				return target:GetChildren()
 			end
+			if type(target) == "table" then
+				if type(target.GetChildren) == "function" then
+					local ok, res = pcall(target.GetChildren, target)
+					if ok and type(res) == "table" then
+						return res
+					end
+				end
+				local out = {}
+				for _, child in ipairs(target) do
+					table.insert(out, child)
+				end
+				return out
+			end
 			return {}
 		end,
 
@@ -792,10 +823,17 @@ function DataModel.new(vide: any?): any
 		--- is the tie-break when two siblings share a ZIndex.
 		ChildIndex = function(target: any): number
 			local parent = target.Parent
-			if not parent or not isInstance(parent) then
+			if not parent then
 				return 0
 			end
-			for i, child in ipairs(parent:GetChildren()) do
+			local kids = if isInstance(parent) then parent:GetChildren()
+				elseif type(parent.GetChildren) == "function" then parent:GetChildren()
+				elseif type(parent) == "table" then parent
+				else nil
+			if not kids then
+				return 0
+			end
+			for i, child in ipairs(kids) do
 				if child == target then
 					return i
 				end
@@ -809,24 +847,32 @@ function DataModel.new(vide: any?): any
 		--- flag — a ScrollingFrame with it off still bounds its canvas, and a
 		--- CanvasGroup renders its subtree to a texture the size of itself.
 		Clips = function(target: any): boolean
-			if isInstance(target) then
-				if target:IsA("ScrollingFrame") or target:IsA("CanvasGroup") then
-					return true
-				end
+			if askIsA(target, "ScrollingFrame") or askIsA(target, "CanvasGroup") then
+				return true
+			end
+			local class = if isInstance(target) then target.ClassName else (target.ClassName or target._ClassName)
+			if class == "ScrollingFrame" or class == "CanvasGroup" then
+				return true
 			end
 			return target.ClipsDescendants == true
 		end,
 
 		--- Is this the root of a render layer (a LayerCollector)?
 		IsLayerRoot = function(target: any): boolean
-			return isInstance(target) and target:IsA("LayerCollector")
+			local asked = askIsA(target, "LayerCollector")
+			if asked ~= nil then
+				return asked
+			end
+			local class = if isInstance(target) then target.ClassName else (target.ClassName or target._ClassName)
+			return class == "ScreenGui" or class == "SurfaceGui" or class == "BillboardGui"
 		end,
 
 		--- Is this a node Layer 2 should walk at all? Everything above a
 		--- GuiObject chain is somebody else's tree.
 		IsSurface = function(target: any): boolean
-			if isInstance(target) then
-				return target:IsA("GuiObject")
+			local asked = askIsA(target, "GuiObject")
+			if asked ~= nil then
+				return asked
 			end
 			--- A stand-in with a rectangle IS a surface, which is the whole point
 			--- of the contract.

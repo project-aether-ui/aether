@@ -83,14 +83,14 @@ local function resolve<T>(v: ((() -> T) | T)?): T?
 end
 
 local function udim2New(xs: number, xo: number, ys: number, yo: number): any
-	if isRoblox and typeof(UDim2) == "table" and UDim2.new then
+	if typeof(UDim2) == "table" and UDim2.new then
 		return UDim2.new(xs, xo, ys, yo)
 	end
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }
 end
 
 local function vector2New(x: number, y: number): any
-	if isRoblox and typeof(Vector2) == "table" and Vector2.new then
+	if typeof(Vector2) == "table" and Vector2.new then
 		return Vector2.new(x, y)
 	end
 	return { X = x, Y = y }
@@ -301,12 +301,12 @@ local function ScrollArea(props: ScrollAreaProps): any
 	local hasExplicitCanvas = props.CanvasSize ~= nil or props.ContentHeight ~= nil
 	local useListLayout = if isStationaryCanvas then false else (props.Layout == "List" or (props.Layout == nil and not hasExplicitCanvas))
 
-	local autoSizeY = if isStationaryCanvas then nil elseif not hasExplicitCanvas and isRoblox and typeof(Enum) == "table" and Enum.AutomaticSize
+	local autoSizeY = if isStationaryCanvas then nil elseif not hasExplicitCanvas and Enum and Enum.AutomaticSize
 		then Enum.AutomaticSize.Y
 		else nil
-	local fillDir = if isRoblox and typeof(Enum) == "table" and Enum.FillDirection then Enum.FillDirection.Vertical else nil
-	local sortOrder = if isRoblox and typeof(Enum) == "table" and Enum.SortOrder then Enum.SortOrder.LayoutOrder else nil
-	local padding = if isRoblox and typeof(UDim) == "table" and UDim.new then UDim.new(0, 4) else nil
+	local fillDir = if Enum and Enum.FillDirection then Enum.FillDirection.Vertical else nil
+	local sortOrder = if Enum and Enum.SortOrder then Enum.SortOrder.LayoutOrder else nil
+	local padding = if typeof(UDim) == "table" and UDim.new then UDim.new(0, 4) else nil
 
 	local motionConfig = props.Motion or {}
 	local isDraggingThumb = source(false)

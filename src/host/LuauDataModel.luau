@@ -1123,10 +1123,16 @@ function Headless.new(): any
 		--- ask for": the UDim2, the AnchorPoint, the padding. A solver needs the
 		--- request; everything else needs the result.
 		Raw = function(target: any, key: string): any
-			return rawget(target, key)
+			if type(target) == "table" then
+				return rawget(target, key)
+			end
+			return (target :: any)[key]
 		end,
 
 		Children = function(target: any): { any }
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any):GetChildren()
+			end
 			if isMock(target) then
 				return target:GetChildren()
 			end
@@ -1138,22 +1144,37 @@ function Headless.new(): any
 		end,
 
 		ClassOf = function(target: any): string?
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).ClassName
+			end
 			return rawget(target, "ClassName") or rawget(target, "_ClassName")
 		end,
 
 		Name = function(target: any): string?
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).Name
+			end
 			return rawget(target, "Name")
 		end,
 
 		ZIndex = function(target: any): number
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).ZIndex or 1
+			end
 			return rawget(target, "ZIndex") or 1
 		end,
 
 		IsVisible = function(target: any): boolean
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).Visible ~= false
+			end
 			return rawget(target, "Visible") ~= false
 		end,
 
 		Parent = function(target: any): any
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).Parent
+			end
 			if isMock(target) then
 				return target.Parent
 			end
@@ -1161,8 +1182,22 @@ function Headless.new(): any
 		end,
 
 		ChildIndex = function(target: any): number
-			local parent = if isMock(target) then target.Parent else rawget(target, "Parent")
-			if not parent or not isMock(parent) then
+			local parent = if type(target) == "userdata" or typeof(target) == "Instance"
+				then (target :: any).Parent
+				elseif isMock(target) then target.Parent
+				else rawget(target, "Parent")
+			if not parent then
+				return 0
+			end
+			if type(parent) == "userdata" or typeof(parent) == "Instance" then
+				for i, child in ipairs((parent :: any):GetChildren()) do
+					if child == target then
+						return i
+					end
+				end
+				return 0
+			end
+			if not isMock(parent) then
 				return 0
 			end
 			for i, child in ipairs(parent) do
@@ -1180,9 +1215,14 @@ function Headless.new(): any
 			if askIsA(target, "ScrollingFrame") or askIsA(target, "CanvasGroup") then
 				return true
 			end
-			local class = rawget(target, "ClassName") or rawget(target, "_ClassName")
+			local class = if type(target) == "userdata" or typeof(target) == "Instance"
+				then (target :: any).ClassName
+				else (rawget(target, "ClassName") or rawget(target, "_ClassName"))
 			if class == "ScrollingFrame" or class == "CanvasGroup" then
 				return true
+			end
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).ClipsDescendants == true
 			end
 			return rawget(target, "ClipsDescendants") == true
 		end,
@@ -1192,7 +1232,9 @@ function Headless.new(): any
 			if asked ~= nil then
 				return asked
 			end
-			local class = rawget(target, "ClassName") or rawget(target, "_ClassName")
+			local class = if type(target) == "userdata" or typeof(target) == "Instance"
+				then (target :: any).ClassName
+				else (rawget(target, "ClassName") or rawget(target, "_ClassName"))
 			return class == "ScreenGui" or class == "SurfaceGui" or class == "BillboardGui"
 		end,
 
@@ -1207,10 +1249,16 @@ function Headless.new(): any
 		end,
 
 		DisplayOrder = function(target: any): number
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).DisplayOrder or 0
+			end
 			return rawget(target, "DisplayOrder") or 0
 		end,
 
 		IsEnabled = function(target: any): boolean
+			if type(target) == "userdata" or typeof(target) == "Instance" then
+				return (target :: any).Enabled ~= false
+			end
 			return rawget(target, "Enabled") ~= false
 		end,
 

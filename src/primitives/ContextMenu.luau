@@ -106,7 +106,7 @@ local function ContextMenu(props: ContextMenuProps): any
 		end,
 	})
 
-	local autoSizeY = if isRoblox and typeof(Enum) == "table" and Enum.AutomaticSize then Enum.AutomaticSize.Y else nil
+	local autoSizeY = if Enum and Enum.AutomaticSize then Enum.AutomaticSize.Y else nil
 
 	return ScopedSurface {
 		Name = "AetherContextMenu",

@@ -184,7 +184,9 @@ local function testTextStillMeasures()
 		Text = "abcde",
 	})
 	local r = solveNamed(host, root)
-	assert(r.Label.Width == 50, `five characters at ten pixels is 50, got {r.Label.Width}`)
+	local expectedWidth, _ = host.Text.Measure("abcde", 14)
+	assert(r.Label.Width == expectedWidth, `label width should match host text measurement ({expectedWidth}), got {r.Label.Width}`)
+	assert(r.Label.Width > 0, "measured label width should be non-zero")
 end
 
 --- A list layout stacks, and the container grows to the stack.

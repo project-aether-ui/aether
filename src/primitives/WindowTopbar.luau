@@ -53,15 +53,32 @@ local function resolve<T>(v: ((() -> T) | T)?): T?
 	return v :: any
 end
 
+local function getEnum(cat: string, member: string, fallback: any): any
+	if Enum then
+		local ok, c = pcall(function()
+			return (Enum :: any)[cat]
+		end)
+		if ok and c then
+			local ok2, m = pcall(function()
+				return c[member]
+			end)
+			if ok2 and m ~= nil then
+				return m
+			end
+		end
+	end
+	return fallback
+end
+
 local function color3FromRGB(r: number, g: number, b: number): any
-	if isRoblox and typeof(Color3) == "table" and Color3.fromRGB then
+	if typeof(Color3) == "table" and Color3.fromRGB then
 		return Color3.fromRGB(r, g, b)
 	end
 	return { R = r / 255, G = g / 255, B = b / 255 }
 end
 
 local function udim2New(xs: number, xo: number, ys: number, yo: number): any
-	if isRoblox and typeof(UDim2) == "table" and UDim2.new then
+	if typeof(UDim2) == "table" and UDim2.new then
 		return UDim2.new(xs, xo, ys, yo)
 	end
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }
@@ -96,8 +113,8 @@ local function WindowTopbar(props: WindowTopbarProps): any
 				BackgroundTransparency = 1,
 				TextColor3 = color3FromRGB(220, 220, 220),
 				TextSize = 13,
-				TextXAlignment = if isRoblox and typeof(Enum) == "table" and Enum.TextXAlignment then Enum.TextXAlignment.Left else "Left",
-				Font = if isRoblox and typeof(Enum) == "table" and Enum.Font then Enum.Font.GothamMedium else "GothamMedium",
+				TextXAlignment = getEnum("TextXAlignment", "Left", "Left"),
+				Font = getEnum("Font", "GothamMedium", "GothamMedium"),
 				BorderSizePixel = 0,
 			})
 		end
@@ -134,7 +151,7 @@ local function WindowTopbar(props: WindowTopbarProps): any
 				BackgroundTransparency = 1,
 				TextColor3 = color3FromRGB(200, 200, 200),
 				TextSize = 12,
-				Font = if isRoblox and typeof(Enum) == "table" and Enum.Font then Enum.Font.GothamBold else "GothamBold",
+				Font = getEnum("Font", "GothamBold", "GothamBold"),
 				BorderSizePixel = 0,
 			}),
 		})

@@ -79,7 +79,7 @@ local function resolve<V>(v: ((() -> V) | V)?): V?
 end
 
 local function udim2New(xs: number, xo: number, ys: number, yo: number): any
-	if isRoblox and typeof(UDim2) == "table" and UDim2.new then
+	if typeof(UDim2) == "table" and UDim2.new then
 		return UDim2.new(xs, xo, ys, yo)
 	end
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }

@@ -100,28 +100,28 @@ local function resolve<T>(v: ((() -> T) | T)?): T?
 end
 
 local function color3FromRGB(r: number, g: number, b: number): any
-	if isRoblox and typeof(Color3) == "table" and Color3.fromRGB then
+	if typeof(Color3) == "table" and Color3.fromRGB then
 		return Color3.fromRGB(r, g, b)
 	end
 	return { R = r / 255, G = g / 255, B = b / 255 }
 end
 
 local function udim2New(xs: number, xo: number, ys: number, yo: number): any
-	if isRoblox and typeof(UDim2) == "table" and UDim2.new then
+	if typeof(UDim2) == "table" and UDim2.new then
 		return UDim2.new(xs, xo, ys, yo)
 	end
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }
 end
 
 local function vector2New(x: number, y: number): any
-	if isRoblox and typeof(Vector2) == "table" and Vector2.new then
+	if typeof(Vector2) == "table" and Vector2.new then
 		return Vector2.new(x, y)
 	end
 	return { X = x, Y = y }
 end
 
 local function udimNew(scale: number, offset: number): any
-	if isRoblox and typeof(UDim) == "table" and UDim.new then
+	if typeof(UDim) == "table" and UDim.new then
 		return UDim.new(scale, offset)
 	end
 	return { Scale = scale, Offset = offset }
@@ -377,8 +377,20 @@ local function Scrollbar(props: ScrollbarProps): any
 	end
 
 	-- Colors and Appearance
+	local function toColor3(c: any): any
+		if c == nil then return nil end
+		if typeof(c) == "Color3" then return c end
+		if type(c) == "table" and c.R and c.G and c.B then
+			local r = if c.R <= 1 and c.G <= 1 and c.B <= 1 then c.R * 255 else c.R
+			local g = if c.R <= 1 and c.G <= 1 and c.B <= 1 then c.G * 255 else c.G
+			local b = if c.R <= 1 and c.G <= 1 and c.B <= 1 then c.B * 255 else c.B
+			return color3FromRGB(r, g, b)
+		end
+		return c
+	end
+
 	local trackColor = function(): any
-		local c = resolve(props.TrackColor)
+		local c = toColor3(resolve(props.TrackColor))
 		return if c then c else color3FromRGB(20, 26, 40)
 	end
 	local trackTransparency = function(): number
@@ -389,8 +401,8 @@ local function Scrollbar(props: ScrollbarProps): any
 
 	local thumbColor = function(): any
 		local h = hoverSpring()
-		local customColor = resolve(props.ThumbColor)
-		local customHover = resolve(props.ThumbHoverColor)
+		local customColor = toColor3(resolve(props.ThumbColor))
+		local customHover = toColor3(resolve(props.ThumbHoverColor))
 		if customColor and customHover and typeof(customColor) == "Color3" and typeof(customHover) == "Color3" then
 			return customColor:Lerp(customHover, h)
 		elseif customColor then

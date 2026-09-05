@@ -75,7 +75,7 @@ local function resolve<V>(v: ((() -> V) | V)?): V?
 end
 
 local function udim2New(xs: number, xo: number, ys: number, yo: number): any
-	if isRoblox and typeof(UDim2) == "table" and UDim2.new then
+	if typeof(UDim2) == "table" and UDim2.new then
 		return UDim2.new(xs, xo, ys, yo)
 	end
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }
@@ -165,7 +165,7 @@ local function TreeView<T>(props: TreeViewProps<T>): any
 			BorderSizePixel = 0,
 
 			create("UIListLayout")({
-				SortOrder = if isRoblox and typeof(Enum) == "table" and Enum.SortOrder then Enum.SortOrder.LayoutOrder else 0,
+				SortOrder = if Enum and Enum.SortOrder then Enum.SortOrder.LayoutOrder else 0,
 			}),
 
 			if For then For({

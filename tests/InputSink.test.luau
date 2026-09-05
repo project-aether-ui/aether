@@ -13,7 +13,8 @@
 --- `InstallVocabulary` is the one place that answers this. It still resolves to
 --- Lune's real Roblox types where they exist, so nothing about running under Lune
 --- changes; on a runtime without them it installs the pure-Luau vocabulary.
-require("../src/api").Host.detect().InstallVocabulary()
+local host = require("../src/api").Host.detect()
+host.InstallVocabulary()
 local InputSink = require("../src/InputSink")
 
 -- Self-executing: the runner spawns `lune run <suite>` and judges by EXIT CODE
@@ -28,11 +29,16 @@ local function run()
 	-- completion. That is a low bar the suite was not clearing: it built a sink,
 	-- asserted nothing, and could not have run at all (vide.create was absent
 	-- from the shim), which no one discovered because it never executed.
-	local sink = InputSink({
-		Modal = true,
-		OnDismiss = function() end,
-	})
+	local destroy, sink = host.root(function()
+		return InputSink({
+			Modal = true,
+			OnDismiss = function() end,
+		})
+	end)
 	assert(sink ~= nil, "InputSink constructs without an engine")
+	if destroy then
+		destroy()
+	end
 
 	-- Real behaviour lives in InputScope (M16), which supersedes this primitive
 	-- and has a suite that resolves arbitration headlessly.
