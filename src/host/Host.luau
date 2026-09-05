@@ -187,6 +187,17 @@ local detected: Host? = nil
 --- and building a fresh one per call would hand two call sites different
 --- `Instance.new` identities headlessly — which is the kind of split-brain that
 --- makes a mock tree look correct and compare unequal.
+--- `vide` IS AN OVERRIDE AND NOT AN INPUT TO THE DECISION, which is the whole of
+--- what changed on 2026-09-04. `Deps.luau` used to resolve vide by
+--- `typeof(game) == "Instance"` and pass it here, so there were TWO independent
+--- answers to "which DataModel am I on" and this function's was the second of
+--- them: off-engine every component built through the test double's `create`
+--- whatever this returned, so the host could report `DataModel` over a tree of
+--- mock instances and every suite would pass.
+---
+--- Now the host resolves its own -- `roblox_packages/vide` in the engine, and
+--- `VideCore.full()` on a conforming host that is not the engine -- and `Deps`
+--- takes `vide` back off the resolved host. One answer, and it is this one.
 function Host.detect(vide: any?): Host
 	if detected then
 		return detected

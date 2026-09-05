@@ -219,7 +219,74 @@ local function testAnEnvironmentThatCannotBuildATreeIsRefused()
 	)
 end
 
+--- 4 - AND WHAT THE FRAMEWORK BUILDS WITH ------------------------------------
+
+--- The half `Name` cannot report, and the one that was wrong for a whole sprint.
+---
+--- `Deps.luau` used to resolve vide by `typeof(game) == "Instance"` and hand it
+--- to `Host.detect(vide)`. Two independent answers to "which DataModel am I on",
+--- and the one this suite asserts was the SECOND of them: off-engine every
+--- component in the framework built through the test double's `create` whatever
+--- `detect` returned. Dew measured a mount reporting `Host.Name == "DataModel"`
+--- over a tree of mock instances, with every suite here green.
+---
+--- So the host now resolves its own vide and `Deps` reads it back off the host.
+--- This asserts the two are one object rather than two that happen to agree --
+--- which is a claim about identity, and the only shape of assertion that a
+--- second resolver could not satisfy by coincidence.
+--- ASKED OF `Deps.Host` RATHER THAN OF `detect()`, and that is not a dodge.
+--- `Deps` resolves the host ONCE, at require time, and `Host._reset` exists so
+--- other cases in this file can re-probe -- so a later `detect()` is a different
+--- object by construction and comparing against it would test the memo rather
+--- than the wiring. `Deps.Host` is the host `Deps` actually built with, which is
+--- the thing the claim is about.
+local function testDepsBuildsWithTheResolvedHostsVide()
+	local Deps = require("../../src/Deps")
+
+	assert(
+		rawequal(Deps.vide, Deps.Host.vide),
+		"Deps must take vide FROM the resolved host, not resolve one of its own"
+	)
+	--- AND THE MEMBER EVERY COMPONENT ACTUALLY CALLS, because `Deps.vide` being
+	--- right while `Deps.create` was captured from somewhere else is exactly the
+	--- failure this is about.
+	assert(
+		rawequal(Deps.create, Deps.Host.create),
+		"Deps.create must be the resolved host's create"
+	)
+	--- AND IT IS THE HOST THIS ENVIRONMENT SELECTS, so that "one decision" is a
+	--- claim about the right decision. Under lune that is the test double.
+	assert(
+		Deps.Host.Name == "LuauDataModel",
+		`Deps must build with the host detect() chooses here, got {tostring(Deps.Host.Name)}`
+	)
+end
+
+--- vide's gate, asked of the module that reads it.
+---
+--- `VideCore.full` assembles the seven vide modules that sit behind
+--- `local typeof = game and typeof or require "../test/mock".typeof`. Under lune
+--- there is no `game`, so the honest answer is nil -- and nil rather than seven
+--- require errors naming a `test/` directory the shipped artifact does not
+--- contain, which is what asking the gate first buys.
+local function testVideCoreRefusesTheGatedHalfWithoutTheGate()
+	assert(
+		(game :: any) == nil,
+		"this suite's premise is that lune has no `game`; something installed one"
+	)
+	assert(
+		Aether.Host.VideCore.full() == nil,
+		"without the gate the seven gated vide modules cannot load, and full() must say so"
+	)
+	--- THE UNGATED SIXTEEN STILL LOAD, which is the measurement VideCore exists
+	--- for and the reason the test double works here at all.
+	local core = Aether.Host.VideCore.load()
+	assert(core ~= nil and core.source ~= nil, "the reactive core loads without the gate")
+end
+
 T.test("detect() reports the host it chose, by name", testDetectReportsItselfByName, "math")
+T.test("Deps builds with the resolved host's vide", testDepsBuildsWithTheResolvedHostsVide, "math")
+T.test("VideCore refuses the gated half without `game`", testVideCoreRefusesTheGatedHalfWithoutTheGate, "math")
 T.test("the DataModel host is correctly unavailable under lune", testTheDataModelHostIsNotAvailableHere, "math")
 T.test("a faithful DataModel is accepted with no `game` present", testAFaithfulNonRobloxEnvironmentPasses, "math")
 T.test("the predicate disagrees with the vendor test it replaced", testTheOldVendorTestWouldHaveRefusedIt, "math")

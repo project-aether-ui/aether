@@ -45,6 +45,7 @@
 ]]
 
 local TextModule = require("./Text")
+local VideCore = require("./VideCore")
 
 local DataModel = {}
 
@@ -373,10 +374,71 @@ function DataModel.available(): boolean
 	})
 end
 
+--- The eleven names `Host.Vocabulary` declares, and the members of each that
+--- this framework or a mod written against it actually calls.
+---
+--- ASSERTED BECAUSE THIS HOST INSTALLS NOTHING. `InstallVocabulary` here is
+--- `function() end` -- what a host says when the environment already supplies the
+--- vocabulary -- so a missing member is not a member this host could have
+--- provided and did not. It is a hole in the ENVIRONMENT that nothing else on
+--- this path will notice: `available()` asks for six of the names and asks
+--- nothing about their members, so an environment carrying a `Color3` without
+--- `fromHex` passes the probe, is selected, and produces a nil index inside a
+--- component several hundred milliseconds later.
+---
+--- That is not hypothetical. Dew's vocabulary had `new` and `fromRGB` and not
+--- `fromHex`, `fromHex` has 17 call sites in Dew's own mods and 5 in this
+--- framework, and the symptom was three mods that stopped loading with an error
+--- naming a theme file. This list turns that into one sentence at mount, naming
+--- the member and the host.
+local REQUIRED_VOCABULARY: { { name: string, members: { string } } } = {
+	{ name = "UDim", members = { "new" } },
+	{ name = "UDim2", members = { "new", "fromScale", "fromOffset" } },
+	{ name = "Vector2", members = { "new", "zero", "one" } },
+	{ name = "Color3", members = { "new", "fromRGB", "fromHex", "fromHSV" } },
+	{ name = "Rect", members = { "new" } },
+	{ name = "Font", members = { "new" } },
+	{ name = "NumberSequence", members = { "new" } },
+	{ name = "NumberSequenceKeypoint", members = { "new" } },
+	{ name = "ColorSequence", members = { "new" } },
+	{ name = "ColorSequenceKeypoint", members = { "new" } },
+	{ name = "Enum", members = {} },
+}
+
+--- The first missing `Type.member`, or nil when the vocabulary is complete.
+local function missingVocabulary(vocabulary: any): string?
+	for _, entry in ipairs(REQUIRED_VOCABULARY) do
+		local value = vocabulary[entry.name]
+		if value == nil then
+			return entry.name
+		end
+		for _, member in ipairs(entry.members) do
+			--- pcall, because a value type may be userdata whose metatable
+			--- errors on an unknown key rather than answering nil.
+			local ok, got = pcall(function()
+				return (value :: any)[member]
+			end)
+			if not ok or got == nil then
+				return `{entry.name}.{member}`
+			end
+		end
+	end
+	return nil
+end
+
 --- Build the host. Errors rather than degrading, because a silent degrade is how
 --- a host-only path ends up "passing" in a Lune suite that was never exercising
 --- it.
-function DataModel.new(vide: any): any
+---
+--- `vide` IS OPTIONAL, AND SINCE 2026-09-04 NOBODY PASSES IT. `Deps.luau` used to
+--- resolve vide first -- by `typeof(game) == "Instance"` -- and hand it here, so
+--- there were two independent answers to "which DataModel am I on" and this one
+--- was the second. Off-engine that meant every component built through the test
+--- double's `create` whatever `Host.detect` returned: the host name said
+--- `DataModel` and the tree underneath was mock instances. The parameter stays
+--- for a caller that has a vide in hand -- Roblox's `Deps` still does -- and the
+--- host resolves its own when it does not.
+function DataModel.new(vide: any?): any
 	if not DataModel.available() then
 		error(
 			"Aether.Host.DataModel requires an environment providing a conforming DataModel; "
@@ -384,8 +446,43 @@ function DataModel.new(vide: any): any
 			2
 		)
 	end
+	if vide == nil then
+		vide = VideCore.full()
+	end
 	if type(vide) ~= "table" then
-		error("Aether.Host.DataModel.new(vide) requires the vide module.", 2)
+		error(
+			"Aether.Host.DataModel found a conforming DataModel and no vide to drive it with. "
+				.. "On Roblox `roblox_packages/vide` supplies it; elsewhere VideCore assembles "
+				.. "it from the installed package, which needs a truthy `game` for vide's own "
+				.. "gate and a reachable `@vide`.",
+			2
+		)
+	end
+
+	--- BEFORE THE SURFACE, for the same reason the services check is. A member
+	--- missing here is missing everywhere, because this host installs none.
+	local missing = missingVocabulary({
+		UDim = UDim,
+		UDim2 = UDim2,
+		Vector2 = Vector2,
+		Color3 = Color3,
+		Rect = Rect,
+		Font = Font,
+		NumberSequence = NumberSequence,
+		NumberSequenceKeypoint = NumberSequenceKeypoint,
+		ColorSequence = ColorSequence,
+		ColorSequenceKeypoint = ColorSequenceKeypoint,
+		Enum = Enum,
+	})
+	if missing then
+		error(
+			`Aether.Host.DataModel: this environment's value vocabulary is missing \`{missing}\`. `
+				.. "This host installs no vocabulary of its own -- `InstallVocabulary` is a no-op "
+				.. "here, because a host providing a DataModel is expected to define these -- so "
+				.. "the gap cannot be filled in from the framework, and a partial vocabulary is "
+				.. "worse than none: it passes `available()` and fails at a call site.",
+			2
+		)
 	end
 
 	--- BEFORE ANY OF THE SURFACE BELOW, because a host that cannot measure text
@@ -412,6 +509,13 @@ function DataModel.new(vide: any): any
 	--- know which branch ran asserts one of those rather than looking at pixels.
 	host.Name = "DataModel"
 	host.Environment = services.Environment
+
+	--- THE vide THIS HOST RESOLVED, so that a caller needing the module rather
+	--- than the surface takes it from the host instead of resolving a second one.
+	--- `Deps.luau` is that caller, and it is the inversion: the host decides which
+	--- DataModel this is, and the vide follows from the host rather than the host
+	--- being told about a vide chosen some other way.
+	host.vide = vide
 
 	-- ---- Layers 2 and 2.5 both come straight from vide here ----
 	host.source = vide.source
@@ -455,6 +559,12 @@ function DataModel.new(vide: any): any
 	--- one of these as a global, and overwriting them would be strictly worse than
 	--- leaving them alone. Present so a host program can call it unconditionally
 	--- (ms-52 M5), and clause 5 of the probe is what makes it safe.
+	---
+	--- THIS IS THE LINE THAT PUTS THE VOCABULARY ON THE ENVIRONMENT, and the
+	--- `missingVocabulary` check above is its other half. A host that installs
+	--- nothing is a host whose environment must be complete, and the failure mode
+	--- of "complete enough to be selected, incomplete at a call site" is what that
+	--- check exists to convert into a sentence.
 	host.InstallVocabulary = function() end
 
 	host.typeof = typeof
@@ -467,6 +577,36 @@ function DataModel.new(vide: any): any
 	--- was already isolated — it just was not owned by anything that could swap it.
 	--- The environment supplies the frame source; this file supplies the interface.
 	host.Clock = services.Clock
+
+	--- AND vide'S OWN STEPPERS GET A FRAME, WHERE NOBODY ELSE IS GIVING THEM ONE.
+	---
+	--- On Roblox `lib.luau` connects `update_springs` and `update_timeouts` to
+	--- Heartbeat itself, so the vide obtained there arrives already driven and
+	--- exposes no stepper to drive. A vide assembled by `VideCore.full` does not:
+	--- it deliberately leaves out lib.luau's Heartbeat connection, because that
+	--- line reads `game:GetService` and this environment's `game` is not a
+	--- DataModel. So the frame source that would have driven them is `Host.Clock`,
+	--- which is the same substitution the rest of this file makes.
+	---
+	--- WHAT IT COSTS TO FORGET is not an error, it is springs that never move --
+	--- `Motion.HasSpringDriver()` answers true, every smoothed value snaps to its
+	--- target on the frame it changed, and the UI looks wired up and animates
+	--- nothing. That exact failure is recorded in LuauDataModel.luau, which is why
+	--- the presence of `update_springs` is what decides this rather than the
+	--- environment's name.
+	if type(vide.update_springs) == "function" or type(vide.update_timeouts) == "function" then
+		local springs, timeouts = vide.update_springs, vide.update_timeouts
+		host.Clock.OnFrame(function(dt: number)
+			--- SPRINGS FIRST, before anything that reads them this frame. vide's
+			--- own lib.luau orders them the same way and for the same reason.
+			if springs then
+				springs(dt)
+			end
+			if timeouts then
+				timeouts(dt)
+			end
+		end)
+	end
 
 	--- THE VALUE VOCABULARY (ms-51 M16).
 	---
@@ -498,13 +638,51 @@ function DataModel.new(vide: any): any
 		return nil
 	end
 
-	--- Present for contract parity with LuauDataModel. On a host that solves
-	--- layout itself these properties are the solver's, so this can only move the
-	--- element — which is what
-	--- a caller asking to "set bounds" on a real Frame actually wants.
-	host.SetBounds = function(target: GuiObject, x: number, y: number, width: number, height: number)
-		target.Position = UDim2.fromOffset(x, y)
-		target.Size = UDim2.fromOffset(width, height)
+	--- WHERE A SOLVED RECTANGLE GOES, and it is not into `Position` and `Size`.
+	---
+	--- This used to be
+	---
+	---     target.Position = UDim2.fromOffset(x, y)
+	---     target.Size = UDim2.fromOffset(width, height)
+	---
+	--- described as "contract parity with LuauDataModel", on the reasoning that a
+	--- caller asking to set bounds on a real Frame wants the element moved. THERE
+	--- IS NO SUCH CALLER. `Live.luau`'s `commitLayout` is the only thing in this
+	--- framework that calls `SetBounds`, and what it is doing is stated in its own
+	--- comment: in Roblox the engine writes `AbsolutePosition`/`AbsoluteSize` after
+	--- laying out and everything downstream reads them back, so off-engine the
+	--- solver has to write its answer somewhere `Scene.Bounds` will find it. That
+	--- is a report of an OUTPUT. `Position` and `Size` are the solver's INPUTS.
+	---
+	--- Writing the one into the other is a feedback loop, and on Dew it ran:
+	--- each frame the solver read a Position it had itself written as an absolute
+	--- offset, added the parent's offset again, and wrote a larger one. Measured
+	--- on `mods/timetracker` -- a label walking 286 pixels right and 16 down per
+	--- frame, a readout drifting 19 up, at 305 repainted frames a second on a
+	--- widget that was doing nothing. It survived every test in both repositories
+	--- because nothing off-engine had ever driven this host before.
+	---
+	--- A TABLE BESIDE THE TREE, NOT A WRITE INTO IT. `AbsolutePosition` and
+	--- `AbsoluteSize` are read-only on a conforming host, correctly -- they are
+	--- what the layout owner computed, and here the layout owner is this
+	--- framework. So the answer is recorded here and `Scene.Bounds` prefers it,
+	--- which needs no host permission and invents no host API.
+	---
+	--- ON ROBLOX THIS TABLE STAYS EMPTY, and that is not a special case: nothing
+	--- calls `SetBounds` in the engine, because `Live.Session` is the session a
+	--- host opens when there is NO engine. `Scene.Bounds` falls through to the
+	--- environment's own properties there, exactly as before.
+	---
+	--- WEAK KEYS, so a discarded subtree does not pin its rectangle for the life
+	--- of the process -- the same reason `Live.luau`'s own node ids are weak. That
+	--- this works at all depends on the environment handing back ONE object per
+	--- instance: a host that built a fresh handle per read would make every entry
+	--- unreachable the moment it was written. Dew's DataModel does, the engine
+	--- does, and Aether's probe does not currently ask for it.
+	local solvedBounds: { [any]: { number } } = setmetatable({}, { __mode = "k" }) :: any
+
+	host.SetBounds = function(target: any, x: number, y: number, width: number, height: number)
+		solvedBounds[target] = { x, y, width, height }
 	end
 
 	--- THE SCENE CONTRACT (ms-51 M16 part 3) — the questions Layer 2 asks about a
@@ -556,7 +734,15 @@ function DataModel.new(vide: any): any
 			return canvas.X, canvas.Y
 		end,
 
+		--- THE SOLVED RECTANGLE FIRST, THE ENVIRONMENT'S SECOND. See `SetBounds`:
+		--- an entry exists only where this framework laid the node out itself,
+		--- which is only off-engine, so in the engine this reads exactly what it
+		--- always read.
 		Bounds = function(target: any): (number, number, number, number)
+			local solved = solvedBounds[target]
+			if solved then
+				return solved[1], solved[2], solved[3], solved[4]
+			end
 			local pos = target.AbsolutePosition
 			local size = target.AbsoluteSize
 			return pos.X, pos.Y, size.X, size.Y

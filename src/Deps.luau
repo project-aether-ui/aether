@@ -12,48 +12,79 @@
 	THE CONTRACT: every field below is NON-NIL, always. Consumers never guard.
 ]]
 
---- THE ONE PLACE AN ENVIRONMENT IS STILL BRANCHED ON, and it is not about paths.
+--- THE HOST DECIDES, AND vide FOLLOWS FROM IT. Inverted 2026-09-04.
 ---
---- Every require in this package is now a string, resolved the same way by every
---- runtime. This branch survives because the two hosts do not obtain the same
---- ARTEFACT, not because they spell the path differently:
+--- This file used to open with
 ---
----   * On Roblox, `roblox_packages/vide` is a redirect pesde GENERATES, and it
----     reaches its target through the Instance tree. We require it by string; what
----     it does inside is pesde's business and not ours to spell away.
----   * Off-engine that redirect cannot resolve — there is no Instance tree — so
----     VideCore takes the sixteen vide modules that load as plain Luau and
----     supplies the seven that need an engine, over mock instances.
+---     local isRobloxEngine = typeof(game) == "Instance"
 ---
---- `typeof(game)` rather than `typeof(script)`: the question being asked is "is
---- this the Roblox engine", and `game` answers it directly. `script` answers
---- "was this loaded as an Instance", which is the same thing today and is a
---- proxy rather than the question.
+--- and resolve vide from it -- the pesde redirect in the engine, the Luau test
+--- double everywhere else -- and then hand the result to `Host.detect(vide)`.
+---
+--- THAT WAS A SECOND ANSWER TO A QUESTION THE HOST ALREADY ANSWERS, and the two
+--- could disagree. `Host.detect()` selects by capability now: it builds an
+--- instance, agrees with `typeof` about it, reads a name back, parents a child,
+--- round-trips a `UDim2` and tears the tree down. This line selected by looking
+--- for one vendor's global, which is the thing `available()` stopped doing --
+--- and it selected the ARTEFACT EVERY COMPONENT IS BUILT WITH, so it outranked
+--- the host in practice. On a conforming non-Roblox host the pair produced a
+--- framework reporting `Host.Name == "DataModel"` over a tree of mock instances,
+--- with every suite green and every widget rendering correctly, because
+--- `Deps.create` was the double's `create`. Dew measured exactly that.
+---
+--- So: resolve the host, take vide from the host. `Host.DataModel` gets the
+--- engine's artefact where there is one and assembles vide from the installed
+--- package with `VideCore.full()` where there is not; `Host.LuauDataModel` IS a
+--- vide, which is what makes it a test double. Either way there is one decision,
+--- it is made by capability, and this file reads the result.
+local HostModule = require("./host/Host")
+
+--- THE ENGINE'S OWN ARTEFACT, OFFERED TO THE HOST RATHER THAN CHOSEN INSTEAD OF
+--- IT, and this is the one line of the old branch that stays exactly where it is.
+---
+--- `roblox_packages/vide` is a redirect pesde GENERATES and it reaches its target
+--- through the Instance tree, so there is nothing here to require off-engine.
+--- VideCore assembles vide from the installed package there instead, and the host
+--- calls it; this is the artefact that has no off-engine equivalent.
+---
+--- IT IS NOT MOVED INTO THE HOST, deliberately, and the reason is ms-51: this
+--- exact line was deleted by accident in c296a8c, sixty-two suites and six gates
+--- stayed green because not one of them can execute the Roblox branch, and it
+--- surfaced in a Studio session as every consumer of Aether failing to load.
+--- `verify_require_paths` asserts it in this file. A Roblox-only require is worth
+--- keeping in the file that already has a gate watching it.
+---
+--- OFFERED, NOT DECIDED WITH. `detect()` still picks the host by capability, and
+--- uses this only if it picked the host that drives a DataModel. A host that
+--- declined would ignore it, which is the correct answer rather than a lost one.
+local engineVide: any = nil
+if typeof(game) == "Instance" then
+	engineVide = require("../roblox_packages/vide")
+end
+
+local ResolvedHost = HostModule.detect(engineVide)
+
+--- The vide the resolved host is driving. Never nil: both hosts set it, and a
+--- host that could not resolve one errors in its own constructor rather than
+--- handing back a half-built surface.
+local vide: any = ResolvedHost.vide
+
+--- STILL BRANCHED ON, FOR ONE OPTIONAL PACKAGE AND NOT FOR vide. `spektr/virtual`
+--- is a pesde redirect that reaches its target through the Instance tree, so
+--- there is nothing to require off-engine and the require itself is the failure.
+--- Without it VirtualList renders every row, which is slow rather than wrong.
+---
+--- `typeof(game)` rather than `typeof(script)`: the question is "is this the
+--- Roblox engine", and `game` answers it directly. It is ALSO the last use of
+--- `game` in this framework, and it is a genuine one -- Dew's `game` is the
+--- boolean `true`, so this answers false there, correctly.
 local isRobloxEngine = typeof(game) == "Instance"
 
-local vide: any
 local VirtualPkg: any = nil
-
 if isRobloxEngine then
-	--- Unguarded: a missing hard dependency is a build error and must surface.
-	---
-	--- ms-51: this line was deleted by accident in c296a8c and only found in a
-	--- Studio session. It is the reason `Host.detect(vide)` below received nil and
-	--- every consumer of Aether failed to load in-engine while 62 headless suites
-	--- and six gates stayed green — the Roblox branch is the one thing they cannot
-	--- reach. verify_require_paths now asserts it.
-	vide = require("../roblox_packages/vide")
-
-	--- OPTIONAL. `spektr/virtual` windows a long list; without it VirtualList
-	--- renders every row, which is slow rather than wrong.
 	pcall(function()
 		VirtualPkg = require("../roblox_packages/Virtual")
 	end)
-else
-	--- The reactive core, unmodified, plus mock instances for the seven modules
-	--- that need an engine. VideCore.luau carries the measurement and the reason
-	--- the split lands exactly there.
-	vide = require("./host/LuauDataModel").new()
 end
 
 --- Read a source WITHOUT subscribing the enclosing reactive scope to it.
@@ -99,9 +130,10 @@ end
 --- call sites stay exactly as they are while the provider becomes swappable.
 --- They are not deeply Roblox types: UDim2 is {scale, offset} per axis, Color3 is
 --- three floats. A non-Roblox host implements the same eleven names.
-local HostModule = require("./host/Host")
-
-local ResolvedHost = HostModule.detect(vide)
+---
+--- FROM THE SAME HOST vide CAME FROM, which is the point of the inversion at the
+--- top of this file: the vocabulary and the reactive surface are now two readings
+--- of ONE decision rather than two decisions that happened to agree.
 local Vocabulary = ResolvedHost.Vocabulary
 
 return {
@@ -123,5 +155,9 @@ return {
 	cleanup = scopedCleanup,
 
 	Virtual = VirtualPkg,
-	isRoblox = typeof(game) == "Instance",
+	--- STILL A VENDOR TEST, AND STILL THE RIGHT ONE. Its consumers ask "am I in
+	--- the engine" about engine-only affordances -- `Enum.Font.GothamMedium`
+	--- against the string "GothamMedium" in WindowTopbar, for one -- rather than
+	--- asking which DataModel they are on. That second question is `Host.Name`.
+	isRoblox = isRobloxEngine,
 }

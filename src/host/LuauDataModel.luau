@@ -803,6 +803,37 @@ function Headless.new(): any
 		return { priority = 0, callback = function() end }
 	end
 
+	--- THE vide THIS HOST RESOLVED, so `Deps.luau` can take it from whichever
+	--- host `Host.detect()` chose rather than choosing one for itself.
+	---
+	--- THIS HOST IS ITS OWN vide, which is what makes it a test double and not a
+	--- host: sixteen modules are the real ones, and the seven behind the engine
+	--- gate are written above, over mock instances. A caller asking a host for its
+	--- vide is asking "what did the framework end up building with", and here the
+	--- honest answer is "these". Assembled by name rather than handing back
+	--- `host` itself, so the answer stays the vide surface and does not quietly
+	--- include `Scene`, `Resolve` and the rest.
+	host.vide = {
+		root = host.root,
+		mount = host.mount,
+		create = host.create,
+		source = host.source,
+		effect = host.effect,
+		derive = host.derive,
+		switch = host.switch,
+		show = host.show,
+		indexes = host.indexes,
+		values = host.values,
+		cleanup = host.cleanup,
+		untrack = host.untrack,
+		read = host.read,
+		batch = host.batch,
+		context = host.context,
+		spring = host.spring,
+		action = host.action,
+		changed = host.changed,
+	}
+
 	-- ---- Host services ----
 
 	--- TEXT METRICS (ms-52 M1). The bundled advance table by default; the web host

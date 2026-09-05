@@ -31,6 +31,20 @@
 	artifact, and all seven fail to load however real the four globals are. See
 	Dew's milestone 2 sprint 8 record for the measurement.
 
+	SO A HOST THAT OPENS THE GATE CAN HAVE THEM, and `VideCore.full` below is how
+	-- the same operation as `load`, over the other seven. Dew installs a truthy
+	`game` for an Aether mod, for that gate and for nothing else; it is the
+	boolean `true`, so it is not a DataModel and cannot be mistaken for one.
+	`Host.DataModel` calls `full()` and takes `create`, `mount`, `cleanup` and
+	`changed` from vide's own modules, which is what distinguishes it from the
+	test double below.
+
+	WHAT `full` DOES NOT REQUIRE IS `lib.luau`, and that is deliberate rather than
+	an omission: lib.luau is vide's ROBLOX ENTRY POINT and reads the gate twice
+	more than the leaves do -- `game:GetService("RunService").Heartbeat` and
+	`debug.profilebegin`, neither of which exists off-engine. Assembling from the
+	modules is what this file has been doing for the sixteen since ms-52.
+
 	WHAT THIS BUYS OVER A SHIM. testkit's VideShim substituted the WHOLE of vide,
 	including the pure core that never needed substituting, and its substitute was
 	strictly weaker: `effect` ran once with no dependency tracking and `derive`
@@ -114,9 +128,26 @@ export type Core = {
 	update_springs: any,
 }
 
+--- The seven vide leaves behind the `game` gate, which is what `VideCore.full`
+--- adds to the sixteen above.
+---
+--- `defaults` and `implicit_effect` are not listed: they are required BY
+--- `create` and `apply` rather than by anything here, so they load as a
+--- consequence. `branch` is not listed for the same reason, and lib.luau does not
+--- export it either -- the line is commented out in vide's own source.
+local GATED_MODULES = {
+	"create",
+	"apply",
+	"mount",
+	"cleanup",
+	"changed",
+}
+
 local cached: Core? = nil
+local full: any = nil
 local resolvedRoot: string? = nil
 local attempted = false
+local fullAttempted = false
 
 --- Load the reactive core, or nil when no installed vide can be reached.
 ---
@@ -179,6 +210,136 @@ function VideCore.load(): Core?
 	return nil
 end
 
+--- THE WHOLE OF vide, ASSEMBLED FROM ITS OWN MODULES, on an environment whose
+--- `game` gate is open. nil where it is not, or where no vide is reachable.
+---
+--- WHY THIS IS NOT `require "@vide/lib"`, which is the obvious thing and is
+--- wrong. `lib.luau` is not just vide's assembly; it is vide's ROBLOX ENTRY
+--- POINT, and it reads the gate twice more than the leaves do:
+---
+---     local stepped = game and game:GetService("RunService").Heartbeat:Connect(...)
+---     if game then debug.profilebegin("VIDE STEP") end
+---
+--- Both are guarded by `game`, and a host that opens the gate to load `create`
+--- opens them at the same time. `game:GetService` on anything that is not a
+--- DataModel is an error at require time, and `debug.profilebegin` is a Roblox
+--- extension the standard Luau `debug` library does not carry, so it would be an
+--- error every frame. Dew's `game` is the boolean `true`, deliberately, so both
+--- of those fail LOUDLY and at the line rather than being answered with silence
+--- by something shaped like a service locator.
+---
+--- So the gate cannot be opened for lib.luau, and it does not have to be: this
+--- module already exists to assemble vide out of its parts for a runtime that is
+--- not the engine, and it has been doing it for the sixteen since ms-52. This is
+--- the same operation over the other seven.
+---
+--- WHAT IS NOT SUBSTITUTED, WHICH IS THE POINT. `create`, `apply`, `mount`,
+--- `cleanup` and `changed` are vide's own modules, required unmodified, building
+--- real instances through the environment's real `Instance.new`. ADR-001 forbids
+--- a host that supplies its own `create` -- that would be a second implementation
+--- inside one host -- and this is not one. What is replaced is twenty lines of
+--- table construction and a Heartbeat connection, and the frame source it
+--- replaces is `Host.Clock`, which is the whole shape of this layer.
+---
+--- THE STEPPERS COME BACK WITH IT. `update_springs` and `update_timeouts` are
+--- what lib.luau's Heartbeat drives; a host taking this table owes them a frame,
+--- and `DataModel.new` subscribes them to `Host.Clock` where the environment is
+--- not the engine.
+function VideCore.full(): any?
+	if fullAttempted then
+		return full
+	end
+	fullAttempted = true
+
+	--- THE GATE, ASKED BEFORE ANYTHING IS REQUIRED. Without it every module
+	--- below falls through to `require "../test/mock"`, which the shipped
+	--- artifact does not contain -- so the failure would arrive as seven require
+	--- errors naming a directory nobody can produce, rather than as nil here.
+	if not game then
+		return nil
+	end
+
+	local core = VideCore.load()
+	if not core then
+		return nil
+	end
+	local root = resolvedRoot
+	if not root then
+		return nil
+	end
+
+	local gated: { [string]: any } = {}
+	for _, name in ipairs(GATED_MODULES) do
+		local ok, mod = pcall(require, root .. name)
+		if not ok then
+			return nil
+		end
+		gated[name] = mod
+	end
+
+	--- `timeout` is a factory returning the constructor and its stepper, the same
+	--- shape as `spring` and `action`. It is OPTIONAL here: nothing in Aether
+	--- reads `vide.timeout`, and a vide that lacks the module should still give a
+	--- host `create`.
+	local timeout, updateTimeouts
+	local okTimeout, factory = pcall(require, root .. "timeout")
+	if okTimeout and type(factory) == "function" then
+		local okCall, made, stepper = pcall(factory)
+		if okCall then
+			timeout, updateTimeouts = made, stepper
+		end
+	end
+
+	local action = core.action()
+
+	full = {
+		-- core
+		root = core.root,
+		mount = gated.mount,
+		create = gated.create,
+		source = core.source,
+		effect = core.effect,
+		derive = core.derive,
+		switch = core.switch,
+		show = core.show,
+		indexes = core.indexes,
+		values = core.values,
+
+		-- util
+		cleanup = gated.cleanup,
+		untrack = core.untrack,
+		read = core.read,
+		batch = core.batch,
+		context = core.context,
+
+		-- animations
+		spring = core.spring,
+
+		-- actions
+		action = action,
+		changed = gated.changed,
+
+		timeout = timeout,
+
+		--- vide's own `apply` takes an instance and returns a prop applier; the
+		--- shape is lib.luau's, kept so that a caller written against vide finds
+		--- what vide documents.
+		apply = function(instance: any)
+			return function(props: { [any]: any })
+				gated.apply(instance, props)
+				return instance
+			end
+		end,
+
+		--- WHAT lib.luau'S HEARTBEAT WOULD HAVE DRIVEN. Exposed rather than
+		--- connected, because this module does not know what a frame is; the host
+		--- that took this table does.
+		update_springs = core.update_springs,
+		update_timeouts = updateTimeouts,
+	}
+	return full
+end
+
 --- Which root satisfied the load, for diagnostics. nil until `load` succeeds.
 function VideCore.resolvedRoot(): string?
 	return resolvedRoot
@@ -187,8 +348,10 @@ end
 --- Testing seam: forget the cached result so a suite can re-probe.
 function VideCore._reset()
 	cached = nil
+	full = nil
 	resolvedRoot = nil
 	attempted = false
+	fullAttempted = false
 end
 
 return VideCore
