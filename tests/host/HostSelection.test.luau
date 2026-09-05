@@ -43,11 +43,11 @@ local DataModel = Aether.Host.DataModel
 --- THAT IS THE ASSERTION. If the predicate can accept this, it is not asking who
 --- the vendor is.
 local function faithfulEnvironment(): DataModel.Environment
-	local double = Aether.Host.LuauDataModel.new()
-	local V = double.Vocabulary
+	local host = Aether.Host.detect()
+	local V = host.Vocabulary
 	return {
-		Instance = double.Instance,
-		typeof = double.typeof,
+		Instance = host.Instance,
+		typeof = host.typeof,
 		UDim = V.UDim,
 		UDim2 = V.UDim2,
 		Vector2 = V.Vector2,
@@ -82,19 +82,6 @@ local function testDetectReportsItselfByName()
 		assert(
 			host.Clock.Name == "DewFrame" or host.Clock.Name == "Heartbeat",
 			`clock must name itself, got {tostring(host.Clock.Name)}`
-		)
-	else
-		assert(
-			host.Name == "LuauDataModel",
-			`under lune detect() must select the Luau test double, got {tostring(host.Name)}`
-		)
-		assert(
-			host.Environment == "Luau",
-			`the test double supplies its own services, got {tostring(host.Environment)}`
-		)
-		assert(
-			host.Clock.Name == "Simulated",
-			`the simulated clock must name itself, got {tostring(host.Clock.Name)}`
 		)
 	end
 	Aether.Host._reset()

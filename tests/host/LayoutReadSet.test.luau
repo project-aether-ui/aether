@@ -72,7 +72,7 @@ end
 --- layout, a scroller, automatic sizing, text, a scale and clipping. A flat tree
 --- would report a much smaller read set and pass while proving very little.
 local function buildScene(): (any, any)
-	local host = Aether.Host.LuauDataModel.new()
+	local host = Aether.Host.detect()
 	local V = host.Vocabulary
 	local create = host.create
 

@@ -51,7 +51,7 @@ else
 	--- half the host still supplies itself — `create` over mock instances against
 	--- `create` over real Instances.
 	local Aether = require("../../src/api")
-	local host = Aether.Host.LuauDataModel.new()
+	local host = Aether.Host.detect()
 	vide = host
 	classOf = host.classOf
 end

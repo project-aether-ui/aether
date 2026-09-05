@@ -52,12 +52,15 @@ jobs:
 
       - run: pesde install
       - run: lune run conformance/syntax_check.luau
-      # THE SUITES RUN AGAIN. They required `spektr/testkit` through a .luaurc
-      # alias into the monorepo this repository no longer sits inside, so they
-      # had not been runnable since Aether graduated -- and their silence read
-      # as success for months. tests/testkit.luau replaces the four functions
-      # they actually used.
-      - run: lune run tests/run.luau
+      # THE 33 SUITES RUN UNDER DEW (ADR-002).
+      #
+      # Under ADR-002, LuauDataModel retired to OSS/luau-datamodel/ and Aether
+      # hosts nothing of its own. The test suites execute against Dew's native
+      # DataModel host via `dew test`, which runs against Dew's runtime VM rather
+      # than Lune.
+      #
+      # What checks this framework in standalone CI: the structural gates and
+      # the conformance suite against Roblox.
       - run: lune run tests/gates/all_gates.luau --run
       - run: lune run conformance/run.luau
 

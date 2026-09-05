@@ -34,7 +34,7 @@ local VIEWPORT = { X = 0, Y = 0, Width = 400, Height = 300 }
 Layout.SetCacheEnabled(true)
 
 local function fixture()
-	local host = Aether.Host.LuauDataModel.new()
+	local host = Aether.Host.detect()
 	local V = host.Vocabulary
 	local create = host.create
 
@@ -256,7 +256,7 @@ local function testAddingAndRemovingChildren()
 end
 
 local function testAScaledSubtreeDoesNotCompound()
-	local host = Aether.Host.LuauDataModel.new()
+	local host = Aether.Host.detect()
 	local V = host.Vocabulary
 	local create = host.create
 	Layout.ClearCache()
