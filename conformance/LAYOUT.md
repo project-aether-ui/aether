@@ -356,6 +356,35 @@ measured, and has a place in the tree. Any implementation must drop it at the
 same point, or a consumer diffing two frames sees nodes appear and disappear for
 reasons the tree does not explain.
 
+## 9. Content and image resolution
+
+What a host must accept versus what it may gate.
+
+- **A conformant host MUST accept `rbxassetid://`** as a well-formed `Content`
+  URI. Both `Content.fromUri("rbxassetid://<id>")` and the legacy string form
+  `Image = "rbxassetid://<id>"` must assign without error.
+- **Resolution is host-defined.** How a host turns that URI into pixels is not
+  dictated by the standard: Roblox resolves it natively through its own client
+  content pipeline, while off-engine hosts may resolve by fetch-and-cache, map
+  to a local asset store, or decline resolution.
+- **A host MAY require a permission or grant** before resolving a remote
+  scheme. Network access to third-party endpoints is a capability, and gating
+  it behind an explicit mod grant does not violate conformance.
+- **A host MAY accept additional schemes.** Local schemes (such as `mod://` for
+  assets co-located with an application) and platform-specific registries (such
+  as `dewassetid://` or generic URLs) may be provided.
+- **An unresolvable `Content` is a rendering outcome, not a property error.**
+  When an asset URI cannot be resolved -- whether because the scheme is
+  unsupported, a network grant was withheld, the host is offline, or the file
+  is missing -- the property assignment succeeds, the property retains its
+  assigned value upon readback, and the host indicates why nothing was drawn
+  (reporting the reason and drawing an unresolvable or missing indicator).
+
+The last rule preserves application portability: a Roblox application moved to
+an off-engine host where a remote asset grant is withheld remains a correct
+application missing an image, rather than a broken application that fails at
+runtime.
+
 ## What this document does not yet cover
 
 Each of these is a section someone will have to write, and none can be written
