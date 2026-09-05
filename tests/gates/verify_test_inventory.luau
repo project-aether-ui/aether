@@ -52,6 +52,12 @@
 	    of this gate CLAIMED that check already existed here. It did not: the
 	    testkit it was inherited from had one and `tests/testkit.luau` did not.
 	  * An assertion that cannot fail. Nothing here reads what a test asserts.
+	  * REPOSITORY BOUNDARIES. A test removed from this repository and relocated
+	    to another tree (e.g. `LuauDataModel.test.luau` moving to `OSS/luau-datamodel/`)
+	    leaves the tree this census walks. This gate cannot see outside this
+	    checkout to assert that the relocated suite is wired into a runner or CI
+	    workflow in its new home. Moving a suite across a repository boundary is
+	    a way to go dark that a local inventory gate cannot detect.
 ]]
 
 local fs = require("@lune/fs")
