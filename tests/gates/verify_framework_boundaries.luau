@@ -65,14 +65,11 @@ local RUST_NOT_MOVED_YET: { string } = {}
 --- it are the framework working as intended. What is forbidden is IMPLEMENTING
 --- one, and the marker for that is mock-instance machinery.
 ---
---- `LuauDataModel.luau` is 1235 lines against `DataModel.luau`'s 709 and implements
---- `Instance.new`, `AbsolutePosition`, `AbsoluteSize`, property-changed firing and
---- geometry resolution. ADR-002 moves it to `OSS/luau-datamodel/` as a jsdom for
+--- EMPTY, AND IT IS THE SECOND LIST HERE TO REACH THAT.
+--- `LuauDataModel.luau` moved to `OSS/luau-datamodel/` under ADR-002 as a jsdom for
 --- the standard: archived rather than deleted, moved rather than copied, and
---- Aether does not depend on it afterwards.
-local DATAMODEL_NOT_MOVED_YET = {
-	"src/host/LuauDataModel.luau",
-}
+--- Aether implements no DataModel of its own.
+local DATAMODEL_NOT_MOVED_YET: { string } = {}
 
 --- Anything under here is vendored or generated and is nobody's business.
 local NOT_OURS = { "roblox_packages", "luau_packages", ".pesde", "target", "node_modules", ".git" }

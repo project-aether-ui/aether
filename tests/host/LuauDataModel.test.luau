@@ -18,7 +18,10 @@
 	is load-bearing for ~30 files — so it is pinned, not left to convention.
 ]=]
 local T = require("@testkit")
-local Headless = require("../../src/host/LuauDataModel")
+local okHeadless, HeadlessModule = pcall(function()
+	return require("../../../luau-datamodel/LuauDataModel")
+end)
+local Headless = if okHeadless and HeadlessModule then HeadlessModule else require("../../src/host/Host").LuauDataModel
 local VideCore = require("../../src/host/VideCore")
 
 local function testCoreIsRealVide()

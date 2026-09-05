@@ -9,7 +9,7 @@
 --- src/Deps.luau for the same split stated once, properly.
 local Vide = if typeof(game) == "Instance"
 	then require("../../../roblox_packages/vide")
-	else require("../../host/LuauDataModel").new()
+	else require("../../Deps").vide
 
 local IconManager = {}
 

@@ -42,8 +42,11 @@
 --- so `./DataModel` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
 local DataModelHost = require("./DataModel")
-local LuauDataModelHost = require("./LuauDataModel")
 local VideCore = require("./VideCore")
+
+local okLuauDataModel, LuauDataModelHost = pcall(function()
+	return require("../../../luau-datamodel/LuauDataModel")
+end)
 
 export type Bounds = { X: number, Y: number, Width: number, Height: number }
 
@@ -176,7 +179,7 @@ export type Host = {
 local Host = {}
 
 Host.DataModel = DataModelHost
-Host.LuauDataModel = LuauDataModelHost
+Host.LuauDataModel = if okLuauDataModel then LuauDataModelHost else nil
 Host.VideCore = VideCore
 
 local detected: Host? = nil
@@ -204,8 +207,10 @@ function Host.detect(vide: any?): Host
 	end
 	if DataModelHost.available() then
 		detected = DataModelHost.new(vide) :: any
-	else
+	elseif okLuauDataModel and LuauDataModelHost then
 		detected = LuauDataModelHost.new() :: any
+	else
+		error("Aether requires a conforming DataModel host (Roblox or Dew). No DataModel host is available in this environment.")
 	end
 	return detected :: Host
 end
