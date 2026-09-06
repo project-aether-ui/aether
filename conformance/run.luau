@@ -24,6 +24,8 @@ host.InstallVocabulary()
 
 --- Shared with the Roblox runner, so a case cannot mean two things.
 local decode = require("./decode")
+--- Shared tally counting rule, so both runners agree by construction.
+local tally = require("./tally")
 
 local function build(node: any): any
 	local props: { [any]: any } = decode.props(node)
@@ -299,6 +301,7 @@ local SUPPORTS: { [string]: boolean } = {
 	["AutomaticSize"] = true,
 	["AnchorPoint"] = true,
 	["ClipsDescendants"] = true,
+	["UIGradient.Radial"] = true,
 }
 
 local function unsupported(case: any): string?
@@ -380,38 +383,16 @@ for _, r in ipairs(results) do
 	end
 end
 
-local verified = 0
---- EVERY `asserted` CASE IS AN OPEN QUESTION, INCLUDING THE ONES THAT PASS.
----
---- This used to count only the asserted cases the implementation DISAGREED with,
---- so a suite carrying four unverified beliefs that we happen to match reported
---- "0 open questions" -- which reads as "everything here is verified" and is the
---- opposite of true. Agreeing with a guess is not evidence; the same guess is
---- what both runners are reading.
-local unverified = 0
-for _, r in ipairs(results) do
-	if r.provenance == "roblox" and r.note ~= "unsupported" then
-		verified += 1
-	elseif r.provenance == "asserted" and r.note ~= "unsupported" then
-		unverified += 1
-	end
-end
+local summary = tally.summarize(results)
 
 print("")
-print(
-	`CONFORMANCE: {#results - failed - open - skipped} of {#results - skipped} passing `
-		.. `({verified} verified against Roblox, {divergent} documented gaps, `
-		.. `{unverified} open questions, {skipped} unsupported)`
-)
+print(summary.formatted)
 
-if unverified > 0 then
-	print(
-		`  {unverified} case(s) state a belief nobody has checked in Studio`
-			.. (if open > 0 then `, {open} of which this implementation disagrees with` else "")
-			.. ". See conformance/README.md for how to verify one."
-	)
+local note = tally.open_questions_note(summary)
+if note then
+	print(note)
 end
 
-if failed > 0 then
+if summary.failed > 0 then
 	process.exit(1)
 end

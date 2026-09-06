@@ -20,11 +20,8 @@ return {
 	name = "a radial UIGradient reaches the display list as radial",
 	provenance = "asserted",
 	requires = { "UIGradient.Radial" },
-	note = "THE ENGINE RUNNER REPORTS THIS AS AGREEING, which is a flaw in the case rather than a "
-		.. "result. It asserts geometry only, and a gradient moves nothing -- so it cannot fail on "
-		.. "the thing it is named for. The pixel runner now exists, but the display list still has "
-		.. "no gradient kind. The case remains skipped as unsupported and cannot fail for its own "
-		.. "reason until that field arrives.",
+	note = "A radial UIGradient renders as a radial ramp centred on the container, rather than a linear "
+		.. "ramp or flat fill. Centre probes white (#ffffff) and corners probe black (#000000).",
 	surface = { width = 200, height = 100 },
 
 	tree = {
@@ -32,11 +29,24 @@ return {
 		name = "Root",
 		props = { Size = { "UDim2", 0, 100, 0, 50 } },
 		children = {
-			{ class = "UIGradient", name = "Gradient", props = {} },
+			{
+				class = "UIGradient",
+				name = "Gradient",
+				props = { Type = { "Enum", "GradientType", "Radial" } },
+			},
 		},
 	},
 
 	expect = {
 		{ name = "Root", x = 0, y = 0, w = 100, h = 50 },
+	},
+
+	pixels = {
+		--- Centre of the 100x50 frame is white (t = 0 of the radial ramp).
+		--- Half-pixel rasterizer center sampling (50.5, 25.5) gives delta 7 from pure white.
+		{ x = 50, y = 25, color = "#ffffff", tolerance = 8 },
+		--- Corners are black (t = 1 of the radial ramp).
+		{ x = 2, y = 2, color = "#000000" },
+		{ x = 98, y = 48, color = "#000000" },
 	},
 }

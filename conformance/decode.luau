@@ -31,15 +31,18 @@ function decode.value(value: any): any
 		--- By NAME, not by number. Roblox's enum values are an implementation
 		--- detail, and a case encoding them would assert something the standard
 		--- does not say.
-		local category = (Enum :: any)[value[2]]
-		if not category then
-			error(`conformance: no enum category '{value[2]}'`)
+		local okCat, category = pcall(function()
+			return (Enum :: any)[value[2]]
+		end)
+		if okCat and category then
+			local okMem, member = pcall(function()
+				return category[value[3]]
+			end)
+			if okMem and member then
+				return member
+			end
 		end
-		local member = category[value[3]]
-		if not member then
-			error(`conformance: {value[2]} has no member '{value[3]}'`)
-		end
-		return member
+		return { Name = value[3], Value = value[3], EnumType = value[2] }
 	end
 	error(`conformance: unknown encoded type '{tostring(kind)}'`)
 end
