@@ -390,7 +390,7 @@ local verified = 0
 --- what both runners are reading.
 local unverified = 0
 for _, r in ipairs(results) do
-	if r.provenance == "roblox" then
+	if r.provenance == "roblox" and r.note ~= "unsupported" then
 		verified += 1
 	elseif r.provenance == "asserted" and r.note ~= "unsupported" then
 		unverified += 1

@@ -400,5 +400,5 @@ honestly without opening Studio first.
 - `SizeConstraint`, which changes which parent axis a scale resolves against.
 
 The property-level view of the same gap is generated into Dew's
-`docs/datamodel_scope.md`, which counts 105 in-scope properties still to
+`docs/datamodel_scope.md`, which tracks the in-scope properties still to
 implement.
