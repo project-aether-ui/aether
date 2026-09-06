@@ -42,6 +42,7 @@ local Layout = require("./Layout")
 --- The focused-field authority. Required directly rather than injected: there is
 --- exactly one per process, the same way there is one PointerRouter.
 local TextInputManager = require("../TextInputManager")
+local Text = require("./Text")
 
 local Live = {}
 
@@ -264,9 +265,73 @@ local function gradientOf(Scene: any, node: any): any
 	}
 end
 
+local function paddingOf(Scene: any, node: any): (number, number, number, number)
+	for _, child in ipairs(Scene.Children(node)) do
+		if Scene.ClassOf(child) == "UIPadding" then
+			local l = Scene.Raw(child, "PaddingLeft")
+			local r = Scene.Raw(child, "PaddingRight")
+			local t = Scene.Raw(child, "PaddingTop")
+			local b = Scene.Raw(child, "PaddingBottom")
+			local lo = if type(l) == "table" then l.Offset or 0 else 0
+			local ro = if type(r) == "table" then r.Offset or 0 else 0
+			local to = if type(t) == "table" then t.Offset or 0 else 0
+			local bo = if type(b) == "table" then b.Offset or 0 else 0
+			return lo, to, ro, bo
+		end
+	end
+	return 0, 0, 0, 0
+end
+
+local function resolvedTextSize(Scene: any, node: any, rect: any, host: any?): number
+	local authored = Scene.Raw(node, "TextSize") or 14
+	if Scene.Raw(node, "TextScaled") ~= true then
+		return authored
+	end
+	local text = Scene.Raw(node, "Text")
+	if type(text) ~= "string" or text == "" then
+		return authored
+	end
+
+	local textModule = if host and host.Text then host.Text else Text
+	local padL, padT, padR, padB = paddingOf(Scene, node)
+	local boxW = math.max(rect.Width - padL - padR, 0)
+	local boxH = math.max(rect.Height - padT - padB, 0)
+	if boxW <= 0 or boxH <= 0 then
+		return authored
+	end
+
+	local wrapped = Scene.Raw(node, "TextWrapped") == true
+	if not wrapped then
+		local w1, _ = textModule.Measure(text, 1.0, nil)
+		local lines = 1
+		for _ in string.gmatch(text, "\n") do
+			lines += 1
+		end
+		local h1 = lines * 1.5
+		local scaleW = if w1 > 0 then boxW / w1 else 1e6
+		local scaleH = if h1 > 0 then boxH / h1 else 1e6
+		return math.min(scaleW, scaleH)
+	else
+		local low = 1
+		local high = math.max(boxH / 1.5, 1)
+		for _ = 1, 16 do
+			local mid = (low + high) / 2
+			local mw, mh = if textModule.MeasureWrapped
+				then textModule.MeasureWrapped(text, mid, boxW, nil)
+				else textModule.Measure(text, mid, nil)
+			if mw <= boxW and mh <= boxH then
+				low = mid
+			else
+				high = mid
+			end
+		end
+		return low
+	end
+end
+
 --- BUILD ONE DISPLAY NODE. Every allocation in the snapshot happens here: the
 --- node table, and one sub-table each for fill, textColour and clip.
-local function buildNode(Scene: any, item: Solved): any
+local function buildNode(Scene: any, item: Solved, host: any?): any
 	local node, rect = item.Node, item.Rect
 	local fill = Scene.Raw(node, "BackgroundColor3")
 	local scale, offset = Scene.RenderedCorner(node)
@@ -304,7 +369,9 @@ local function buildNode(Scene: any, item: Solved): any
 		stroke = strokeOf(Scene, node),
 		gradient = gradientOf(Scene, node),
 		text = if hasText then text else nil,
-		textSize = Scene.Raw(node, "TextSize") or 14,
+		textSize = if hasText
+			then resolvedTextSize(Scene, node, rect, host)
+			else (Scene.Raw(node, "TextSize") or 14),
 		--- Emitted only for nodes that HAVE text, so an idle frame does not grow
 		--- two fields per node for nothing.
 		textAlignX = if hasText then alignOf(Scene, node, "TextXAlignment", "center") else nil,
@@ -321,7 +388,7 @@ function Live.SnapshotSolved(host: any, solved: { Solved }, width: number, heigh
 	for _, item in ipairs(solved) do
 		if item.Rect.Width > 0 and item.Rect.Height > 0 then
 			count += 1
-			nodes[count] = buildNode(Scene, item)
+			nodes[count] = buildNode(Scene, item, host)
 		end
 	end
 
@@ -437,8 +504,13 @@ local function unchanged(Scene: any, item: Solved, was: any): boolean
 	if was.alpha ~= 1 - (Scene.Raw(node, "BackgroundTransparency") or 0) then
 		return false
 	end
-	if was.textSize ~= (Scene.Raw(node, "TextSize") or 14) then
-		return false
+	if Scene.Raw(node, "TextScaled") == true then
+		-- When TextScaled is active, textSize is determined by rect and text,
+		-- which have already been verified as unchanged above.
+	else
+		if was.textSize ~= (Scene.Raw(node, "TextSize") or 14) then
+			return false
+		end
 	end
 	if was.name ~= (Scene.Name(node) or Scene.ClassOf(node) or "?") then
 		return false
@@ -792,7 +864,7 @@ function Live.Session(host: any, root: any, router: any, width: number, height: 
 					if was ~= nil and unchanged(Scene, item, was) then
 						n, isSame = was, true
 					else
-						n, isSame = buildNode(Scene, item), false
+						n, isSame = buildNode(Scene, item, host), false
 					end
 
 					count += 1

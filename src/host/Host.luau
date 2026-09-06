@@ -43,6 +43,7 @@
 --- file this is required by path and its siblings resolve normally.
 local DataModelHost = require("./DataModel")
 local VideCore = require("./VideCore")
+local TextModule = require("./Text")
 
 local okLuauDataModel, LuauDataModelHost = pcall(function()
 	return require("../../../luau-datamodel/LuauDataModel")
@@ -164,6 +165,7 @@ export type Host = {
 	Text: {
 		Measure: (text: string, size: number, font: string?) -> (number, number),
 		MeasureDefault: (text: string, size: number, font: string?) -> (number, number),
+		MeasureWrapped: (text: string, size: number, maxWidth: number, font: string?) -> (number, number),
 		SetProvider: (provider: any, owner: string?) -> boolean,
 		HasProvider: () -> boolean,
 	},
@@ -208,7 +210,11 @@ function Host.detect(vide: any?): Host
 	if DataModelHost.available() then
 		detected = DataModelHost.new(vide) :: any
 	elseif okLuauDataModel and LuauDataModelHost then
-		detected = LuauDataModelHost.new() :: any
+		local h = LuauDataModelHost.new() :: any
+		if h.Text == nil or h.Text.MeasureWrapped == nil then
+			h.Text = TextModule
+		end
+		detected = h :: any
 	else
 		error("Aether requires a conforming DataModel host (Roblox or Dew). No DataModel host is available in this environment.")
 	end

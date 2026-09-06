@@ -61,7 +61,8 @@ Layout.Inputs = {
 	Properties = {
 		"AnchorPoint", "AutomaticSize", "CanvasPosition", "FillDirection",
 		"LayoutOrder", "Padding", "PaddingBottom", "PaddingLeft", "PaddingRight",
-		"PaddingTop", "Position", "Scale", "Size", "Text", "TextSize", "Visible",
+		"PaddingTop", "Position", "Scale", "Size", "Text", "TextScaled", "TextSize",
+		"TextWrapped", "Visible",
 	},
 	--- Derived accessors, which read layout-affecting state WITHOUT going through
 	--- `Raw` -- `ClassOf` reads a class name, `Clips` a `ClipsDescendants`,
@@ -235,7 +236,6 @@ local function solveRect(Scene: any, node: any, parent: Rect, host: any?, laidOu
 		local text = Scene.Raw(node, "Text")
 		if type(text) == "string" and text ~= "" then
 			local size = Scene.Raw(node, "TextSize") or 14
-			local tw, th = host.Text.Measure(text, size, nil)
 			--- Padding on the element itself widens what its content needs.
 			local padX, padY = 0, 0
 			for _, child in ipairs(Scene.Children(node)) do
@@ -247,6 +247,18 @@ local function solveRect(Scene: any, node: any, parent: Rect, host: any?, laidOu
 					padX, padY = l + r, t + b
 					break
 				end
+			end
+			local wrapped = Scene.Raw(node, "TextWrapped") == true
+			local tw, th
+			if wrapped then
+				local availW = if autoX then (parent.Width - padX) else (width - padX)
+				if availW > 0 and host.Text.MeasureWrapped then
+					tw, th = host.Text.MeasureWrapped(text, size, availW, nil)
+				else
+					tw, th = host.Text.Measure(text, size, nil)
+				end
+			else
+				tw, th = host.Text.Measure(text, size, nil)
 			end
 			if autoX then
 				width = math.max(width, tw + padX)

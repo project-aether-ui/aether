@@ -107,6 +107,92 @@ function Text.MeasureDefault(text: string, size: number, _font: string?): (numbe
 	return widest, lines * size * LINE_HEIGHT
 end
 
+--- Measure text with word wrapping against an available width constraint.
+---
+--- Breaks at word boundaries against `maxWidth`, and at glyph boundaries
+--- when a single word exceeds `maxWidth`. Line height is `lines * size * LINE_HEIGHT`.
+function Text.MeasureWrapped(text: string, size: number, maxWidth: number, font: string?): (number, number)
+	if text == nil or text == "" then
+		return 0, size * LINE_HEIGHT
+	end
+	if maxWidth <= 0 then
+		return Text.Measure(text, size, font)
+	end
+
+	local spaceWidth = (ADVANCE[" "] or 0.26) * size
+	local totalLines = 0
+	local maxObservedWidth = 0
+
+	for paragraph in string.gmatch(text .. "\n", "([^\n]*)\n") do
+		if paragraph == "" then
+			totalLines += 1
+			continue
+		end
+
+		local currentLineWidth = 0
+		local hasCurrentLine = false
+
+		-- Extract words separated by spaces
+		local words = {}
+		for word in string.gmatch(paragraph, "%S+") do
+			table.insert(words, word)
+		end
+
+		for _, word in ipairs(words) do
+			local wordWidth = 0
+			for i = 1, #word do
+				local c = string.sub(word, i, i)
+				wordWidth += (ADVANCE[c] or DEFAULT_ADVANCE) * size
+			end
+
+			if wordWidth <= maxWidth then
+				if not hasCurrentLine then
+					currentLineWidth = wordWidth
+					hasCurrentLine = true
+				else
+					local candidateWidth = currentLineWidth + spaceWidth + wordWidth
+					if candidateWidth <= maxWidth then
+						currentLineWidth = candidateWidth
+					else
+						maxObservedWidth = math.max(maxObservedWidth, currentLineWidth)
+						totalLines += 1
+						currentLineWidth = wordWidth
+					end
+				end
+			else
+				-- Word is wider than maxWidth: break at glyph boundaries
+				if hasCurrentLine then
+					maxObservedWidth = math.max(maxObservedWidth, currentLineWidth)
+					totalLines += 1
+					currentLineWidth = 0
+					hasCurrentLine = false
+				end
+
+				for i = 1, #word do
+					local c = string.sub(word, i, i)
+					local charWidth = (ADVANCE[c] or DEFAULT_ADVANCE) * size
+					if hasCurrentLine and currentLineWidth + charWidth > maxWidth then
+						maxObservedWidth = math.max(maxObservedWidth, currentLineWidth)
+						totalLines += 1
+						currentLineWidth = charWidth
+					else
+						currentLineWidth += charWidth
+						hasCurrentLine = true
+					end
+				end
+			end
+		end
+
+		if hasCurrentLine then
+			maxObservedWidth = math.max(maxObservedWidth, currentLineWidth)
+			totalLines += 1
+		end
+	end
+
+	local lineCount = math.max(totalLines, 1)
+	return maxObservedWidth, lineCount * size * LINE_HEIGHT
+end
+
 local provider: Metrics? = nil
 local providerOwner: string? = nil
 

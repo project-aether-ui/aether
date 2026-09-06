@@ -302,6 +302,8 @@ local SUPPORTS: { [string]: boolean } = {
 	["AnchorPoint"] = true,
 	["ClipsDescendants"] = true,
 	["UIGradient.Radial"] = true,
+	["TextScaled"] = true,
+	["TextWrapped"] = true,
 }
 
 local function unsupported(case: any): string?
