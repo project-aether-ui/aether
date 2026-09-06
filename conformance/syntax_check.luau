@@ -16,6 +16,7 @@ local files = {
     "conformance/roblox/src/run.client.luau",
     "conformance/run.luau",
     "conformance/decode.luau",
+    "conformance/tally.luau",
 }
 
 for _, entry in ipairs(fs.readDir("conformance/cases")) do

@@ -392,6 +392,7 @@ local note = tally.open_questions_note(summary)
 if note then
 	print(note)
 end
+print("  (summary: shared tally.luau)")
 
 if summary.failed > 0 then
 	process.exit(1)

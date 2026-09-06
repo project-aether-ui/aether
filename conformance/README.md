@@ -69,6 +69,7 @@ is wrong, or the case needs re-verifying in Studio — not adjusting.
 ```
 conformance/cases/*.luau      the cases — data, not code
 conformance/decode.luau       the value encoding, shared
+conformance/tally.luau        the source both runners read for suite tallies
 conformance/run.luau          against the Luau implementation
 conformance/roblox/           against the engine
 ```

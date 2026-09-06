@@ -1,14 +1,8 @@
 --!strict
 --[[
-	The tally counting rule, shared by every runner.
-
-	A suite reports passed, verified against Roblox, documented gaps, open questions,
-	and unsupported counts.
-
-	THIS FILE IS THE REASON THOSE NUMBERS AGREE.
-	If each runner implements its own counting rules, the reported tallies drift
-	whenever a new case shape (such as an asserted case that passes) appears.
-	One module defines the counting rule, so every runner agrees by construction.
+	The shared module tally.luau is the source both runners read to produce their
+	suite summaries, with native Rust retained in Dew as an explicit fallback when
+	running detached from Aether.
 ]]
 
 export type CaseResult = {
