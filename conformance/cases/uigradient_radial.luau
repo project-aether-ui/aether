@@ -21,7 +21,7 @@ return {
 	provenance = "asserted",
 	requires = { "UIGradient.Radial" },
 	note = "A radial UIGradient renders as a radial ramp centred on the container, rather than a linear "
-		.. "ramp or flat fill. Centre probes white (#ffffff) and corners probe black (#000000).",
+		.. "ramp or flat fill. Centre probes red (#ff0000) and corners probe blue (#0000ff).",
 	surface = { width = 200, height = 100 },
 
 	tree = {
@@ -32,7 +32,10 @@ return {
 			{
 				class = "UIGradient",
 				name = "Gradient",
-				props = { Type = { "Enum", "GradientType", "Radial" } },
+				props = {
+					Type = { "Enum", "GradientType", "Radial" },
+					Color = { "ColorSequence", { "Color3", 1, 0, 0 }, { "Color3", 0, 0, 1 } },
+				},
 			},
 		},
 	},
@@ -42,11 +45,11 @@ return {
 	},
 
 	pixels = {
-		--- Centre of the 100x50 frame is white (t = 0 of the radial ramp).
-		--- Half-pixel rasterizer center sampling (50.5, 25.5) gives delta 7 from pure white.
-		{ x = 50, y = 25, color = "#ffffff", tolerance = 8 },
-		--- Corners are black (t = 1 of the radial ramp).
-		{ x = 2, y = 2, color = "#000000" },
-		{ x = 98, y = 48, color = "#000000" },
+		--- Centre of the 100x50 frame is red (t = 0 of the radial ramp).
+		--- Half-pixel rasterizer center sampling (50.5, 25.5) gives small delta from pure red.
+		{ x = 50, y = 25, color = "#ff0000", tolerance = 8 },
+		--- Corners are blue (t = 1 of the radial ramp).
+		{ x = 2, y = 2, color = "#0000ff" },
+		{ x = 98, y = 48, color = "#0000ff" },
 	},
 }
