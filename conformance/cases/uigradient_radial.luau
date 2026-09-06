@@ -22,8 +22,9 @@ return {
 	requires = { "UIGradient.Radial" },
 	note = "THE ENGINE RUNNER REPORTS THIS AS AGREEING, which is a flaw in the case rather than a "
 		.. "result. It asserts geometry only, and a gradient moves nothing -- so it cannot fail on "
-		.. "the thing it is named for. Same shape as the clip-radius case. Closing it needs a "
-		.. "gradient kind in the display list and a pixel-level runner.",
+		.. "the thing it is named for. The pixel runner now exists, but the display list still has "
+		.. "no gradient kind. The case remains skipped as unsupported and cannot fail for its own "
+		.. "reason until that field arrives.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

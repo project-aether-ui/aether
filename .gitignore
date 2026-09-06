@@ -16,6 +16,8 @@ target/
 *.rbxlx
 *.rbxm
 !tests/*.rbxl
+conformance/goldens/*_diff.png
+conformance/goldens/.diffs/
 
 # editor / os
 .DS_Store

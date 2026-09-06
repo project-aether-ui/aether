@@ -19,8 +19,8 @@
 return {
 	name = "ZIndex orders the paint, then depth, then declaration",
 	provenance = "reference",
-	note = "Unverifiable against the engine. Three gaps now wait on a pixel-level runner: this, the "
-		.. "clip radius, and the gradient kind.",
+	note = "Observed by the pixel runner at (40, 40), where Front's blue outranks Middle's green "
+		.. "and Behind's red. Unverifiable against the engine until the engine runner can inspect pixels.",
 	surface = { width = 200, height = 100 },
 
 	tree = {
@@ -32,17 +32,29 @@ return {
 			{
 				class = "Frame",
 				name = "Behind",
-				props = { Size = { "UDim2", 0, 80, 0, 80 }, ZIndex = 1 },
+				props = {
+					Size = { "UDim2", 0, 80, 0, 80 },
+					ZIndex = 1,
+					BackgroundColor3 = { "Color3", 1, 0, 0 },
+				},
 			},
 			{
 				class = "Frame",
 				name = "Front",
-				props = { Size = { "UDim2", 0, 80, 0, 80 }, ZIndex = 5 },
+				props = {
+					Size = { "UDim2", 0, 80, 0, 80 },
+					ZIndex = 5,
+					BackgroundColor3 = { "Color3", 0, 0, 1 },
+				},
 			},
 			{
 				class = "Frame",
 				name = "Middle",
-				props = { Size = { "UDim2", 0, 80, 0, 80 }, ZIndex = 3 },
+				props = {
+					Size = { "UDim2", 0, 80, 0, 80 },
+					ZIndex = 3,
+					BackgroundColor3 = { "Color3", 0, 1, 0 },
+				},
 			},
 		},
 	},
@@ -51,4 +63,10 @@ return {
 	--- Back to front. Declaration order is Behind, Front, Middle; ZIndex reorders
 	--- them, so a run that returns declaration order has not sorted at all.
 	order = { "Root", "Behind", "Middle", "Front" },
+
+	pixels = {
+		--- At (40, 40), Front (ZIndex 5, Blue) paints over Middle (ZIndex 3, Green)
+		--- and Behind (ZIndex 1, Red).
+		{ x = 40, y = 40, color = "#0000ff" },
+	},
 }

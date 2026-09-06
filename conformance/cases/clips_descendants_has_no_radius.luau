@@ -26,10 +26,9 @@
 return {
 	name = "a clipped child keeps its rectangle (the radius gap is invisible here)",
 	provenance = "divergent",
-	note = "Roblox rounds a clip to the parent's UICorner; our display list carries a clip as a bare "
-		.. "rectangle with no radius. NOT DETECTABLE GEOMETRICALLY -- the rectangle below conforms, "
-		.. "and the engine runner confirmed it. Needs a clip radius in the display list and a "
-		.. "pixel-level runner to catch.",
+	note = "Observed by the pixel runner at (2, 2): Roblox rounds a clip to the parent's UICorner, "
+		.. "clipping the corner to transparent; our display list carries a bare rectangular clip, so "
+		.. "Titlebar red survives. Geometrically the rectangle conforms either way.",
 	surface = { width = 200, height = 100 },
 
 	tree = {
@@ -38,13 +37,17 @@ return {
 		props = {
 			Size = { "UDim2", 0, 120, 0, 60 },
 			ClipsDescendants = true,
+			BackgroundColor3 = { "Color3", 0.2, 0.2, 0.2 },
 		},
 		children = {
 			{ class = "UICorner", name = "Corner", props = { CornerRadius = { "UDim", 0, 14 } } },
 			{
 				class = "Frame",
 				name = "Titlebar",
-				props = { Size = { "UDim2", 1, 0, 0, 20 } },
+				props = {
+					Size = { "UDim2", 1, 0, 0, 20 },
+					BackgroundColor3 = { "Color3", 1, 0, 0 },
+				},
 			},
 		},
 	},
@@ -52,5 +55,19 @@ return {
 	expect = {
 		-- The titlebar is clipped to the card's RECTANGLE, corners included.
 		{ name = "Titlebar", x = 0, y = 0, w = 120, h = 20 },
+	},
+
+	pixels = {
+		--- Inside the Titlebar and safely within the card's rounded corner:
+		{ x = 20, y = 10, color = "#ff0000" },
+		--- At (2, 2): inside Titlebar rect [0..120, 0..20], but outside radius-14 corner.
+		--- Roblox: clipped by rounded corner to canvas/background (#00000000).
+		--- Off-engine: display list clip is rectangular, so Titlebar red (#ff0000) survives.
+		{
+			x = 2,
+			y = 2,
+			color = "#00000000",
+			divergentColor = "#ff0000",
+		},
 	},
 }
