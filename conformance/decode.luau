@@ -43,6 +43,32 @@ function decode.value(value: any): any
 			end
 		end
 		return { Name = value[3], Value = value[3], EnumType = value[2] }
+	elseif kind == "ColorSequence" then
+		if type(value[2]) == "table" and type(value[2][1]) == "table" then
+			local keypoints = {}
+			for i, kp in ipairs(value[2]) do
+				keypoints[i] = decode.value(kp)
+			end
+			return ColorSequence.new(keypoints)
+		else
+			local c1 = decode.value(value[2])
+			local c2 = if value[3] then decode.value(value[3]) else nil
+			return ColorSequence.new(c1, c2)
+		end
+	elseif kind == "ColorSequenceKeypoint" then
+		return ColorSequenceKeypoint.new(value[2], decode.value(value[3]))
+	elseif kind == "NumberSequence" then
+		if type(value[2]) == "table" and type(value[2][1]) == "table" then
+			local keypoints = {}
+			for i, kp in ipairs(value[2]) do
+				keypoints[i] = decode.value(kp)
+			end
+			return NumberSequence.new(keypoints)
+		else
+			return NumberSequence.new(value[2], value[3])
+		end
+	elseif kind == "NumberSequenceKeypoint" then
+		return NumberSequenceKeypoint.new(value[2], value[3], value[4])
 	end
 	error(`conformance: unknown encoded type '{tostring(kind)}'`)
 end
