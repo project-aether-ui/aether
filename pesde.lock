@@ -11,16 +11,18 @@ roblox = "src/Icon"
 [workspace."spektr/virtual"]
 roblox = "packages/virtual"
 
+[graph."centau/vide@0.0.0-a6d5f55d98fcbdae2d7e3740ef4616f8a9006407 roblox"]
+direct = ["vide", { repo = "https://github.com/es9-dev/vide", rev = "058c5d5bf3b5098029bf6109c564e13f7598a10b" }, "standard"]
+
+[graph."centau/vide@0.0.0-a6d5f55d98fcbdae2d7e3740ef4616f8a9006407 roblox".pkg_ref]
+ref_ty = "git"
+repo = "https://github.com/es9-dev/vide"
+tree_id = "a6d5f55d98fcbdae2d7e3740ef4616f8a9006407"
+new_structure = true
+
 [graph."spektr/virtual@0.0.1 roblox"]
 direct = ["Virtual", { workspace = "spektr/virtual", version = "^" }, "standard"]
 
 [graph."spektr/virtual@0.0.1 roblox".pkg_ref]
 ref_ty = "workspace"
 path = "packages/virtual"
-
-[graph."wally#centau/vide@0.4.1 roblox"]
-direct = ["vide", { wally = "wally#centau/vide", version = "^0.4.0", index = "default" }, "standard"]
-
-[graph."wally#centau/vide@0.4.1 roblox".pkg_ref]
-ref_ty = "wally"
-index_url = "https://github.com/UpliftGames/wally-index"
