@@ -44,7 +44,7 @@
 	implementation of it, it does not yet reroute those consumers.
 ]]
 
-local TextModule = require("./Text")
+local TextModule = require("../core/Text")
 
 local DataModel = {}
 

@@ -42,7 +42,7 @@
 --- so `./DataModel` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
 local DataModelHost = require("./DataModel")
-local TextModule = require("./Text")
+local TextModule = require("../core/Text")
 
 local okLuauDataModel, LuauDataModelHost = pcall(function()
 	return require("../../../luau-datamodel/LuauDataModel")

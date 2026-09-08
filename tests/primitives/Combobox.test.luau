@@ -2,7 +2,7 @@
 --!tier math
 local T = require("@testkit")
 local SelectionModel = require("../../src/controllers/SelectionModel")
-local FloatingMath = require("../../src/FloatingMath")
+local FloatingMath = require("../../src/core/FloatingMath")
 
 -- Unit test for Combobox pure logic (filtering & keyboard selection mechanics)
 local function testComboboxFilter()

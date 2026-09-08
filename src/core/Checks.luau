@@ -1,8 +1,8 @@
 --!strict
 --[[
-	Aether · host/Checks — what is wrong with this frame? (ms-53 P3)
+	Aether · core/Checks — what is wrong with this frame? (ms-53 P3)
 
-	    local Checks = require(".../host/Checks")
+	    local Checks = require(".../core/Checks")
 	    local findings, coverage = Checks.Run(frame, measure)
 
 	WHY THIS EXISTS RATHER THAN A PIXEL DIFF.

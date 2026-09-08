@@ -18,7 +18,7 @@
 ]=]
 local T = require("@testkit")
 local Aether = require("../../src/api")
-local Layout = require("../../src/host/Layout")
+local Layout = require("../../src/core/Layout")
 local Svg = require("../../src/host/Svg")
 
 local host = Aether.Host.LuauDataModel.new()
@@ -300,7 +300,7 @@ end
 --- So none of these assert that a width exists. They assert that the width VARIES
 --- with the thing it is supposed to vary with.
 local function testTextMeasurement()
-	local Text = require("../../src/host/Text")
+	local Text = require("../../src/core/Text")
 	Text._reset()
 
 	local shortW = Text.Measure("Hi", 14)
@@ -334,7 +334,7 @@ end
 --- The seam, and the reason it exists: a host with exact metrics must be able to
 --- replace the bundled table without layout ever awaiting.
 local function testTextProviderSeam()
-	local Text = require("../../src/host/Text")
+	local Text = require("../../src/core/Text")
 	Text._reset()
 
 	local asked = 0
@@ -673,7 +673,7 @@ end
 --- canvas for AutomaticCanvasSize; the session moves CanvasPosition on a wheel.
 local function testNativeScrollingFrameScrolls()
 	local Live = require("../../src/host/Live")
-	local Layout = require("../../src/host/Layout")
+	local Layout = require("../../src/core/Layout")
 
 	local rows = {}
 	for i = 1, 12 do
@@ -816,7 +816,7 @@ end
 --- without its label would look worse than not scaling at all, so what is
 --- asserted is that a CHILD moved and grew too, and about the right fixed point.
 local function testUIScaleTransformsTheSubtree()
-	local Layout = require("../../src/host/Layout")
+	local Layout = require("../../src/core/Layout")
 
 	local function build(scale: number, anchorX: number)
 		local label = host.create("TextLabel")({
@@ -954,7 +954,7 @@ end
 --- visible by every test it applies. They were painted over, which is a property
 --- of the ORDER and of nothing else. Hence this test.
 local function testPaintOrderIsHierarchical()
-	local Layout = require("../../src/host/Layout")
+	local Layout = require("../../src/core/Layout")
 
 	local inner = host.create("TextLabel")({
 		Name = "Inner",
@@ -1152,7 +1152,7 @@ local function testDragReleaseDoesNotSnapBack()
 	--- can assert anything.
 	local destroy = host.root(function()
 		local Live = require("../../src/host/Live")
-		local Layout = require("../../src/host/Layout")
+		local Layout = require("../../src/core/Layout")
 		local liveHost = Aether.Host.detect()
 
 		--- A MOTION RUNTIME IS THE PRECONDITION, not decoration.

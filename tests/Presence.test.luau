@@ -19,7 +19,7 @@
 	not, which is why they are written as a cycle rather than as states.
 ]=]
 local T = require("@testkit")
-local Presence = require("../src/Presence")
+local Presence = require("../src/core/Presence")
 
 --- A hand-driven fixture: two booleans and a machine over them.
 local function fixture(withAnimation: boolean)

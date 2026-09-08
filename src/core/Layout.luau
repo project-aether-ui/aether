@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Aether · host/Layout — scale-and-offset layout, solved without an engine.
+	Aether · core/Layout — scale-and-offset layout, solved without an engine.
 
 	WHY THIS EXISTS (ms-51 M21)
 	It is the LAST engine service Aether does not model. Everything else a

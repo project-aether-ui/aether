@@ -21,7 +21,7 @@ local UserInputService = Deps.Host.Services.UserInputService
 --- springs, so this edge could not be reversed like the component seams —
 --- it was made OPTIONAL instead. Unregistered, Smooth hands the target
 --- straight back and the value steps. See Motion.luau.
-local Motion = require("../Motion")
+local Motion = require("../core/Motion")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it

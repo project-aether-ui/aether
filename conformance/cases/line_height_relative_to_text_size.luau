@@ -2,7 +2,7 @@
 --[[
 	How tall is one line of text, as a multiple of `TextSize`?
 
-	Off-engine Aether answers 1.2, a constant written into `host/Text.luau` and
+	Off-engine Aether answers 1.2, a constant written into `core/Text.luau` and
 	relied on by every `AutomaticSize.Y` on a `TextLabel`. Whether Roblox agrees
 	has never been checked, and it is exactly the kind of number that is wrong by
 	a few percent everywhere without anyone noticing.

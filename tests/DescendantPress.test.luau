@@ -30,7 +30,7 @@ local Aether = require("../src/api")
 local host = Aether.Host.detect()
 host.InstallVocabulary()
 
-local Layout = require("../src/host/Layout")
+local Layout = require("../src/core/Layout")
 local PointerRouter = Aether.PointerRouter
 
 local VIEWPORT = { X = 0, Y = 0, Width = 400, Height = 300 }
