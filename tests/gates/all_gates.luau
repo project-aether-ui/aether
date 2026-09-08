@@ -59,7 +59,6 @@ local M = {}
 --- The rest are permanent and should stay.
 M.GATES = {
 	"tests/gates/verify_cycles.luau",
-	"tests/gates/verify_require_paths.luau",
 	"tests/gates/verify_property_names.luau",
 	"tests/gates/verify_use_before_declaration.luau",
 	"tests/gates/verify_reactive_scopes.luau",

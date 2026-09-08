@@ -42,7 +42,6 @@
 --- so `./DataModel` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
 local DataModelHost = require("./DataModel")
-local VideCore = require("./VideCore")
 local TextModule = require("./Text")
 
 local okLuauDataModel, LuauDataModelHost = pcall(function()
@@ -182,7 +181,6 @@ local Host = {}
 
 Host.DataModel = DataModelHost
 Host.LuauDataModel = if okLuauDataModel then LuauDataModelHost else nil
-Host.VideCore = VideCore
 
 local detected: Host? = nil
 

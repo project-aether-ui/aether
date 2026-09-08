@@ -57,17 +57,19 @@ local HostModule = require("./host/Host")
 --- OFFERED, NOT DECIDED WITH. `detect()` still picks the host by capability, and
 --- uses this only if it picked the host that drives a DataModel. A host that
 --- declined would ignore it, which is the correct answer rather than a lost one.
-local engineVide: any = nil
-if typeof(game) == "Instance" then
-	engineVide = require("../roblox_packages/vide")
-end
+--- ONE REQUIRE, EVERY ENVIRONMENT. pesde installs vide beside this package in
+--- both, so there is nothing to detect and nothing to search for. This used to
+--- be gated on `typeof(game) == "Instance"`, with `VideCore` assembling vide
+--- module by module off engine because vide's leaves could not load there. They
+--- can now, so the gate and the assembler are both gone.
+local vide = require("../roblox_packages/vide")
 
-local ResolvedHost = HostModule.detect(engineVide)
+local ResolvedHost = HostModule.detect(vide)
 
 --- The vide the resolved host is driving. Never nil: both hosts set it, and a
 --- host that could not resolve one errors in its own constructor rather than
 --- handing back a half-built surface.
-local vide: any = ResolvedHost.vide
+local resolvedVide: any = ResolvedHost.vide
 
 --- STILL BRANCHED ON, FOR ONE OPTIONAL PACKAGE AND NOT FOR vide. `spektr/virtual`
 --- is a pesde redirect that reaches its target through the Instance tree, so

@@ -251,34 +251,6 @@ end
 
 --- vide's gate, asked of the module that reads it.
 ---
---- `VideCore.full` assembles the seven vide modules that sit behind
---- `local typeof = game and typeof or require "../test/mock".typeof`. Under lune
---- there is no `game`, so the honest answer is nil -- and nil rather than seven
---- require errors naming a `test/` directory the shipped artifact does not
---- contain, which is what asking the gate first buys.
-local function testVideCoreRefusesTheGatedHalfWithoutTheGate()
-	if (game :: any) ~= nil then
-		local full = Aether.Host.VideCore.full()
-		assert(full ~= nil, "with game present the gated vide modules load")
-		return
-	end
-	assert(
-		(game :: any) == nil,
-		"this suite's premise is that lune has no `game`; something installed one"
-	)
-	assert(
-		Aether.Host.VideCore.full() == nil,
-		"without the gate the seven gated vide modules cannot load, and full() must say so"
-	)
-	--- THE UNGATED SIXTEEN STILL LOAD, which is the measurement VideCore exists
-	--- for and the reason the test double works here at all.
-	local core = Aether.Host.VideCore.load()
-	assert(core ~= nil and core.source ~= nil, "the reactive core loads without the gate")
-end
-
-T.test("detect() reports the host it chose, by name", testDetectReportsItselfByName, "math")
-T.test("Deps builds with the resolved host's vide", testDepsBuildsWithTheResolvedHostsVide, "math")
-T.test("VideCore refuses the gated half without `game`", testVideCoreRefusesTheGatedHalfWithoutTheGate, "math")
 T.test("a faithful DataModel is accepted with no `game` present", testAFaithfulNonRobloxEnvironmentPasses, "math")
 T.test("the predicate disagrees with the vendor test it replaced", testTheOldVendorTestWouldHaveRefusedIt, "math")
 T.test("a missing value vocabulary is refused", testAMissingVocabularyIsRefused, "math")

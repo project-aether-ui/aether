@@ -69,6 +69,9 @@ local Motion = require("./Motion")
 --- can register itself, which is what replaced Aether depending on it.
 local Cursor = require("./Cursor")
 local Host = require("./host/Host")
+--- THE DESKTOP CEREMONY, on the public surface so a HOST can reach it through
+--- the consumer's own installed copy rather than through a path into ours.
+local Desktop = require("./host/Desktop")
 
 --- THE REACTIVE SURFACE AND THE VALUE VOCABULARY, exported from the root.
 ---
@@ -178,6 +181,7 @@ return {
 	Controllers = Controllers,
 	Core = Core,
 	Host = Host,
+	Desktop = Desktop,
 	Motion = Motion,
 	Cursor = Cursor,
 	Runtime = Runtime,

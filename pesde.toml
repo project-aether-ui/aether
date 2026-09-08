@@ -39,7 +39,7 @@ workspace_members = ["src/Icon", "packages/virtual"]
 # everywhere but Roblox.
 [target]
 environment = "roblox"
-lib = "src/init.luau"
+lib = "src/api.luau"
 build_files = ["src"]
 
 [dependencies]
@@ -56,7 +56,14 @@ Virtual = { workspace = "spektr/virtual" }
 # Roblox consumer of Aether is unaffected. Proposed upstream as centau/vide pull
 # request 89; if that merges this returns to the registry, and if it is declined
 # the fork stays.
-vide = { repo = "es9-dev/vide", rev = "058c5d5bf3b5098029bf6109c564e13f7598a10b" }
+
+[peer_dependencies]
+# VIDE IS THE CONSUMER'S TO INSTALL. Aether drives vide but does not choose which
+# copy an application gets: an application that installed its own would otherwise
+# be running two reactive graphs, and a source made against one is invisible to an
+# effect on the other. Declared here so pesde links the consumer's copy beside
+# this package rather than vendoring a second one.
+vide = { repo = "es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
