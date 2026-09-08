@@ -8,8 +8,8 @@
 	Consumes all 12 style packages with full slot and token polymorphism.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 local ScrollController = require("../controllers/ScrollController")
 --- Renamed from PressableFrame in ms-51 M14; same primitive.
 local PressableFrame = require("./Pressable")
@@ -33,12 +33,8 @@ local source = Deps.source
 local action = Deps.action
 local cleanup = Deps.cleanup
 
-local UserInputService = if isRoblox and typeof(game) == "Instance" and game:GetService("UserInputService")
-	then game:GetService("UserInputService")
-	else nil
-local RunService = if isRoblox and typeof(game) == "Instance" and game:GetService("RunService")
-	then game:GetService("RunService")
-	else nil
+local UserInputService = Deps.Host.Services.UserInputService
+local RunService = Deps.Host.Services.RunService
 
 export type ScrollbarMotionConfig = {
 	Period: number?,

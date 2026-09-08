@@ -10,7 +10,6 @@
 	- Aether.Runtime.For (keyed item diffing)
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 local useFloating = require("../useFloating")
 local For = require("../For")

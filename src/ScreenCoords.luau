@@ -12,12 +12,12 @@
 	   - Used by: IgnoreGuiInset=false containers, InputObject.Position.
 ]]
 
-local isRoblox = typeof(game) == "Instance"
-local UserInputService = if isRoblox then (game :: any):GetService("UserInputService") else nil
-local GuiService = if isRoblox then (game :: any):GetService("GuiService") else nil
 
 --- ms-51 M16: resolved here purely for the value vocabulary below.
 local Deps = require("./Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
+local UserInputService = Deps.Host.Services.UserInputService
+local GuiService = Deps.Host.Services.GuiService
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below is unchanged.

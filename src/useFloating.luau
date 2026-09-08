@@ -4,11 +4,11 @@
 	Part of Aether.Engine (Layer 2.5/3 Headless Positioning).
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 
 local FloatingMath = require("./FloatingMath")
 local ScreenCoords = require("./ScreenCoords")
 local Deps = require("./Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it
@@ -24,8 +24,8 @@ local source = Deps.source
 local effect = Deps.effect
 local scopedCleanup = Deps.cleanup
 
-local Workspace = if isRoblox then (game :: any):GetService("Workspace") else nil
-local RunService = if isRoblox then (game :: any):GetService("RunService") else nil
+local Workspace = Deps.Host.Services.Workspace
+local RunService = Deps.Host.Services.RunService
 
 export type Placement = FloatingMath.Placement
 export type ComputeOptions = FloatingMath.ComputeOptions

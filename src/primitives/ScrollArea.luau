@@ -7,17 +7,15 @@
 	with full InputScope and InputSink coordination.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 local ScrollController = require("../controllers/ScrollController")
 local Scrollbar = require("./Scrollbar")
 local InputScope = require("../InputScope")
 local PointerRouter = require("../PointerRouter")
 local HitTest = require("../HitTest")
 
-local UserInputService = if isRoblox and typeof(game) == "Instance" and game:GetService("UserInputService")
-	then game:GetService("UserInputService")
-	else nil
+local UserInputService = Deps.Host.Services.UserInputService
 
 --- ms-51 M16: the motion SEAM, not Flux. Aether is a genuine consumer of
 --- springs, so this edge could not be reversed like the component seams —

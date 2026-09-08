@@ -13,7 +13,6 @@
 	- Keyboard roving and ARIA tree accessibility contracts.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 
 local TreeControllerMod = require("../controllers/TreeController")

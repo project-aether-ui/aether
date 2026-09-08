@@ -35,9 +35,9 @@
 	PointerRouter.IsPointerOver answers, honouring cover and clipping.
 ]]
 
-local isRoblox = typeof(game) == "Instance"
 
 local Deps = require("./Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 local PointerRouter = require("./PointerRouter")
 local InputScope = require("./InputScope")
 
@@ -50,7 +50,7 @@ local Enum =
 local source = Deps.source
 local scopedCleanup = Deps.cleanup
 
-local RunService = if isRoblox then (game :: any):GetService("RunService") else nil
+local RunService = Deps.Host.Services.RunService
 
 export type HoverOptions = {
 	--- Fired on transitions only, never repeated while the state holds.
@@ -137,7 +137,7 @@ local function useHover(options: HoverOptions?): HoverHandle
 						end),
 					})
 				else
-					local UserInputService = (game :: any):GetService("UserInputService")
+					local UserInputService = Deps.Host.Services.UserInputService
 					table.insert(connections, UserInputService.InputChanged:Connect(function(input: any)
 						if input.UserInputType == Enum.UserInputType.MouseMovement
 							or input.UserInputType == Enum.UserInputType.Touch then

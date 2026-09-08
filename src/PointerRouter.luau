@@ -33,9 +33,9 @@
 	Cursor. Elements that declare none leave it alone.
 ]]
 
-local isRoblox = typeof(game) == "Instance"
 
 local Deps = require("./Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 local InputScope = require("./InputScope")
 local HitTest = require("./HitTest")
 local LayerManager = require("./LayerManager")
@@ -49,8 +49,8 @@ local Enum =
 local source = Deps.source
 local scopedCleanup = Deps.cleanup
 
-local UserInputService = if isRoblox then (game :: any):GetService("UserInputService") else nil
-local RunService = if isRoblox then (game :: any):GetService("RunService") else nil
+local UserInputService = Deps.Host.Services.UserInputService
+local RunService = Deps.Host.Services.RunService
 
 export type PressableProps = {
 	--- The InputScope this element lives in. Supplies depth and cross-menu

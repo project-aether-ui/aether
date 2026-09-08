@@ -19,7 +19,6 @@
 	StudioUI, StudioWindowing and prism-studio still spell it that way.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 local PointerRouter = require("../PointerRouter")
 local ScopeContext = require("../ScopeContext")

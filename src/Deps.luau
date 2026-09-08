@@ -66,6 +66,17 @@ local vide = require("../roblox_packages/vide")
 
 local ResolvedHost = HostModule.detect(vide)
 
+--- CAPABILITY TABLES ARE OPTIONAL, AND THE DEFAULT IS EMPTY.
+---
+--- `Host.Services` comes from the DataModel host and from nothing else: the Luau
+--- double has no engine to resolve services from. A consumer reading
+--- `Deps.Host.Services.UserInputService` must get nil there rather than an error
+--- indexing a nil table, which is the contract every other capability on this
+--- record keeps -- present and empty beats absent.
+if not (ResolvedHost :: any).Services then
+	(ResolvedHost :: any).Services = {}
+end
+
 --- The vide the resolved host is driving. Never nil: both hosts set it, and a
 --- host that could not resolve one errors in its own constructor rather than
 --- handing back a half-built surface.
@@ -76,11 +87,16 @@ local resolvedVide: any = ResolvedHost.vide
 --- there is nothing to require off-engine and the require itself is the failure.
 --- Without it VirtualList renders every row, which is slow rather than wrong.
 ---
---- `typeof(game)` rather than `typeof(script)`: the question is "is this the
---- Roblox engine", and `game` answers it directly. It is ALSO the last use of
---- `game` in this framework, and it is a genuine one -- Dew's `game` is the
---- boolean `true`, so this answers false there, correctly.
-local isRobloxEngine = typeof(game) == "Instance"
+--- THE HOST ANSWERS THIS, and it is the only thing that should.
+---
+--- This read `typeof(game) == "Instance"` and called itself the last genuine use
+--- of `game` in the framework. It was not the last -- twenty-two modules were
+--- asking the same question independently -- and it was not genuine either: the
+--- host resolved directly above already knows which environment it bound to, and
+--- an answer taken from it cannot disagree with the host the way a second read
+--- can. Dew no longer installs a `game` at all, which is what made the old
+--- comment about Dew's boolean stale as well as beside the point.
+local isRobloxEngine = (ResolvedHost :: any).Environment == "Roblox"
 
 local VirtualPkg: any = nil
 if isRobloxEngine then
