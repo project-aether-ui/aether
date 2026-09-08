@@ -10,7 +10,6 @@
 	- Headless PointerRouter arbitration: Zero engine input-sinking bugs.
 ]]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 
 local ScrollArea = require("./ScrollArea")

@@ -15,7 +15,6 @@
 	instance also registers itself as a Block scope, so the arbiter accounts for
 	it and a mixed InputSink/InputScope screen still resolves correctly.
 ]]
-local isRoblox = typeof(game) == "Instance"
 
 local Deps = require("./Deps")
 local InputScope = require("./InputScope")

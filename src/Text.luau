@@ -1,5 +1,4 @@
 --!strict
-local isRoblox = typeof(game) == "Instance"
 --- ms-43 M119: the package's OWN tree, not the application's.
 ---
 --- This read `ReplicatedStorage.roblox_packages`, which is whatever the HOST

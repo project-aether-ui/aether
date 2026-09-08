@@ -95,6 +95,32 @@ export type Services = {
 --- nothing until something actually animates, and the listener list is
 --- snapshotted per frame because a listener may dispose itself, or a sibling,
 --- mid-frame. That is the property flux_motion existed to guarantee (ms-51 M16).
+--- THE ENGINE SERVICES A COMPONENT MIGHT WANT, RESOLVED ONCE AND HERE.
+---
+--- Eighteen modules used to open with `local isRoblox = typeof(game) == "Instance"`
+--- and five of them went on to call `game:GetService` from inside a component.
+--- `Host.luau` has always said selection is by capability and never by
+--- configuration; that was eighteen modules deciding for themselves.
+---
+--- This is the layer allowed to know. A component asks the host for the service
+--- it wants and gets nil where there is none, which is the same shape as
+--- `host.Clock` and `host.Vocabulary`.
+local function engineServices(): { [string]: any }
+	if typeof(game) ~= "Instance" then
+		return {}
+	end
+	local engine = game :: any
+	return {
+		UserInputService = engine:GetService("UserInputService"),
+		GuiService = engine:GetService("GuiService"),
+		ContextActionService = engine:GetService("ContextActionService"),
+		RunService = engine:GetService("RunService"),
+		TextService = engine:GetService("TextService"),
+		Players = engine:GetService("Players"),
+		Workspace = engine:GetService("Workspace"),
+	}
+end
+
 local function robloxServices(): Services?
 	if typeof(game) ~= "Instance" then
 		return nil
@@ -580,6 +606,9 @@ function DataModel.new(vide: any?): any
 	--- was already isolated — it just was not owned by anything that could swap it.
 	--- The environment supplies the frame source; this file supplies the interface.
 	host.Clock = services.Clock
+
+	--- Empty off engine, which is what a component's nil-guard already expects.
+	host.Services = engineServices()
 
 	--- AND vide'S OWN STEPPERS GET A FRAME, WHERE NOBODY ELSE IS GIVING THEM ONE.
 	---

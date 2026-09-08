@@ -12,7 +12,6 @@
 	- Aether.Primitives.ScopedSurface (popup boundary & click-outside dismissal)
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 local TextInput = require("../TextInput")
 local useFloating = require("../useFloating")

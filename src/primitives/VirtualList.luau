@@ -15,8 +15,8 @@
 	- 100% offline testable in Lune.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 
 local ScrollController = require("../controllers/ScrollController")
 
@@ -45,7 +45,7 @@ local source = Deps.source
 local effect = Deps.effect
 local action = Deps.action
 local cleanup = Deps.cleanup
-local RunService = if isRoblox and game:GetService("RunService") then game:GetService("RunService") else nil
+local RunService = Deps.Host.Services.RunService
 
 export type VirtualListProps<T> = {
 	Name: string?,

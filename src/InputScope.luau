@@ -41,9 +41,9 @@
 	         for a HUD element that should never eat a click.
 ]]
 
-local isRoblox = typeof(game) == "Instance"
 
 local Deps = require("./Deps")
+local isRoblox = Deps.Host.Environment == "Roblox"
 local LayerManager = require("./LayerManager")
 local HitTest = require("./HitTest")
 
@@ -56,9 +56,9 @@ local UDim2, Vector2, Color3, Enum =
 local vide = Deps.vide
 local scopedCleanup = Deps.cleanup
 
-local UserInputService = if isRoblox then (game :: any):GetService("UserInputService") else nil
-local GuiService = if isRoblox then (game :: any):GetService("GuiService") else nil
-local ContextActionService = if isRoblox then (game :: any):GetService("ContextActionService") else nil
+local UserInputService = Deps.Host.Services.UserInputService
+local GuiService = Deps.Host.Services.GuiService
+local ContextActionService = Deps.Host.Services.ContextActionService
 
 export type ScopePolicy = "Modal" | "Block" | "Pass"
 

@@ -7,7 +7,6 @@
 	directly composing Aether.Primitives.PressableFrame.
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 --- Renamed from PressableFrame in ms-51 M14; same primitive.
 local PressableFrame = require("./Pressable")

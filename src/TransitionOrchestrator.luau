@@ -17,7 +17,7 @@ local source = Deps.source
 local spring = Deps.spring
 local root = Deps.root
 local isRoblox = Deps.isRoblox
-local RunService = if isRoblox then (game :: any):GetService("RunService") else nil
+local RunService = Deps.Host.Services.RunService
 
 local ScreenStack = require("./ScreenStack")
 

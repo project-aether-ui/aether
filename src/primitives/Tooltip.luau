@@ -9,7 +9,6 @@
 	- Aether.Primitives.ScopedSurface (floating container)
 ]=]
 
-local isRoblox = typeof(game) == "Instance"
 local Deps = require("../Deps")
 local useHover = require("../useHover")
 local useFloating = require("../useFloating")

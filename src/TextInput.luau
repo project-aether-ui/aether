@@ -18,10 +18,10 @@ local PressableFrame = require("./primitives/Pressable")
 local TextInputManager = require("./TextInputManager")
 local InputScope = require("./InputScope")
 
-local isRoblox = typeof(game) == "Instance"
-local TextService = if isRoblox then game:GetService("TextService") else nil
-local UserInputService = if isRoblox then game:GetService("UserInputService") else nil
-local RunService = if isRoblox then game:GetService("RunService") else nil
+local isRoblox = Deps.Host.Environment == "Roblox"
+local TextService = Deps.Host.Services.TextService
+local UserInputService = Deps.Host.Services.UserInputService
+local RunService = Deps.Host.Services.RunService
 
 --- ONE SOURCE OF TEXT METRICS (ms-52 M3).
 ---

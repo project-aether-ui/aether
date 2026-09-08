@@ -103,7 +103,7 @@ end
 --- 22 the day this gate was written, counting any bare `game` rather than one
 --- phrase, which is why it is not the 23 the milestone note quotes. It is not a target; it is a ratchet, so
 --- that the number cannot quietly climb back while milestone 7 is in progress.
-local ALLOWANCE = 22
+local ALLOWANCE = 0
 
 local modules: { [string]: boolean } = {}
 local distinct = 0

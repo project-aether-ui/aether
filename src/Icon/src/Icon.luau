@@ -3,13 +3,15 @@
 --- props table unchanged, which is indistinguishable from working until
 --- something reads the result.
 ---
---- THE BRANCH IS ABOUT THE ARTEFACT, NOT THE PATH. Both arms are string requires
---- now; what differs is that `roblox_packages/vide` is a redirect pesde generates
---- for the engine and which cannot resolve without an Instance tree. See
---- src/Deps.luau for the same split stated once, properly.
-local Vide = if typeof(game) == "Instance"
-	then require("../../../roblox_packages/vide")
-	else require("../../Deps").vide
+--- THERE IS NO BRANCH ANY MORE. This picked between the pesde redirect and the
+--- one `Deps` had resolved, because the redirect could not load off engine: vide
+--- guarded its leaves on `game` and fell back to a `test/` directory the
+--- published artifact does not ship.
+---
+--- vide guards each name on what it actually uses now, so the redirect resolves
+--- in both environments and `Deps` takes it there unconditionally. One vide, one
+--- reactive graph, and no module here asking what it is running on.
+local Vide = require("../../Deps").vide
 
 local IconManager = {}
 
