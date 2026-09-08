@@ -12,7 +12,7 @@ roblox = "src/Icon"
 roblox = "packages/virtual"
 
 [graph."centau/vide@0.0.0-730e7398fc80d6b26b7aa0c761960498283850db roblox"]
-direct = ["vide", { repo = "https://github.com/es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }, "standard"]
+direct = ["vide", { repo = "https://github.com/es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }, "peer"]
 
 [graph."centau/vide@0.0.0-730e7398fc80d6b26b7aa0c761960498283850db roblox".pkg_ref]
 ref_ty = "git"
