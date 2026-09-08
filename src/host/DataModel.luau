@@ -597,8 +597,20 @@ function DataModel.new(vide: any?): any
 	--- nothing. That exact failure is recorded in LuauDataModel.luau, which is why
 	--- the presence of `update_springs` is what decides this rather than the
 	--- environment's name.
-	if type(vide.update_springs) == "function" or type(vide.update_timeouts) == "function" then
-		local springs, timeouts = vide.update_springs, vide.update_timeouts
+	--- PROBE, DO NOT INDEX. vide's public table raises from `__index` on a name
+	--- it does not carry, so `type(vide.update_springs)` is itself an error
+	--- against the real package. Only an assembled core answers nil.
+	local function member(name: string): any
+		local ok, value = pcall(function()
+			return (vide :: any)[name]
+		end)
+		return if ok then value else nil
+	end
+
+	local springs, timeouts = member("update_springs"), member("update_timeouts")
+	local step = member("step")
+
+	if type(springs) == "function" or type(timeouts) == "function" then
 		host.Clock.OnFrame(function(dt: number)
 			--- SPRINGS FIRST, before anything that reads them this frame. vide's
 			--- own lib.luau orders them the same way and for the same reason.
@@ -608,6 +620,15 @@ function DataModel.new(vide: any?): any
 			if timeouts then
 				timeouts(dt)
 			end
+		end)
+	elseif type(step) == "function" then
+		--- THE WHOLE PACKAGE DRIVES ITSELF THROUGH ONE ENTRY POINT. vide's
+		--- `step` runs springs, then timeouts, then the scheduler, in the order
+		--- its own Heartbeat connection would have. That connection asks
+		--- `game:GetService`, which is nil here, so `Host.Clock` calls it
+		--- instead -- the same substitution the rest of this file makes.
+		host.Clock.OnFrame(function(dt: number)
+			step(dt)
 		end)
 	end
 
