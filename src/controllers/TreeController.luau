@@ -37,17 +37,22 @@ export type TreeController = {
 	Subscribe: (listener: (expandedKeys: { any }) -> ()) -> (() -> ()),
 }
 
-local Deps = require("../Deps")
-
-local source = Deps.source
+--- NO REACTIVE LIBRARY HERE, AND THAT IS THE POINT OF `controllers/`.
+---
+--- This machine used to hold a vide `source` as a version counter, bumped on
+--- every change and read inside `IsExpanded` so a caller reading state inside an
+--- effect would be tracked. It was a second notification path beside `Subscribe`
+--- below, and `TreeView` -- the only consumer -- already uses `Subscribe`.
+---
+--- A machine reports; a binding decides what that means to a reactive graph.
+--- That is the split `@zag-js/*` keeps from `@ark-ui/react`, and the version
+--- source was this module reaching across it.
 
 local function new(options: TreeControllerOptions?): TreeController
 	local opts = options or {}
 	local expandedSet: { [any]: boolean } = {}
 	local expandedCount = 0
 	local listeners: { (expandedKeys: { any }) -> () } = {}
-	local versionSource = if source then source(0) else nil
-
 	if opts.OnExpandedChanged then
 		table.insert(listeners, opts.OnExpandedChanged)
 	end
@@ -63,9 +68,6 @@ local function new(options: TreeControllerOptions?): TreeController
 	end
 
 	local function notify()
-		if versionSource then
-			versionSource(versionSource() + 1)
-		end
 		local keys = getExpandedKeys()
 		for _, listener in ipairs(listeners) do
 			listener(keys)
@@ -84,9 +86,6 @@ local function new(options: TreeControllerOptions?): TreeController
 	local self = {} :: TreeController
 
 	function self.IsExpanded(id: any): boolean
-		if versionSource then
-			local _ = versionSource()
-		end
 		return expandedSet[id] == true
 	end
 
