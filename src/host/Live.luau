@@ -38,11 +38,11 @@
 	diffing. It is an instrument, and its honesty matters more than its throughput.
 ]]
 
-local Layout = require("./Layout")
+local Layout = require("../core/Layout")
 --- The focused-field authority. Required directly rather than injected: there is
 --- exactly one per process, the same way there is one PointerRouter.
 local TextInputManager = require("../TextInputManager")
-local Text = require("./Text")
+local Text = require("../core/Text")
 
 local Live = {}
 

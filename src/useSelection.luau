@@ -42,7 +42,7 @@
 	framework becomes something you have to look up.
 ]]
 
-local Presence = require("./Presence")
+local Presence = require("./core/Presence")
 
 local useSelection = {}
 

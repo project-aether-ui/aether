@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Aether · host/Text — how wide is this string, answered synchronously.
+	Aether · core/Text — how wide is this string, answered synchronously.
 
 	WHY (ms-52 M1)
 	`AutomaticSize`, `TextScaled` and `TextBounds` are used across spektr/button,

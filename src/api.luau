@@ -46,9 +46,9 @@ local ScopeContext = require("./ScopeContext")
 local ScopedSurface = require("./ScopedSurface")
 local TextInput = require("./TextInput")
 local TextInputManager = require("./TextInputManager")
-local FloatingMath = require("./FloatingMath")
+local FloatingMath = require("./core/FloatingMath")
 local useFloating = require("./useFloating")
-local Presence = require("./Presence")
+local Presence = require("./core/Presence")
 local useDisclosure = require("./useDisclosure")
 local useSelection = require("./useSelection")
 local Stagger = require("./Stagger")
@@ -64,10 +64,10 @@ local TreeView = require("./primitives/TreeView")
 
 --- Layer 2.5. Exported so packages ABOVE Aether can build on the same host —
 --- notably so they can take real vide headlessly instead of a shim.
-local Motion = require("./Motion")
+local Motion = require("./core/Motion")
 --- The cursor seam (ms-51 M19). Exported so the package that OWNS the cursor
 --- can register itself, which is what replaced Aether depending on it.
-local Cursor = require("./Cursor")
+local Cursor = require("./core/Cursor")
 local Host = require("./host/Host")
 --- THE DESKTOP CEREMONY, on the public surface so a HOST can reach it through
 --- the consumer's own installed copy rather than through a path into ours.

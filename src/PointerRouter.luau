@@ -162,7 +162,7 @@ local CURSOR_PRIORITY = 100
 --- reach `Mouse.PushCursor`, and that edge was the last thing keeping VideShim
 --- alive, since spektr/mouse could never depend on Aether for a real headless
 --- vide without closing a cycle. CoreInput registers itself now. See Cursor.luau.
-local Cursor = require("./Cursor")
+local Cursor = require("./core/Cursor")
 local popCursor: (() -> ())? = nil
 
 local PointerRouter = {}

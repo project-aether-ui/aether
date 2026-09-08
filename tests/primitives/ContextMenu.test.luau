@@ -1,7 +1,7 @@
 --!strict
 --!tier math
 local T = require("@testkit")
-local FloatingMath = require("../../src/FloatingMath")
+local FloatingMath = require("../../src/core/FloatingMath")
 
 local function testContextMenuCursorPlacement()
 	local cursorAnchor = { X = 450, Y = 300, Width = 0, Height = 0 }

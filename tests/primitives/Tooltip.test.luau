@@ -1,7 +1,7 @@
 --!strict
 --!tier math
 local T = require("@testkit")
-local FloatingMath = require("../../src/FloatingMath")
+local FloatingMath = require("../../src/core/FloatingMath")
 
 local function testTooltipTopPlacement()
 	local targetAnchor = { X = 500, Y = 300, Width = 100, Height = 40 }

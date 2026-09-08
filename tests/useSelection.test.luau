@@ -29,7 +29,7 @@ local host = Aether.Host.detect()
 host.InstallVocabulary()
 
 local useSelection = require("../src/useSelection")
-local Presence = require("../src/Presence")
+local Presence = require("../src/core/Presence")
 
 --- A group over three items whose exits are driven by hand.
 local function fixture(mode: string?, inherit: Presence.Handle?)

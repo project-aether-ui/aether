@@ -5,7 +5,7 @@
 ]=]
 
 
-local FloatingMath = require("./FloatingMath")
+local FloatingMath = require("./core/FloatingMath")
 local ScreenCoords = require("./ScreenCoords")
 local Deps = require("./Deps")
 local isRoblox = Deps.Host.Environment == "Roblox"

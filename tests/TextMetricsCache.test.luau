@@ -22,7 +22,7 @@
 	when it should not is broken.
 ]=]
 local T = require("@testkit")
-local Text = require("../src/host/Text")
+local Text = require("../src/core/Text")
 
 local function testCacheStopsCallingTheProvider()
 	Text._reset()

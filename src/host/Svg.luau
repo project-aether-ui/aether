@@ -37,7 +37,7 @@
 	this note no longer excludes it.
 ]]
 
-local Layout = require("./Layout")
+local Layout = require("../core/Layout")
 
 local Svg = {}
 

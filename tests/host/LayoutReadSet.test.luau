@@ -30,7 +30,7 @@
 ]=]
 local T = require("@testkit")
 local Aether = require("../../src/api")
-local Layout = require("../../src/host/Layout")
+local Layout = require("../../src/core/Layout")
 
 --- A scene wrapper that records every access and forwards it unchanged.
 ---

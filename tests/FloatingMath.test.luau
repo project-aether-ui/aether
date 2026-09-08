@@ -1,6 +1,6 @@
 --!strict
 --!tier math
-local FloatingMath = require("../src/FloatingMath")
+local FloatingMath = require("../src/core/FloatingMath")
 local T = require("@testkit")
 
 local function testStandardBottomPlacements()
