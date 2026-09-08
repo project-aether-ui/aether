@@ -85,6 +85,35 @@ Fixes: 1234567890ab ("the subject line")
 Skip the body when there genuinely is not one. `chore(assets): update the tray
 icon` is complete.
 
+**Most commits do not need a body.**
+The rules above say what a good body contains, not that every commit owes one.
+A body is earned by a why the diff cannot show, and most changes do not have
+one. The subject alone is the correct output more often than not.
+
+Three short paragraphs is already a long body. Past that, a commit is usually
+doing two things and wants to be two commits. A body that restates the diff,
+narrates the process, or recaps numbers CI already prints is noise: it buries
+the commits whose bodies do matter.
+
+**Do not write `owner/repo#N`, and do not paste an issue or pull request URL.**
+GitHub autolinks both in commit messages. Against a repository you do not own
+that puts a permanent cross-reference on THEIR timeline, which cannot be
+deleted, edited away, or undone by rewriting your own history. Write "centau/vide
+pull request 89" instead. Source comments are fine; file contents do not
+autolink.
+
+This is the hash rule again: say the thing, do not link the thing.
+
+### Authorship
+
+Commits and pull requests are authored by the person landing them. No
+`Co-Authored-By` trailer naming a tool, and no generated-by footer in a pull
+request body.
+
+The trailer means "a person to contact", which a tool is not. It also cannot be
+removed later without rewriting published history, so the default is to leave it
+out.
+
 ---
 
 ## Pull requests
