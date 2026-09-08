@@ -255,7 +255,14 @@ function VideCore.full(): any?
 	--- below falls through to `require "../test/mock"`, which the shipped
 	--- artifact does not contain -- so the failure would arrive as seven require
 	--- errors naming a directory nobody can produce, rather than as nil here.
-	if not game then
+	---
+	--- IT ASKS ABOUT `Instance`, NOT `game`, since centau/vide#89. vide's leaves
+	--- read `game` for truthiness alone to decide whether the Roblox globals are
+	--- real; that patch has them ask about the globals themselves, and `Instance`
+	--- is the one this mirror should ask about too. A host supplying a DataModel
+	--- supplies `Instance`, and nothing then has to install a `game` global whose
+	--- only job was satisfying a proxy.
+	if not Instance then
 		return nil
 	end
 
