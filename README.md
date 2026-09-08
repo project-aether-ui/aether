@@ -5,8 +5,9 @@ desktop, and in CI, because layout, hit testing, pointer arbitration, focus and
 text editing are all resolved in Luau rather than by an engine.
 
 A host binds that abstract geometry to something concrete and paints it.
-`Host.detect()` picks one by environment and never by configuration: the Roblox
-host when `game` is an Instance, the headless host otherwise.
+`Host.detect()` selects by capability and never by configuration: the DataModel
+host when the environment supplies a DataModel this framework can drive, and the
+Luau test double otherwise.
 
 ## Running it
 
@@ -18,15 +19,10 @@ lune run tests/gates/all_gates.luau --run    # the structural gates
 lune run conformance/run.luau                # against Roblox's own behaviour
 ```
 
-[aether-cli](https://github.com/project-aether-ui/aether-cli) renders a component
-with no engine underneath it, from its own repository:
-
-```sh
-aether snapshot examples/counter/entry/desktop.luau -o counter.png
-aether preview  examples/counter/entry/desktop.luau
-```
-
-`snapshot` needs no display, so it runs in CI. `preview` opens a window.
+Rendering off-engine needs a host that owns the process and embeds Luau as a
+guest. That host is not in this repository (ADR-004) and is not published yet,
+so the desktop path is not something a reader can run from here today;
+`examples/counter/entry/desktop.luau` is the entry point such a host mounts.
 
 ## One component, three hosts
 
@@ -50,7 +46,7 @@ The off-engine hosts are Rust-owned: Rust holds the process and embeds Luau as a
 guest. That Rust is THEIRS, not this repository's -- the rasteriser, the runtime
 and the window layer live in Dew (ADR-004), and this package ships `src/**` and
 nothing else. [docs/hosting_architecture.md](docs/hosting_architecture.md) has
-why, and how the CLI and Dew share one pipeline.
+why, and what an off-engine host is required to supply.
 
 ## Conformance
 
