@@ -1,6 +1,7 @@
 {
   "aliases": {
     "testkit": "./tests/testkit",
-    "aether": "./src"
+    "aether": "./src",
+    "vide": "./roblox_packages/.pesde/centau+vide/0.0.0-a6d5f55d98fcbdae2d7e3740ef4616f8a9006407/vide/src"
   }
 }

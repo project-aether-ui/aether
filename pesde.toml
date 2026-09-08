@@ -44,7 +44,19 @@ build_files = ["src"]
 
 [dependencies]
 Virtual = { workspace = "spektr/virtual" }
-vide = { wally = "centau/vide", version = "^0.4.0" }
+# THE FORK, NOT THE REGISTRY. Upstream vide guards `typeof`, `Instance`, `Enum`,
+# `Color3` and `debug.profilebegin` on the truthiness of `game`, so off Roblox --
+# where a host supplies the real globals and no `game` -- six of its modules fall
+# back to requiring `test/`, which the published artifact does not ship, and fail
+# to load. Measured against a host that supplies the real globals: 6 modules load
+# only because `game` is present.
+#
+# The fork guards each name on what it actually uses. It is a no-op on Roblox,
+# where every one of those names exists and both forms take the same branch, so a
+# Roblox consumer of Aether is unaffected. Proposed upstream as centau/vide pull
+# request 89; if that merges this returns to the registry, and if it is declined
+# the fork stays.
+vide = { repo = "es9-dev/vide", rev = "058c5d5bf3b5098029bf6109c564e13f7598a10b" }
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
