@@ -11,13 +11,13 @@ roblox = "src/Icon"
 [workspace."spektr/virtual"]
 roblox = "packages/virtual"
 
-[graph."centau/vide@0.0.0-a6d5f55d98fcbdae2d7e3740ef4616f8a9006407 roblox"]
-direct = ["vide", { repo = "https://github.com/es9-dev/vide", rev = "058c5d5bf3b5098029bf6109c564e13f7598a10b" }, "standard"]
+[graph."centau/vide@0.0.0-730e7398fc80d6b26b7aa0c761960498283850db roblox"]
+direct = ["vide", { repo = "https://github.com/es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }, "standard"]
 
-[graph."centau/vide@0.0.0-a6d5f55d98fcbdae2d7e3740ef4616f8a9006407 roblox".pkg_ref]
+[graph."centau/vide@0.0.0-730e7398fc80d6b26b7aa0c761960498283850db roblox".pkg_ref]
 ref_ty = "git"
 repo = "https://github.com/es9-dev/vide"
-tree_id = "a6d5f55d98fcbdae2d7e3740ef4616f8a9006407"
+tree_id = "730e7398fc80d6b26b7aa0c761960498283850db"
 new_structure = true
 
 [graph."spektr/virtual@0.0.1 roblox"]

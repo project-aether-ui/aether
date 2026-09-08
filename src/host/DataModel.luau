@@ -45,7 +45,6 @@
 ]]
 
 local TextModule = require("./Text")
-local VideCore = require("./VideCore")
 
 local DataModel = {}
 
@@ -454,15 +453,11 @@ function DataModel.new(vide: any?): any
 			2
 		)
 	end
-	if vide == nil then
-		vide = VideCore.full()
-	end
 	if type(vide) ~= "table" then
 		error(
 			"Aether.Host.DataModel found a conforming DataModel and no vide to drive it with. "
-				.. "On Roblox `roblox_packages/vide` supplies it; elsewhere VideCore assembles "
-				.. "it from the installed package, which needs a truthy `game` for vide's own "
-				.. "gate and a reachable `@vide`.",
+				.. "vide is passed in by whoever builds the host; `Deps` takes it from "
+				.. "the package installed beside Aether.",
 			2
 		)
 	end
