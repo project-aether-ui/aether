@@ -13,6 +13,7 @@ local Deps = require("../Deps")
 local useHover = require("../useHover")
 local useFloating = require("../useFloating")
 local ScopedSurface = require("../ScopedSurface")
+local TooltipMachine = require("../core/TooltipMachine")
 
 --- The value vocabulary, from the HOST rather than from Roblox globals
 --- (ms-51 M16). Bound as locals so every call site below reads exactly as it
@@ -36,8 +37,32 @@ export type TooltipProps = {
 
 local function Tooltip(props: TooltipProps): any
 	local isOpen = source(false)
-	local timerThread: thread? = nil
-	local delayTime = props.Delay or 0.35
+
+	--- THE RULE LIVES IN `core/TooltipMachine`, and this is the binding half.
+	--- Hover, wait, show; leave, hide, cancel anything pending -- none of that is
+	--- about vide or about Roblox, and it used to be a `task.delay` thread closed
+	--- over by an effect, which meant the only way to ask whether it was right
+	--- was to mount a component.
+	---
+	--- What stays here is what a machine has no business owning: the scheduler it
+	--- is handed, and mirroring its state into a source the tree can read.
+	local machine = TooltipMachine.new({
+		Delay = props.Delay,
+		Schedule = function(seconds: number, fn: () -> ()): () -> ()
+			local thread = task.delay(seconds, fn)
+			return function()
+				task.cancel(thread)
+			end
+		end,
+	})
+
+	machine.Subscribe(function()
+		isOpen(machine.IsOpen())
+	end)
+
+	Deps.cleanup(function()
+		machine.Destroy()
+	end)
 
 	local hoverHandle = useHover()
 	local isHovered = hoverHandle.IsHovered
@@ -56,20 +81,13 @@ local function Tooltip(props: TooltipProps): any
 		end
 	end
 
-	-- Handle dwell delay
+	--- The only thing the binding decides: hovering means Enter, and not hovering
+	--- means Leave. Everything downstream of that is the machine's.
 	Deps.effect(function()
-		local hovered = isHovered()
-		if timerThread then
-			task.cancel(timerThread)
-			timerThread = nil
-		end
-
-		if hovered then
-			timerThread = task.delay(delayTime, function()
-				isOpen(true)
-			end)
+		if isHovered() then
+			machine.Enter()
 		else
-			isOpen(false)
+			machine.Leave()
 		end
 	end)
 
