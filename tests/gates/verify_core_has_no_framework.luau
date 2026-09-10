@@ -76,6 +76,33 @@ local function reachesTheFramework(withStrings: string): string?
 	return nil
 end
 
+--- A THIRD RULE, AND THE ONE THAT MAKES THE OTHER TWO HOLD.
+---
+--- The first two ask what a module requires DIRECTLY. A core module that
+--- required a non-core sibling would pass both while reaching vide through it,
+--- because the coupling would be one hop away. The boundary has no outward edges
+--- today -- every module under it requires nothing at all -- and this is what
+--- keeps that true rather than lucky.
+---
+--- It is also the difference between a directory and a package. A package cannot
+--- reach its consumer because the resolver will not let it; a directory can, and
+--- this rule is the resolver we do not have.
+local function reachesOutsideTheBoundary(withStrings: string, path: string): string?
+	for target in string.gmatch(withStrings, 'require%("([^"]+)"%)') do
+		--- An alias or a package is not a sibling module and is not ours to judge
+		--- here; rules one and two already refuse the framework by name.
+		if string.sub(target, 1, 1) ~= "." then
+			continue
+		end
+		--- `./x` and `../x` from a module already inside the boundary: the only
+		--- shape that stays inside is a sibling, which is `./`.
+		if string.sub(target, 1, 3) == "../" then
+			return `requires \`{target}\`, which leaves the boundary`
+		end
+	end
+	return nil
+end
+
 local function namesAnEngineType(codeOnly: string): string?
 	for _, ty in ipairs(ENGINE_TYPES) do
 		if string.find(codeOnly, `%f[%w_]{ty}%f[^%w_]`) then
@@ -106,7 +133,9 @@ for path in string.gmatch(result.stdout, "[^\r\n]+") do
 	local withStrings = stripComments(fs.readFile(path))
 	local codeOnly = stripStrings(withStrings)
 
-	local why = reachesTheFramework(withStrings) or namesAnEngineType(codeOnly)
+	local why = reachesTheFramework(withStrings)
+		or namesAnEngineType(codeOnly)
+		or (if inBoundary(path) then reachesOutsideTheBoundary(withStrings, path) else nil)
 
 	if inBoundary(path) and why then
 		table.insert(failures, `{path}: {why}, and it sits under the Layer 1 boundary`)
