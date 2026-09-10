@@ -71,6 +71,8 @@ export type VirtualListProps<T> = {
 	[any]: any,
 }
 
+local VirtualWindow = require("../core/VirtualWindow")
+
 local function resolve<V>(v: ((() -> V) | V)?): V?
 	if type(v) == "function" then
 		return (v :: any)()
@@ -85,30 +87,23 @@ local function udim2New(xs: number, xo: number, ys: number, yo: number): any
 	return { X = { Scale = xs, Offset = xo }, Y = { Scale = ys, Offset = yo } }
 end
 
+--- THE ARITHMETIC LIVES IN `core/VirtualWindow`, and this wraps it in the
+--- interface a measured index also satisfies. What stays here is the part that
+--- knows about the item list; what moved is the part that only knows numbers,
+--- and which used to be answerable only by rendering rows and counting them.
 local function createFallbackIndex(getItems: () -> { any }, est: number)
 	local items = getItems()
+	local window = VirtualWindow.uniform(#items, est)
+
 	return {
-		TotalSize = function(): number
-			return #items * est
-		end,
-		Count = function(): number
-			return #items
-		end,
-		OffsetOf = function(index: number): number
-			return (index - 1) * est
-		end,
-		SizeOf = function(index: number): number
-			return est
-		end,
-		Range = function(offset: number, extent: number, overscan: number): (number, number)
-			local n = #items
-			if n == 0 then return 1, 0 end
-			local first = math.clamp(math.floor(offset / est) + 1 - overscan, 1, n)
-			local last = math.clamp(math.ceil((offset + extent) / est) + overscan, 1, n)
-			return first, last
-		end,
+		TotalSize = window.TotalSize,
+		Count = window.Count,
+		OffsetOf = window.OffsetOf,
+		SizeOf = window.SizeOf,
+		Range = window.Range,
 		Refresh = function()
 			items = getItems()
+			window.SetCount(#items)
 		end,
 		Record = function() end,
 	}
