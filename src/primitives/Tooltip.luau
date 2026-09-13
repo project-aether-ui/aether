@@ -48,10 +48,52 @@ local function Tooltip(props: TooltipProps): any
 	--- is handed, and mirroring its state into a source the tree can read.
 	local machine = TooltipMachine.new({
 		Delay = props.Delay,
+		--- WHOEVER CAN WAIT. `task` is Roblox's scheduler and Dew installs none --
+		--- `type(task)` is nil there -- so this read `task.delay` and raised from
+		--- inside a vide effect, which swallowed it. The tooltip hovered, entered
+		--- its machine, and never opened.
+		---
+		--- `Host.Clock` is the frame source every host has, and counting dt up to
+		--- the delay is the only thing a timer is. This is the port `TooltipMachine`
+		--- takes for exactly this reason: the machine states what it needs and the
+		--- binding decides who provides it.
+		---
+		--- NOT FACTORED OUT YET. One consumer is not evidence of the shape a
+		--- general `Delay` should take, and it would want to be Layer 1 taking
+		--- `OnFrame` as a port rather than a helper reaching for a host.
 		Schedule = function(seconds: number, fn: () -> ()): () -> ()
-			local thread = task.delay(seconds, fn)
+			if typeof(task) == "table" and type((task :: any).delay) == "function" then
+				local thread = (task :: any).delay(seconds, fn)
+				return function()
+					(task :: any).cancel(thread)
+				end
+			end
+
+			local clock = (Deps.Host :: any).Clock
+			if not (clock and clock.OnFrame) then
+				--- Nothing can wait here, so open at once rather than never: the
+				--- machine makes the same choice when handed no scheduler.
+				fn()
+				return function() end
+			end
+
+			local elapsed = 0
+			local stop: (() -> ())? = nil
+			stop = clock.OnFrame(function(dt: number)
+				elapsed += dt
+				if elapsed >= seconds then
+					if stop then
+						stop()
+						stop = nil
+					end
+					fn()
+				end
+			end)
 			return function()
-				task.cancel(thread)
+				if stop then
+					stop()
+					stop = nil
+				end
 			end
 		end,
 	})
