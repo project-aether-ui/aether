@@ -72,6 +72,8 @@ local Host = require("./host/Host")
 --- THE DESKTOP CEREMONY, on the public surface so a HOST can reach it through
 --- the consumer's own installed copy rather than through a path into ours.
 local Desktop = require("./host/Desktop")
+local TooltipMachine = require("./core/TooltipMachine")
+local VirtualWindow = require("./core/VirtualWindow")
 
 --- THE REACTIVE SURFACE AND THE VALUE VOCABULARY, exported from the root.
 ---
@@ -92,9 +94,16 @@ local Controllers = {
 }
 
 -- Layer 2: Headless Interaction Protocols (Abstract IO)
+--- THE LAYER 1 MACHINES A CONSUMER CAN REACH.
+---
+--- `TooltipMachine` and `VirtualWindow` were added under `src/core/` by milestone
+--- 7 and listed nowhere: not here, not at the top level. Two modules shipped that
+--- no consumer could require, found when a demo tried to use one.
 local Core = {
 	createPressable = createPressable,
 	ScrollController = ScrollController,
+	TooltipMachine = TooltipMachine,
+	VirtualWindow = VirtualWindow,
 }
 
 -- Domain 1: Reactive Runtime & Control Flow
