@@ -812,7 +812,33 @@ if UserInputService then
 	end)
 end
 
-if RunService then
+--- WHO DRIVES THE FRAME, AND IT IS NOT ALWAYS A HEARTBEAT.
+---
+--- This read `RunService.Heartbeat` and nothing else, so off engine the bus below
+--- never ran: `useHover` registered observers that were never called, and a
+--- tooltip could not open under a host that had no `RunService`. The first demo
+--- written against Dew found it -- 28,800 pixels painted and not one of them
+--- changed when the pointer moved onto the anchor.
+---
+--- `Host.Clock` exists for exactly this substitution and `host/DataModel.luau`
+--- already makes it for vide's springs, naming the same reason: the line that
+--- would connect a Heartbeat reads `game:GetService`, and this environment has
+--- no `game`. Hover is a function of geometry rather than of input events, so it
+--- needs a frame and does not care whose.
+local function onEachFrame(fn: () -> ())
+	if RunService then
+		RunService.Heartbeat:Connect(fn)
+		return
+	end
+	local clock = (Deps.Host :: any).Clock
+	if clock and clock.OnFrame then
+		clock.OnFrame(function(_dt: number)
+			fn()
+		end)
+	end
+end
+
+do
 	-- LIVE HOVER. Movement alone is not enough: a list can scroll, a card can
 	-- animate, a window can open or close under a completely stationary cursor,
 	-- and the element under the pointer changes with no input event to announce
@@ -822,7 +848,7 @@ if RunService then
 	-- Polling makes hover a function of geometry rather than of input events.
 	-- Cost is one Resolve per frame — a rect test per registered control, with
 	-- an early-out when nothing is registered.
-	RunService.Heartbeat:Connect(function()
+	onEachFrame(function()
 		-- Advance first, and unconditionally: IsPointerOver's memo must expire
 		-- even on frames where nothing is registered and hover does no work.
 		frameStamp += 1
