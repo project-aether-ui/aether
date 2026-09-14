@@ -305,8 +305,33 @@ function InputScope.SetPointerPosition(x: number, y: number)
 end
 
 function InputScope.GetPointerPosition(): (number, number)
-	if not UserInputService then return fedX, fedY end
-	local loc = UserInputService:GetMouseLocation()
+	--- ASK THE HOST, WHICHEVER HOST IT IS. Where the pointer is is a question
+	--- every host can answer; only the engine can answer it through a service.
+	---
+	--- The fed coordinates are the last resort and are only true on frames where
+	--- input happened, which is why hover went stale off engine: a list scrolling
+	--- under a stationary cursor changes what is beneath it with no event to say
+	--- so.
+	local rawX: number?, rawY: number? = nil, nil
+
+	local reader = (Deps.Host :: any).Pointer
+	if reader then
+		rawX, rawY = reader.Position()
+	end
+
+	if rawX == nil and UserInputService then
+		local loc = UserInputService:GetMouseLocation()
+		rawX, rawY = loc.X, loc.Y
+	end
+
+	if rawX == nil or rawY == nil then
+		return fedX, fedY
+	end
+
+	--- THE INSET APPLIES TO BOTH. `GetMouseLocation` is in screen space and the
+	--- tree is not, so the topbar has to come off. A host that reports surface
+	--- coordinates already has an inset of zero, so one subtraction serves both
+	--- and neither needs to know which host answered.
 	local insetX, insetY = 0, 0
 	if GuiService then
 		local ok, inset = pcall(function()
@@ -316,7 +341,7 @@ function InputScope.GetPointerPosition(): (number, number)
 			insetX, insetY = inset.X, inset.Y
 		end
 	end
-	return loc.X - insetX, loc.Y - insetY
+	return rawX - insetX, rawY - insetY
 end
 
 --- Live answer for "is the mouse over UI right now?". Registered into

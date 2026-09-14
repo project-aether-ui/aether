@@ -121,6 +121,43 @@ local function engineServices(): { [string]: any }
 	}
 end
 
+--- WHERE IS THE POINTER, ASKED OF WHICHEVER HOST CAN ANSWER.
+---
+--- ITS OWN MEMBER RATHER THAN A FAKE `UserInputService`, and the first attempt
+--- proved why. In this framework a non-nil `UserInputService` MEANS the engine
+--- delivers input through it: `PointerRouter` connects `InputBegan`, `InputEnded`
+--- and `InputChanged` the moment it exists. A shim answering only
+--- `GetMouseLocation` made the router connect to signals that were not there.
+---
+--- So the seam is the question, not the service. Position is a question every
+--- host can answer; input DELIVERY genuinely differs, and pretending otherwise
+--- broke the router.
+local function pointerReader(): { [string]: any }?
+	if typeof(game) == "Instance" then
+		local uis = (game :: any):GetService("UserInputService")
+		return {
+			Position = function(): (number?, number?)
+				local loc = uis:GetMouseLocation()
+				return loc.X, loc.Y
+			end,
+			IsDown = function(_index: number): boolean
+				--- The engine answers this through input events rather than a
+				--- poll, and nothing in this framework asks yet.
+				return false
+			end,
+		}
+	end
+
+	local dew: any = DewHost
+	if type(dew) ~= "table" or type(dew.Pointer) ~= "table" then
+		return nil
+	end
+	return {
+		Position = dew.Pointer.Position,
+		IsDown = dew.Pointer.IsDown,
+	}
+end
+
 local function robloxServices(): Services?
 	if typeof(game) ~= "Instance" then
 		return nil
@@ -609,6 +646,9 @@ function DataModel.new(vide: any?): any
 
 	--- Empty off engine, which is what a component's nil-guard already expects.
 	host.Services = engineServices()
+
+	--- Answered by every host, unlike the services above.
+	host.Pointer = pointerReader()
 
 	--- AND vide'S OWN STEPPERS GET A FRAME, WHERE NOBODY ELSE IS GIVING THEM ONE.
 	---
