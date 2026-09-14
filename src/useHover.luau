@@ -123,8 +123,18 @@ local function useHover(options: HoverOptions?): HoverHandle
 			-- Deliberately no `Active = true` and no router registration. See the
 			-- header: a display surface neither sinks input nor occludes controls.
 
-			if RunService then
-				if opts.LiveHover ~= false then
+			--- LIVE HOVER NEEDS A FRAME, NOT A VENDOR. This asked for `RunService`
+			--- and skipped hover entirely without one, so nothing hovered off
+			--- engine -- found by the first demo written against Dew, which
+			--- painted its whole surface and changed not one pixel when the
+			--- pointer moved onto the anchor.
+			---
+			--- The branch below registers with `PointerRouter.OnFrame`, which is
+			--- the framework's own bus and drives itself from `Host.Clock` where
+			--- there is no Heartbeat. The fallback is the one that genuinely needs
+			--- an engine service, so that is where the check belongs.
+			if opts.LiveHover ~= false then
+				do
 					-- ms-43 M32: the router's ONE frame loop, not a Heartbeat per
 					-- element. Fifty cards used to mean fifty connections; they now
 					-- share one, and because observers run after the router's own
@@ -136,8 +146,10 @@ local function useHover(options: HoverOptions?): HoverHandle
 							evaluate(rbx)
 						end),
 					})
-				else
-					local UserInputService = Deps.Host.Services.UserInputService
+				end
+			elseif RunService then
+				local UserInputService = Deps.Host.Services.UserInputService
+				if UserInputService then
 					table.insert(connections, UserInputService.InputChanged:Connect(function(input: any)
 						if input.UserInputType == Enum.UserInputType.MouseMovement
 							or input.UserInputType == Enum.UserInputType.Touch then
