@@ -30,6 +30,9 @@ Emoji in a running program's output is fine. It is product, not prose.
 
 ## Commits
 
+Everything below the ASCII rule is preference rather than policy. Nothing here is
+enforced by a gate in this repository: it is how it reads when it reads well.
+
 ```
 <type>(<scope>): <subject>
 
@@ -39,8 +42,16 @@ Emoji in a running program's output is fine. It is product, not prose.
 ```
 
 Type and scope follow the conventional-commit scopes, mapped to directories in
-this repository. The subject is imperative and lowercase: "fix the layer
-root", not "fixed" or "Fixes".
+this repository. The subject is imperative and
+lowercase: "fix the layer root", not "fixed" or "Fixes".
+
+A subject that opens with an article or a quantifier is a statement rather than
+an instruction, however true it is. "a surface is a permission" and "one pump for
+the thread" both describe the result; say what applying the commit does.
+
+Scope is required, except for `docs` and `chore`. Those routinely span the whole
+repository, and `docs(docs)` is not information; a `feat` or a `fix` always
+happened somewhere, so it always says where.
 
 **The body's job is the WHY.**
 The diff already says what changed and nobody needs it restated. What the diff
@@ -48,6 +59,22 @@ cannot say is what was wrong, what else was tried, and what this now costs.
 
 A commit is self-contained. It cannot lean on a PR description, an issue, or a
 conversation, because in two years the reader has `git show` and nothing else.
+
+**Write the subject and stop.** That is the default, not a terse option. Most
+commits need no body, and one added out of habit buries the few that matter.
+
+Before writing a body, say what it tells a reader that the subject and the diff
+do not. If the answer takes a moment to find, there is no body to write.
+
+### Do not name the planning notes
+
+`.artifacts/` is not published. A commit or a pull request that says "milestone 9
+step B", "ADR-012" or "the sprint plan" names something the reader cannot open,
+and it dates the moment the plan moves on.
+
+Say what the work is FOR. Not "milestone 9 step B", but "an applet asks the host
+for the surface it draws into". The theme stays true after the numbering has been
+forgotten, and it is the part a reader needed anyway.
 
 ### What makes a body worth reading
 
@@ -112,41 +139,59 @@ request body.
 
 The trailer means "a person to contact", which a tool is not. It also cannot be
 removed later without rewriting published history, so the default is to leave it
-out.
+out. A generated-by footer does worse than the trailer: it invites a reader to
+judge the prose above it by the tool named under it.
+
+This is the one worth being strict about. A trailer cannot be removed later
+without rewriting published history, so it never goes in.
 
 ---
 
 ## Pull requests
 
+**Most pull requests are a paragraph.** Say what was wrong, say what you did,
+stop. If a list of changes helps, use a list. Nothing else is owed.
+
 ```
-<one paragraph: what this is and why it exists>
+Window events had no idea which window they came from, which is fine with
+one window and useless with two. Needed before an applet can ask for a
+popover, since a tooltip creates and destroys a surface constantly.
 
-## What changed
-## What to look at
-## Not done
+- events are tagged with a surface id
+- WM_DESTROY no longer posts WM_QUIT; the first window to close was
+  killing the process
+- poll moved off Window onto a Pump, since PeekMessage drains the whole
+  thread anyway
+
+Tests for both, checked they fail without the fix.
 ```
 
-**The opening paragraph is the whole PR to most readers.**
-Write it as though it is the only part that gets read, because it usually is.
+That is a complete pull request for a real change to the event loop. It is not
+a summary of a longer one that was cut down.
 
-**What changed** is grouped by area rather than being a commit list, since the
-commits are one click away.
+### When sections earn their place
 
-**What to look at** is the section reviewers want and almost nobody writes.
-Point at the two or three places where a mistake would be expensive, or where
-the reasoning is not obvious. This is the difference between a review and a
-skim.
+Add headings only when a reader has to navigate rather than read: several
+independent areas in one branch, or a reviewer who was not in the work and needs
+orienting. Two or three hundred words do not need signposting, and a heading over
+a single paragraph is decoration.
 
-**Not done** is not an apology. It sets the boundary of the claim, so a reviewer
-does not report a known gap as a finding and a user does not meet it as a
-surprise.
+When a pull request is genuinely large, these are the useful sections:
 
-Do not describe the review process, the number of commits, or how long it took.
+- **What changed**, grouped by area rather than listing commits.
+- **What to look at**, naming the two or three places where a mistake would be
+  expensive. Reviewers want this and almost nobody writes it.
+- **Not done**, which sets the boundary of the claim so a known gap is not
+  reported as a finding.
 
 ### Run-in headings
 
-A section is usually a short series of entries, each opening with a bolded
-run-in heading. Three shapes, chosen by what follows:
+Inside a section that is already earning its place, an entry may open with a
+bolded run-in heading. This is for a list of distinct items, not a default: when
+every paragraph on a page opens in bold, the bold has stopped meaning anything
+and the page reads as though it was generated rather than written.
+
+Three shapes, chosen by what follows:
 
 **A full stop, then a new line.**
 When the description runs to a sentence or more, break the line after the
@@ -243,7 +288,7 @@ line. It appears in search results and next to the name in a list, so it should
 read as a definition rather than a slogan:
 
 ```
-A headless UI framework for Luau. One component runs in Roblox, on the desktop, and in CI.
+A headless UI framework for Luau. One component runs on the engine, on the desktop, and in CI.
 ```
 
 Not a tagline, not a promise, and no em dash.
