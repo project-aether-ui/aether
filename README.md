@@ -85,9 +85,8 @@ and the version above is a statement about maturity rather than a resolution key
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md), and
-[docs/contributing/guidelines.md](docs/contributing/guidelines.md) for how work
-is branched, written and landed.
+[CONTRIBUTING.md](CONTRIBUTING.md) for what has to pass and how layout changes
+are proven.
 
 ## License
 
