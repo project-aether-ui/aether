@@ -107,6 +107,20 @@ export type Services = {
 --- `host.Clock` and `host.Vocabulary`.
 local function engineServices(): { [string]: any }
 	if typeof(game) ~= "Instance" then
+		--- A HOST THAT DELIVERS INPUT SAYS SO BY OFFERING THE SERVICE.
+		---
+		--- `PointerRouter` connects `InputBegan`, `InputEnded` and `InputChanged`
+		--- the moment a `UserInputService` exists, and connects nothing at all
+		--- when one does not. Off engine that meant a press never reached the
+		--- framework unless something drove a session by hand.
+		---
+		--- A host offering these three answers that, and offering them is the
+		--- claim: anything reported here delivers input through them the way the
+		--- engine does. A shim answering only position is what this must not be.
+		local dew = (DewHost :: any)
+		if dew ~= nil and dew.Input ~= nil then
+			return { UserInputService = dew.Input }
+		end
 		return {}
 	end
 	local engine = game :: any
