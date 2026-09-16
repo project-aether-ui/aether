@@ -75,9 +75,9 @@ local ResolvedHost = HostModule.detect(vide)
 --- environment defines them.
 ---
 --- IT IS HERE BECAUSE EVERY CONSUMER PASSES THROUGH HERE. A host program can
---- call `InstallVocabulary` for itself and `Desktop.Mount` does, but a suite
---- requiring one module directly never reaches either, and the failure it gets
---- is `attempt to index nil with 'new'` several frames into an unrelated file.
+--- call `InstallVocabulary` for itself, but a suite requiring one module
+--- directly never reaches that call, and the failure it gets is `attempt to
+--- index nil with 'new'` several frames into an unrelated file.
 ResolvedHost.InstallVocabulary()
 
 --- CAPABILITY TABLES ARE OPTIONAL, AND THE DEFAULT IS EMPTY.
