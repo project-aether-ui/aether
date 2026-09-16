@@ -18,21 +18,21 @@
 local Aether = require("../src")
 
 local host = Aether.Host.detect()
-local V = host.Vocabulary
+host.InstallVocabulary()
 
 --- The palette is the real one from ShopUI's call-to-action, because the contrast
 --- story should reproduce a defect this repo actually has rather than an invented
 --- worst case: white on #38BDF8 measures 2.14:1 against WCAG AA's 4.5.
-local SKY = V.Color3.fromRGB(56, 189, 248)
-local SLATE = V.Color3.fromRGB(15, 23, 42)
-local WHITE = V.Color3.fromRGB(255, 255, 255)
-local BLUE = V.Color3.fromRGB(0, 0, 255)
+local SKY = Color3.fromRGB(56, 189, 248)
+local SLATE = Color3.fromRGB(15, 23, 42)
+local WHITE = Color3.fromRGB(255, 255, 255)
+local BLUE = Color3.fromRGB(0, 0, 255)
 
 local function box(name: string, w: number, h: number, fill: any, children: { any }): any
 	return host.create("Frame")({
 		Name = name,
-		Size = V.UDim2.fromOffset(w, h),
-		Position = V.UDim2.fromOffset(40, 40),
+		Size = UDim2.fromOffset(w, h),
+		Position = UDim2.fromOffset(40, 40),
 		BackgroundColor3 = fill,
 		BackgroundTransparency = 0,
 		table.unpack(children),
@@ -42,7 +42,7 @@ end
 local function label(text: string, w: number, h: number, colour: any, size: number): any
 	return host.create("TextLabel")({
 		Name = "Subject",
-		Size = V.UDim2.fromOffset(w, h),
+		Size = UDim2.fromOffset(w, h),
 		BackgroundTransparency = 1,
 		Text = text,
 		TextSize = size,

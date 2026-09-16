@@ -69,27 +69,6 @@ export type Clock = {
 	Step: (dt: number) -> (),
 }
 
---- The value vocabulary — coordinates, colours, sequences, enums.
----
---- es9: a single interface regardless of host. These are NOT deeply Roblox types
---- — UDim2 is {scale, offset} per axis, Color3 is three floats — so a non-Roblox
---- host implements the same names rather than translating away from them. The
---- Roblox host hands back the engine's own globals; the headless host hands back
---- Lune's real implementations, so arithmetic is identical in both.
-export type Vocabulary = {
-	UDim: any,
-	UDim2: any,
-	Vector2: any,
-	Color3: any,
-	Rect: any,
-	NumberSequence: any,
-	NumberSequenceKeypoint: any,
-	ColorSequence: any,
-	ColorSequenceKeypoint: any,
-	Font: any,
-	Enum: any,
-}
-
 --- What Layer 2 may ask about a node in the tree.
 ---
 --- STATELESS, and that is a performance decision rather than a style one.
@@ -169,7 +148,6 @@ export type Host = {
 		HasProvider: () -> boolean,
 	},
 	Clock: Clock,
-	Vocabulary: Vocabulary,
 	Instance: any,
 	typeof: (any) -> string,
 	classOf: (any) -> string?,

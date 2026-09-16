@@ -31,12 +31,6 @@ local ScopeContext = require("../ScopeContext")
 
 local createPressable = require("../core/createPressable").createPressable
 
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local Enum =
-	Deps.Vocabulary.Enum
-
 local vide = Deps.vide
 local create = vide.create
 local cleanup = vide.cleanup

@@ -104,7 +104,7 @@ export type Services = {
 ---
 --- This is the layer allowed to know. A component asks the host for the service
 --- it wants and gets nil where there is none, which is the same shape as
---- `host.Clock` and `host.Vocabulary`.
+--- `host.Clock`.
 local function engineServices(): { [string]: any }
 	if typeof(game) ~= "Instance" then
 		--- A HOST THAT DELIVERS INPUT SAYS SO BY OFFERING THE SERVICE.
@@ -326,7 +326,7 @@ local PROBE_NAME = "AetherConformanceProbe"
 --- What the probe is handed, so that it can be run against an environment this
 --- process is not in.
 ---
---- SIX OF THE ELEVEN NAMES `Host.Vocabulary` declares, plus the two that make a
+--- SIX OF THE ELEVEN VALUE TYPES `REQUIRED_VOCABULARY` lists, plus the two that make a
 --- tree. The sequence types are a gradient feature and no component needs one to
 --- mount; `Font` is reached through `Enum` here. `Enum` is on the list because
 --- vide's own `defaults` module reads it at LOAD time, so an environment without
@@ -458,8 +458,8 @@ function DataModel.available(): boolean
 	})
 end
 
---- The eleven names `Host.Vocabulary` declares, and the members of each that
---- this framework or a mod written against it actually calls.
+--- The eleven value types an environment must define, and the members of each
+--- that this framework or a mod written against it actually calls.
 ---
 --- ASSERTED BECAUSE THIS HOST INSTALLS NOTHING. `InstallVocabulary` here is
 --- `function() end` -- what a host says when the environment already supplies the
@@ -714,26 +714,6 @@ function DataModel.new(vide: any?): any
 			step(dt)
 		end)
 	end
-
-	--- THE VALUE VOCABULARY (ms-51 M16).
-	---
-	--- es9: these should have a single interface regardless of host. On a host
-	--- providing a DataModel that interface is satisfied by the environment's own
-	--- globals — same objects, same identity, zero indirection cost. What the
-	--- indirection buys is that nothing above Layer 2.5 has to NAME them.
-	host.Vocabulary = {
-		UDim = UDim,
-		UDim2 = UDim2,
-		Vector2 = Vector2,
-		Color3 = Color3,
-		Rect = Rect,
-		NumberSequence = NumberSequence,
-		NumberSequenceKeypoint = NumberSequenceKeypoint,
-		ColorSequence = ColorSequence,
-		ColorSequenceKeypoint = ColorSequenceKeypoint,
-		Font = Font,
-		Enum = Enum,
-	}
 
 	host.classOf = function(node: any): string?
 		if typeof(node) == "Instance" then

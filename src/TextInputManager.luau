@@ -2,15 +2,9 @@
 
 local InputScope = require("./InputScope")
 
---- ms-51 M16: resolved here purely for the value vocabulary below.
 local Deps = require("./Deps")
 local isRoblox = Deps.Host.Environment == "Roblox"
 local Players = Deps.Host.Services.Players
-
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below is unchanged.
-local UDim2, Enum =
-	Deps.Vocabulary.UDim2, Deps.Vocabulary.Enum
 
 local TextInputManager = {}
 

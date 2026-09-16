@@ -19,12 +19,6 @@
 local Deps = require("./Deps")
 local InputScope = require("./InputScope")
 local PointerRouter = require("./PointerRouter")
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local UDim2, Vector2, Color3 =
-	Deps.Vocabulary.UDim2, Deps.Vocabulary.Vector2, Deps.Vocabulary.Color3
-
 local vide = Deps.vide
 
 local sinkSeq = 0

@@ -22,13 +22,7 @@
 	element's own bounds are.
 ]]
 
---- ms-51 M16: resolved here purely for the value vocabulary below.
 local Deps = require("./Deps")
-
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below is unchanged.
-local UDim =
-	Deps.Vocabulary.UDim
 
 --- THE SCENE CONTRACT (ms-51 M16 part 3).
 ---

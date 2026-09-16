@@ -32,12 +32,6 @@ local ItemIndex = if Deps.Virtual then (Deps.Virtual.ItemIndex or Deps.Virtual) 
 --- `mountedCount` is a change-guard, not a reactive value — nothing derives from
 --- it — but `reconcile` runs inside the props.Items effect, so a plain read would
 --- subscribe that effect to a source it writes two lines later. See Deps.peek.
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local UDim2 =
-	Deps.Vocabulary.UDim2
-
 local peek = Deps.peek
 
 local create = Deps.create

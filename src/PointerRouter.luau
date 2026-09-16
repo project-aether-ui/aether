@@ -40,12 +40,6 @@ local InputScope = require("./InputScope")
 local HitTest = require("./HitTest")
 local LayerManager = require("./LayerManager")
 
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local Enum =
-	Deps.Vocabulary.Enum
-
 local source = Deps.source
 local scopedCleanup = Deps.cleanup
 

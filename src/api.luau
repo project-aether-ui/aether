@@ -182,12 +182,6 @@ return {
 	cleanup = Deps.cleanup,
 	peek = Deps.peek,
 
-	--- UDim2, Color3, Vector2, Enum and the rest, from the HOST. On Roblox these
-	--- are the engine's; off-engine they are the pure implementations. Named here
-	--- so an author can bind them explicitly instead of relying on whatever the
-	--- host installed as globals.
-	Vocabulary = Deps.Vocabulary,
-
 	-- Layer & Domain Namespaces
 	Controllers = Controllers,
 	Core = Core,

@@ -23,12 +23,6 @@ local UserInputService = Deps.Host.Services.UserInputService
 --- straight back and the value steps. See Motion.luau.
 local Motion = require("../core/Motion")
 
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local UDim2, UDim, Vector2, Enum =
-	Deps.Vocabulary.UDim2, Deps.Vocabulary.UDim, Deps.Vocabulary.Vector2, Deps.Vocabulary.Enum
-
 local create = Deps.create
 local source = Deps.source
 --- A monotonic revision counter, not a value this scope should react to. See

@@ -66,6 +66,20 @@ local vide = require("../roblox_packages/vide")
 
 local ResolvedHost = HostModule.detect(vide)
 
+--- THE VALUE TYPES, IN SCOPE, BEFORE ANY MODULE ABOVE THIS ONE RUNS.
+---
+--- Every module in this tree names `UDim2`, `Color3` and `Enum` directly: they
+--- are the language of a conforming DataModel, present for every guest on the
+--- engine and on any other host implementing the standard. Where they are
+--- already there this call is a no-op, which is what a host says when the
+--- environment defines them.
+---
+--- IT IS HERE BECAUSE EVERY CONSUMER PASSES THROUGH HERE. A host program can
+--- call `InstallVocabulary` for itself and `Desktop.Mount` does, but a suite
+--- requiring one module directly never reaches either, and the failure it gets
+--- is `attempt to index nil with 'new'` several frames into an unrelated file.
+ResolvedHost.InstallVocabulary()
+
 --- CAPABILITY TABLES ARE OPTIONAL, AND THE DEFAULT IS EMPTY.
 ---
 --- `Host.Services` comes from the DataModel host and from nothing else: the Luau
@@ -135,28 +149,8 @@ local function scopedCleanup(fn: () -> ())
 	pcall(vide.cleanup, fn)
 end
 
---- THE VALUE VOCABULARY (ms-51 M16), from the host rather than from globals.
----
---- es9: a single interface regardless of host. UDim2, Color3, Vector2 and the
---- rest were read as GLOBALS everywhere in this tree — ~712 call sites — which
---- worked in Roblox because the engine defines them, and worked headlessly only
---- because each test file happened to assign them (`Vector2 = rbx.Vector2`) as
---- implicit globals before requiring anything. That was the last coupling still
---- sitting outside Layer 2.5.
----
---- Modules bind these as LOCALS at the top of the file, which is what lets the
---- call sites stay exactly as they are while the provider becomes swappable.
---- They are not deeply Roblox types: UDim2 is {scale, offset} per axis, Color3 is
---- three floats. A non-Roblox host implements the same eleven names.
----
---- FROM THE SAME HOST vide CAME FROM, which is the point of the inversion at the
---- top of this file: the vocabulary and the reactive surface are now two readings
---- of ONE decision rather than two decisions that happened to agree.
-local Vocabulary = ResolvedHost.Vocabulary
-
 return {
 	vide = vide,
-	Vocabulary = Vocabulary,
 	--- Layer 2.5 itself. `Host.Scene` is what the hit-testing and arbitration
 	--- algorithms ask instead of asking the engine (ms-51 M16 part 3).
 	Host = ResolvedHost,

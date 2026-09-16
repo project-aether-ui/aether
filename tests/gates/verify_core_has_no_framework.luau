@@ -1,7 +1,24 @@
 --!strict
 --[[
-	verify_core_has_no_framework -- Layer 1 depends on no reactive library and
-	names no engine type.
+	verify_core_has_no_framework -- TWO RULES over the same boundary.
+
+	  1. A Layer 1 module reaches no framework: no reactive library, no engine
+	     type, no require leaving the boundary.
+	  2. A Layer 1 module decides nothing about APPEARANCE. A machine answers
+	     what state a thing is in; a colour, a font and the properties carrying
+	     them are the caller's to choose, and a primitive takes its styling
+	     rather than picking it.
+
+	They are checked separately and they fail separately, because "names
+	`Color3`" and "chose a fill" are two different things to fix.
+
+	RULE 2 IS STATED RATHER THAN IMPLIED, and that is the whole reason it is
+	here. Every module in this tree names `UDim2` and `Color3` directly -- they
+	are the language of a conforming host, available to any file that wants them
+	-- so nothing about how a value is reached keeps a machine from choosing one.
+	A rule that holds because of the way something is plumbed is a rule that
+	stops holding the day the plumbing is simplified, with every gate still
+	green.
 
 	WHY
 	`@zag-js/dialog` depends on the machine core, types, utils, anatomy and a DOM
@@ -41,6 +58,15 @@ local SUBJECT = "src/"
 --- are geometry the host supplies; `Instance` and `GuiObject` are the engine's
 --- object model.
 local ENGINE_TYPES = { "Instance", "GuiObject", "UDim2", "UDim", "Vector2", "Color3", "Enum" }
+
+--- What deciding an appearance is spelled as: the constructors of a colour and
+--- of a font.
+---
+--- GEOMETRY IS NOT ON THIS LIST, deliberately. A machine may say a menu is 200
+--- wide and where its rows sit -- that is behaviour, and `UDim2` is refused by
+--- rule 1 for a different reason entirely. What it may not say is how any of it
+--- is painted.
+local APPEARANCE_VALUES = { "Color3", "ColorSequence", "ColorSequenceKeypoint", "BrickColor", "Font", "FontFace" }
 
 local function isVendored(path: string): boolean
 	return string.find(path, "roblox_packages", 1, true) ~= nil
@@ -112,6 +138,32 @@ local function namesAnEngineType(codeOnly: string): string?
 	return nil
 end
 
+--- RULE 2. A colour, a font, or a property that carries one.
+---
+--- THE PROPERTY NAMES ARE HALF OF IT. `BackgroundColor3 = props.Fill` decides a
+--- fill without constructing anything, and a caller handed that prop has
+--- already lost the choice -- so `%u[%w_]*Color3?` and `%u[%w_]*Font` are read
+--- as appearance wherever they appear. Lowercase spellings are somebody's local
+--- (`byFont`, `fontKey`) and say nothing about what a thing looks like.
+---
+--- NOT TRANSPARENCY, NOT `Image`. A machine returning `BackgroundTransparency =
+--- 1` is saying "a press has no appearance of its own", which is the opposite of
+--- choosing one, and a cursor token is an identifier a host resolves. A name is
+--- added here when something tries to decide a look through it, not in advance.
+local function decidesAppearance(codeOnly: string): string?
+	for _, name in ipairs(APPEARANCE_VALUES) do
+		if string.find(codeOnly, `%f[%w_]{name}%f[^%w_]`) then
+			return `names \`{name}\``
+		end
+	end
+	for word in string.gmatch(codeOnly, "%f[%w_]%u[%w_]*") do
+		if string.match(word, "Color3?$") or string.match(word, "Font$") then
+			return `names \`{word}\``
+		end
+	end
+	return nil
+end
+
 local result = process.exec("git", { "ls-files", "*.luau" })
 if not result.ok then
 	error("cannot list tracked files -- is this a git repository?", 0)
@@ -137,8 +189,18 @@ for path in string.gmatch(result.stdout, "[^\r\n]+") do
 		or namesAnEngineType(codeOnly)
 		or (if inBoundary(path) then reachesOutsideTheBoundary(withStrings, path) else nil)
 
-	if inBoundary(path) and why then
-		table.insert(failures, `{path}: {why}, and it sits under the Layer 1 boundary`)
+	--- BOTH RULES ARE REPORTED, not the first one that trips. A module that
+	--- reaches vide AND picks a colour has two things wrong with it, and hearing
+	--- about one, fixing it and hearing about the other is how a gate teaches
+	--- that it is a list of hoops rather than a boundary.
+	if inBoundary(path) then
+		if why then
+			table.insert(failures, `{path}: {why} -- Layer 1 reaches no framework`)
+		end
+		local looks = decidesAppearance(codeOnly)
+		if looks then
+			table.insert(failures, `{path}: {looks} -- Layer 1 decides nothing about appearance`)
+		end
 	end
 	if not why then
 		table.insert(qualify, path)
@@ -163,5 +225,8 @@ if #failures > 0 then
 	process.exit(1)
 else
 	print("")
-	print(`VERIFY CORE HAS NO FRAMEWORK: PASS (boundary is clean; {#qualify} module(s) qualify, marked in/out above)`)
+	print(
+		`VERIFY CORE HAS NO FRAMEWORK: PASS (boundary reaches no framework and decides no appearance; `
+			.. `{#qualify} module(s) qualify, marked in/out above)`
+	)
 end
