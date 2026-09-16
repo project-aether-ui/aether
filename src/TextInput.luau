@@ -1,11 +1,5 @@
 --!strict
 local Deps = require("./Deps")
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
-local UDim2, UDim, Vector2, Color3, Enum =
-	Deps.Vocabulary.UDim2, Deps.Vocabulary.UDim, Deps.Vocabulary.Vector2, Deps.Vocabulary.Color3, Deps.Vocabulary.Enum
-
 local vide = Deps.vide
 local create = vide.create
 local source = vide.source

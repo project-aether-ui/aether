@@ -21,10 +21,10 @@
 	first one's own dismissal.
 
 	WHAT IT DOES NOT OWN is colour. A focused row is darker than an unfocused
-	one, and the value that expresses that is a host type this layer may not name
-	-- `verify_core_has_no_framework` fails a build over `Color3`. So the machine
-	answers `IsItemFocused`, the binding derives its fill from it, and the whole
-	question of who decides a colour at all is the styling sprint's.
+	one, and how dark is not a question a machine is allowed to answer --
+	`verify_core_has_no_framework` fails a build over a colour named anywhere
+	under this boundary. So the machine answers `IsItemFocused` and the binding
+	derives its fill from it.
 
 	OPEN CAN BE OWNED HERE OR BY THE CALLER. A menu summoned by a right-click
 	sits inside something that already knows where the click was, and that

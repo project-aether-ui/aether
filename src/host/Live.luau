@@ -694,13 +694,12 @@ function Live.Session(host: any, root: any, router: any, width: number, height: 
 					local cx = if pos then (pos.X or 0) else 0
 					local next = math.clamp(cy + delta * STEP, 0, maxScroll)
 					if next ~= cy then
-						--- Written by assignment, and with the HOST's Vector2: the
+						--- Written by assignment, and with a real Vector2: the
 						--- Scene contract is deliberately read-only (it answers
 						--- questions about a tree, it does not own one), and this is
 						--- the engine's property in engine terms. A bare table would
 						--- be accepted by a mock and rejected by Roblox.
-						local V2 = host.Vocabulary and host.Vocabulary.Vector2
-						;(item.Node :: any).CanvasPosition = if V2 then V2.new(cx, next) else { X = cx, Y = next }
+						(item.Node :: any).CanvasPosition = Vector2.new(cx, next)
 					end
 					return
 				end

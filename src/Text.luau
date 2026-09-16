@@ -12,13 +12,7 @@
 ---
 --- It also makes this file TESTABLE: a ReplicatedStorage lookup at module scope
 --- has no headless branch, so nothing here could ever run outside Roblox.
---- ms-51 M16: resolved here purely for the value vocabulary below.
 local Deps = require("./Deps")
-
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below is unchanged.
-local UDim2, Color3, Enum =
-	Deps.Vocabulary.UDim2, Deps.Vocabulary.Color3, Deps.Vocabulary.Enum
 
 --- vide THROUGH Deps, which already resolved it.
 ---

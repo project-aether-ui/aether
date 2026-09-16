@@ -5,7 +5,7 @@
 	WHY THIS EXISTS (ms-51 M21)
 	It is the LAST engine service Aether does not model. Everything else a
 	non-Roblox host needs is already here: construction (`create`), the scene
-	contract (`Scene`), time (`Clock`), values (`Vocabulary`). But bounds were
+	contract (`Scene`), time (`Clock`), the value types themselves. But bounds were
 	always somebody else's answer — in Roblox the layout system computes
 	`AbsolutePosition`/`AbsoluteSize`, and headlessly they are whatever a test
 	sets. Nothing could compute them.

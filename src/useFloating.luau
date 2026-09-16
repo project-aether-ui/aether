@@ -10,15 +10,9 @@ local ScreenCoords = require("./ScreenCoords")
 local Deps = require("./Deps")
 local isRoblox = Deps.Host.Environment == "Roblox"
 
---- The value vocabulary, from the HOST rather than from Roblox globals
---- (ms-51 M16). Bound as locals so every call site below reads exactly as it
---- did — what changed is who provides them, not how they are spelled.
 --- The scene contract, not the engine (ms-51 M16 part 3). Anchor geometry is
 --- the same question hit-testing asks, so it goes through the same door.
 local Scene = Deps.Host.Scene
-
-local UDim2 =
-	Deps.Vocabulary.UDim2
 
 local source = Deps.source
 local effect = Deps.effect
