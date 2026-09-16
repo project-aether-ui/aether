@@ -69,6 +69,7 @@ M.GATES = {
 	"tests/gates/verify_framework_boundaries.luau",
 	"tests/gates/verify_core_has_no_framework.luau",
 	"tests/gates/verify_nothing_sniffs_the_engine.luau",
+	"tests/gates/verify_primitives_bind_machines.luau",
 }
 
 --- Gates that fail for a reason outside this repository, and why.
