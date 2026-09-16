@@ -40,4 +40,39 @@ function SourceScan.stripComments(src: string): string
 	return out
 end
 
+--- The same removal, with every line still where it was.
+---
+--- `stripComments` replaces a long comment with ONE space, which is right for a
+--- scan that asks whether a pattern occurs anywhere in a file and wrong for one
+--- that has to say where: a twenty-line header collapses to a single character
+--- and every line number after it is off by twenty. A gate that reports evidence
+--- needs the offsets to survive.
+---
+--- Kept beside `stripComments` rather than replacing it. The two differ only in
+--- what they substitute, and the header above is the record of what five copies
+--- of one scanner cost; this is a sixth call site, not a sixth implementation.
+function SourceScan.blankComments(src: string): string
+	local function blank(run: string): string
+		return (string.gsub(run, "[^\n]", " "))
+	end
+	local out = string.gsub(src, "%-%-%[%[.-%]%]", blank)
+	out = string.gsub(out, "%-%-%[=%[.-%]=%]", blank)
+	out = string.gsub(out, "%-%-[^\n]*", blank)
+	return out
+end
+
+--- String LITERALS blanked, so a scan measures code rather than data.
+---
+--- Same length out as in, so this composes with `blankComments` without moving
+--- anything. A long string spanning lines keeps its newlines for the same reason.
+function SourceScan.blankStrings(src: string): string
+	local function blank(run: string): string
+		return (string.gsub(run, "[^\n]", " "))
+	end
+	local out = string.gsub(src, "%[%[.-%]%]", blank)
+	out = string.gsub(out, '"[^"\n]*"', blank)
+	out = string.gsub(out, "'[^'\n]*'", blank)
+	return out
+end
+
 return SourceScan
