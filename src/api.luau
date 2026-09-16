@@ -30,6 +30,7 @@ local SelectionModel = require("./controllers/SelectionModel")
 local TreeController = require("./controllers/TreeController")
 local ScrollController = require("./controllers/ScrollController")
 local createPressable = require("./core/createPressable").createPressable
+local createContextMenu = require("./core/createContextMenu").createContextMenu
 
 local LayerManager = require("./LayerManager")
 local Text = require("./Text")
@@ -101,6 +102,7 @@ local Controllers = {
 --- no consumer could require, found when a demo tried to use one.
 local Core = {
 	createPressable = createPressable,
+	createContextMenu = createContextMenu,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
 	VirtualWindow = VirtualWindow,
@@ -203,6 +205,7 @@ return {
 	TreeController = TreeController,
 	ScrollController = ScrollController,
 	createPressable = createPressable,
+	createContextMenu = createContextMenu,
 	For = For,
 	KeyedList = For,
 	ScopedSurface = ScopedSurface,

@@ -319,7 +319,13 @@ function InputScope.GetPointerPosition(): (number, number)
 		rawX, rawY = reader.Position()
 	end
 
-	if rawX == nil and UserInputService then
+	--- BY CAPABILITY, NOT BY PRESENCE. A host declares that it DELIVERS input by
+	--- offering `UserInputService`, and delivering is not answering where the
+	--- pointer is: Dew offers the three signals and no `GetMouseLocation`. Asking
+	--- for one anyway raised on the first frame of any demo whose pointer had not
+	--- moved yet -- before there was a position to read, which is exactly when
+	--- this fallback runs.
+	if rawX == nil and UserInputService and (UserInputService :: any).GetMouseLocation then
 		local loc = UserInputService:GetMouseLocation()
 		rawX, rawY = loc.X, loc.Y
 	end

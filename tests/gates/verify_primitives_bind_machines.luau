@@ -75,7 +75,6 @@ local HOST_INPUT = { "UserInputService", "InputBegan", "InputEnded", "InputChang
 --- NOT a list of exceptions to the rule. A name here is a debt with a shape
 --- attached, and the shape is what the next extraction is measured against.
 local PENDING: { [string]: string } = {
-	["ContextMenu.luau"] = "open, closed, which item is focused, and dismissal",
 	["WindowTopbar.luau"] = "a drag: grab point, delta, release",
 	["ScrollArea.luau"] = "wheel, drag and clamp, shared with Scrollbar and ScrollingFrame",
 	["Scrollbar.luau"] = "thumb geometry and track arithmetic",
