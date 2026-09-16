@@ -70,9 +70,9 @@ local Motion = require("./core/Motion")
 --- can register itself, which is what replaced Aether depending on it.
 local Cursor = require("./core/Cursor")
 local Host = require("./host/Host")
---- THE DESKTOP CEREMONY, on the public surface so a HOST can reach it through
---- the consumer's own installed copy rather than through a path into ours.
-local Desktop = require("./host/Desktop")
+--- MOUNTING, on the public surface because it is the framework's job rather than
+--- a host's. It is what `createRoot(el).render(<App/>)` is elsewhere.
+local Mount = require("./host/Mount")
 local TooltipMachine = require("./core/TooltipMachine")
 local VirtualWindow = require("./core/VirtualWindow")
 
@@ -186,7 +186,7 @@ return {
 	Controllers = Controllers,
 	Core = Core,
 	Host = Host,
-	Desktop = Desktop,
+	mount = Mount.mount,
 	Motion = Motion,
 	Cursor = Cursor,
 	Runtime = Runtime,
