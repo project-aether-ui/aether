@@ -44,6 +44,17 @@ export type ScopedSurfaceProps = {
 	ClipsDescendants: any?,
 	AutomaticSize: any?,
 
+	--- CHILDREN BUILT INSIDE THIS SURFACE'S SCOPE, rather than before it.
+	---
+	--- A child written in the array part is CONSTRUCTED AT THE CALL SITE, which
+	--- is outside the `ScopeProvider` below -- so anything it registers with the
+	--- pointer router carries no scope, and a modal surface's own barrier, which
+	--- IS in the scope, outranks it. That is a control inside a menu losing its
+	--- click to the backdrop drawn under the menu, and it is invisible in the
+	--- tree: the child is in the right place and is arbitrated as though it were
+	--- somewhere else. A function here is called where the context is set.
+	Children: (() -> any)?,
+
 	-- Handles & callbacks
 	OutScope: ((handle: any) -> ())?,
 	SurfaceRef: ((ref: GuiObject) -> ())?,
@@ -80,6 +91,7 @@ local function ScopedSurface(props: ScopedSurfaceProps)
 
 	local RESERVED_SURFACE_PROPS: { [string]: boolean } = {
 		Id = true,
+		Children = true,
 		Layer = true,
 		Policy = true,
 		Priority = true,
@@ -101,8 +113,20 @@ local function ScopedSurface(props: ScopedSurfaceProps)
 	end
 
 	return ScopeProvider(scope, function()
+		--- INSIDE THE PROVIDER AND OUTSIDE THE `create`. The context is set here,
+		--- and the scope is still the caller's stable one -- a child built as a
+		--- vide dynamic child would run in a reactive scope instead, where the
+		--- effects a keyed list creates are not allowed to exist.
+		local scoped = if props.Children then props.Children() else nil
+
 		return create("Frame")({
 			Name = props.Name or "ScopedSurface",
+			--- A HIDDEN SURFACE IS HIDDEN. `Visible` reached the scope, which
+			--- stopped it taking input, and never reached the frame, which went
+			--- on drawing -- so a closed menu was a menu you could see and could
+			--- not click. The scope and the picture disagreed, and only the scope
+			--- was tested.
+			Visible = props.Visible,
 			Size = props.Size or UDim2.fromScale(1, 1),
 			Position = props.Position or UDim2.fromScale(0, 0),
 			AnchorPoint = props.AnchorPoint,
@@ -127,6 +151,7 @@ local function ScopedSurface(props: ScopedSurfaceProps)
 			if props.Policy == "Modal" then scope.Barrier() else nil,
 
 			passProps,
+			scoped,
 			table.unpack(children),
 		})
 	end)
