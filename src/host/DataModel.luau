@@ -70,7 +70,7 @@ export type GeometrySource = {
 -- its own spelling — which is why the two lookups are confined to this block and
 -- named after the environment rather than smeared through `new`.
 --
--- `game` AND `DewHost` NAME AN ENVIRONMENT, AND THAT IS A DIFFERENT QUESTION
+-- `game` AND `dew` NAME AN ENVIRONMENT, AND THAT IS A DIFFERENT QUESTION
 -- FROM THE ONE `available` ASKS. "Where do I obtain a text measurer" is
 -- legitimately answered by knowing which environment this is. "Is the DataModel
 -- under me faithful" is not, and answering it by looking for one vendor's global
@@ -117,7 +117,7 @@ local function engineServices(): { [string]: any }
 		--- A host offering these three answers that, and offering them is the
 		--- claim: anything reported here delivers input through them the way the
 		--- engine does. A shim answering only position is what this must not be.
-		local dew = (DewHost :: any)
+		local dew = (dew :: any)
 		if dew ~= nil and dew.Input ~= nil then
 			return { UserInputService = dew.Input }
 		end
@@ -162,7 +162,7 @@ local function pointerReader(): { [string]: any }?
 		}
 	end
 
-	local dew: any = DewHost
+	local dew: any = dew
 	if type(dew) ~= "table" or type(dew.Pointer) ~= "table" then
 		return nil
 	end
@@ -229,7 +229,7 @@ local function robloxServices(): Services?
 	}
 end
 
---- DEW: the `DewHost` global its milestone 2 sprint 7 installs for every guest.
+--- DEW: the `dew` global its host installs for every guest.
 ---
 --- IT ALREADY HAS THE SHAPE THIS INTERFACE ASKS FOR, which is not a coincidence —
 --- it was built against `Host.Text` and `Host.Clock`. `OnFrame` returns a
@@ -239,7 +239,7 @@ end
 --- `Step` IS SUPPLIED HERE AND IS DELIBERATELY ABSENT THERE. Dew drives its own
 --- frames, so a `Step` a guest could call would be a way to run every frame
 --- twice — which is exactly why the engine's is an empty function rather than a
---- missing one. Dew's `services.rs` asserts `DewHost.Clock.Step` is nil for that
+--- missing one. Dew's `services.rs` asserts `dew.Clock.Step` is nil for that
 --- reason and names this line as where the interface member gets filled.
 local function dewServices(): Services?
 	--- READ AS A PLAIN GLOBAL, NOT THROUGH `_G`, and the distinction is not
@@ -248,7 +248,7 @@ local function dewServices(): Services?
 	--- everywhere else the two happen to be the same table -- which is precisely
 	--- how a predicate written against `_G` passes every test that can be run
 	--- from here and answers false on the one host it must answer true on.
-	local dew: any = DewHost
+	local dew: any = dew
 	if type(dew) ~= "table" or type(dew.Text) ~= "table" or type(dew.Clock) ~= "table" then
 		return nil
 	end
@@ -275,7 +275,7 @@ end
 
 --- ROBLOX FIRST, because it is the reference implementation of the standard and
 --- an environment answering to both would be a conflict worth resolving towards
---- the engine. They are mutually exclusive today: `game` is nil on Dew, `DewHost`
+--- the engine. They are mutually exclusive today: `game` is nil on Dew, `dew`
 --- is nil in-engine.
 local PROVIDERS: { () -> Services? } = { robloxServices, dewServices }
 
@@ -575,7 +575,7 @@ function DataModel.new(vide: any?): any
 			"Aether.Host.DataModel found a conforming DataModel but no host services: "
 				.. "`Host.Text` needs a synchronous measurer and `Host.Clock` needs a frame "
 				.. "source, and this environment offers neither `TextService`/`RunService` "
-				.. "nor a `DewHost` global.",
+				.. "nor a `dew` global.",
 			2
 		)
 	end
