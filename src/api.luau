@@ -70,9 +70,6 @@ local Motion = require("./core/Motion")
 --- can register itself, which is what replaced Aether depending on it.
 local Cursor = require("./core/Cursor")
 local Host = require("./host/Host")
---- MOUNTING, on the public surface because it is the framework's job rather than
---- a host's. It is what `createRoot(el).render(<App/>)` is elsewhere.
-local Mount = require("./host/Mount")
 local TooltipMachine = require("./core/TooltipMachine")
 local VirtualWindow = require("./core/VirtualWindow")
 
@@ -186,7 +183,6 @@ return {
 	Controllers = Controllers,
 	Core = Core,
 	Host = Host,
-	mount = Mount.mount,
 	Motion = Motion,
 	Cursor = Cursor,
 	Runtime = Runtime,
