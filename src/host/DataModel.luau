@@ -70,7 +70,7 @@ export type GeometrySource = {
 -- its own spelling — which is why the two lookups are confined to this block and
 -- named after the environment rather than smeared through `new`.
 --
--- `game` AND `dew` NAME AN ENVIRONMENT, AND THAT IS A DIFFERENT QUESTION
+-- `game` AND `desktop` NAME AN ENVIRONMENT, AND THAT IS A DIFFERENT QUESTION
 -- FROM THE ONE `available` ASKS. "Where do I obtain a text measurer" is
 -- legitimately answered by knowing which environment this is. "Is the DataModel
 -- under me faithful" is not, and answering it by looking for one vendor's global
@@ -117,9 +117,29 @@ local function engineServices(): { [string]: any }
 		--- A host offering these three answers that, and offering them is the
 		--- claim: anything reported here delivers input through them the way the
 		--- engine does. A shim answering only position is what this must not be.
-		local dew = (dew :: any)
-		if dew ~= nil and dew.Input ~= nil then
-			return { UserInputService = dew.Input }
+		---
+		--- READS `desktop`, NOT `dew`. Dew renamed its global in its own
+		--- milestone and this file did not follow: it read `dew` for however
+		--- long that made every Aether example depending on real input fail
+		--- to mount on Dew, silently, because the check below simply found
+		--- nothing and fell through to `{}`.
+		local desktop = (desktop :: any)
+		if desktop ~= nil and desktop.Input ~= nil then
+			local out: { [string]: any } = { UserInputService = desktop.Input }
+			--- `GuiService`, WHEN THE HOST OFFERS ONE. Absent rather than a
+			--- placeholder on a host that has not built it -- the same
+			--- present-and-empty contract `Deps.luau` already promises for
+			--- `Host.Services` as a whole.
+			local servicesProvider = (services :: any)
+			if servicesProvider ~= nil and type(servicesProvider.GetService) == "function" then
+				local ok, guiService = pcall(function()
+					return servicesProvider:GetService("GuiService")
+				end)
+				if ok and guiService ~= nil then
+					out.GuiService = guiService
+				end
+			end
+			return out
 		end
 		return {}
 	end
@@ -162,13 +182,13 @@ local function pointerReader(): { [string]: any }?
 		}
 	end
 
-	local dew: any = dew
-	if type(dew) ~= "table" or type(dew.Pointer) ~= "table" then
+	local desktop: any = desktop
+	if type(desktop) ~= "table" or type(desktop.Pointer) ~= "table" then
 		return nil
 	end
 	return {
-		Position = dew.Pointer.Position,
-		IsDown = dew.Pointer.IsDown,
+		Position = desktop.Pointer.Position,
+		IsDown = desktop.Pointer.IsDown,
 	}
 end
 
@@ -229,7 +249,7 @@ local function robloxServices(): Services?
 	}
 end
 
---- DEW: the `dew` global its host installs for every guest.
+--- DEW: the `desktop` global its host installs for every guest.
 ---
 --- IT ALREADY HAS THE SHAPE THIS INTERFACE ASKS FOR, which is not a coincidence —
 --- it was built against `Host.Text` and `Host.Clock`. `OnFrame` returns a
@@ -239,8 +259,13 @@ end
 --- `Step` IS SUPPLIED HERE AND IS DELIBERATELY ABSENT THERE. Dew drives its own
 --- frames, so a `Step` a guest could call would be a way to run every frame
 --- twice — which is exactly why the engine's is an empty function rather than a
---- missing one. Dew's `services.rs` asserts `dew.Clock.Step` is nil for that
---- reason and names this line as where the interface member gets filled.
+--- missing one. Dew's `services.rs` asserts `desktop.Clock.Step` is nil for
+--- that reason and names this line as where the interface member gets filled.
+---
+--- READS `desktop`, NOT `dew` -- the global this file read until Dew's own
+--- milestone 26 renamed it. Until this line changed, `Host.Text` and
+--- `Host.Clock` resolved to neither environment on Dew and `Host.new()`
+--- raised on every Aether primitive that reached them.
 local function dewServices(): Services?
 	--- READ AS A PLAIN GLOBAL, NOT THROUGH `_G`, and the distinction is not
 	--- cosmetic. In Roblox `_G` is a table scripts SHARE; it is not the
@@ -248,26 +273,26 @@ local function dewServices(): Services?
 	--- everywhere else the two happen to be the same table -- which is precisely
 	--- how a predicate written against `_G` passes every test that can be run
 	--- from here and answers false on the one host it must answer true on.
-	local dew: any = dew
-	if type(dew) ~= "table" or type(dew.Text) ~= "table" or type(dew.Clock) ~= "table" then
+	local desktop: any = desktop
+	if type(desktop) ~= "table" or type(desktop.Text) ~= "table" or type(desktop.Clock) ~= "table" then
 		return nil
 	end
 
-	local dewClock = dew.Clock
+	local desktopClock = desktop.Clock
 	local step = function(_dt: number) end
-	if type(dewClock.Step) == "function" then
+	if type(desktopClock.Step) == "function" then
 		step = function(dt: number)
-			dewClock.Step(dt)
+			desktopClock.Step(dt)
 		end
 	end
 
 	return {
 		Environment = "Dew",
-		Measure = dew.Text.Measure,
+		Measure = desktop.Text.Measure,
 		Clock = {
-			Name = dew.Clock.Name,
-			OnFrame = dew.Clock.OnFrame,
-			Now = dew.Clock.Now,
+			Name = desktop.Clock.Name,
+			OnFrame = desktop.Clock.OnFrame,
+			Now = desktop.Clock.Now,
 			Step = step,
 		},
 	}
@@ -275,8 +300,8 @@ end
 
 --- ROBLOX FIRST, because it is the reference implementation of the standard and
 --- an environment answering to both would be a conflict worth resolving towards
---- the engine. They are mutually exclusive today: `game` is nil on Dew, `dew`
---- is nil in-engine.
+--- the engine. They are mutually exclusive today: `game` is nil on Dew,
+--- `desktop` is nil in-engine.
 local PROVIDERS: { () -> Services? } = { robloxServices, dewServices }
 
 local function resolveServices(): Services?
@@ -575,7 +600,7 @@ function DataModel.new(vide: any?): any
 			"Aether.Host.DataModel found a conforming DataModel but no host services: "
 				.. "`Host.Text` needs a synchronous measurer and `Host.Clock` needs a frame "
 				.. "source, and this environment offers neither `TextService`/`RunService` "
-				.. "nor a `dew` global.",
+				.. "nor a `desktop` global.",
 			2
 		)
 	end
