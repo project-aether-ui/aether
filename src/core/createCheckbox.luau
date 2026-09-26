@@ -25,6 +25,7 @@
 ]]
 
 local corePressable = require("./createPressable")
+local coreSelection = require("./Selection")
 local createPressable = corePressable.createPressable
 
 export type Source<T> = corePressable.Source<T>
@@ -32,23 +33,12 @@ export type SourceFactory = corePressable.SourceFactory
 export type ActionFactory = corePressable.ActionFactory
 export type Router = corePressable.Router
 
---- The part of a selection/keyboard router this machine uses, and all of it.
-export type SelectionHandle = {
-	Bind: (element: any) -> (),
-	Destroy: () -> (),
-}
-
-export type SelectableProps = {
-	--- Called when the keyboard's activation key is pressed while this
-	--- element is the selected one. What counts as "selected", and which key
-	--- activates, are the Selection implementation's own answers -- on a
-	--- DataModel host, `GuiService.SelectedObject` and `Enum.KeyCode.Space`.
-	OnKeyActivate: (() -> ())?,
-}
-
-export type Selection = {
-	Selectable: (props: SelectableProps) -> SelectionHandle,
-}
+--- Re-exported from `core/Selection`, which is where the port's own type
+--- lives now -- `createRadioGroup` takes the identical shape, and duplicating
+--- it here would be two definitions one edit could quietly let drift apart.
+export type SelectionHandle = coreSelection.SelectionHandle
+export type SelectableProps = coreSelection.SelectableProps
+export type Selection = coreSelection.Selection
 
 export type Options = {
 	Router: Router,
