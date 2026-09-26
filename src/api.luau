@@ -30,6 +30,7 @@ local SelectionModel = require("./controllers/SelectionModel")
 local TreeController = require("./controllers/TreeController")
 local ScrollController = require("./controllers/ScrollController")
 local createPressable = require("./core/createPressable").createPressable
+local createCheckbox = require("./core/createCheckbox").createCheckbox
 local createContextMenu = require("./core/createContextMenu").createContextMenu
 
 local LayerManager = require("./LayerManager")
@@ -37,7 +38,9 @@ local Text = require("./Text")
 local InputSink = require("./InputSink")
 local InputScope = require("./InputScope")
 local PointerRouter = require("./PointerRouter")
+local SelectionRouter = require("./SelectionRouter")
 local Pressable = require("./primitives/Pressable")
+local Checkbox = require("./primitives/Checkbox")
 local ScreenStack = require("./ScreenStack")
 local TransitionOrchestrator = require("./TransitionOrchestrator")
 local useHover = require("./useHover")
@@ -99,6 +102,7 @@ local Controllers = {
 --- no consumer could require, found when a demo tried to use one.
 local Core = {
 	createPressable = createPressable,
+	createCheckbox = createCheckbox,
 	createContextMenu = createContextMenu,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
@@ -114,6 +118,7 @@ local Runtime = {
 -- Domain 2: Arbitration & Interaction Engines
 local Engine = {
 	PointerRouter = PointerRouter,
+	SelectionRouter = SelectionRouter,
 	Pressable = if PointerRouter then PointerRouter.Pressable else nil,
 	ScopeProvider = if ScopeContext then ScopeContext.ScopeProvider else nil,
 	ScopeContext = if ScopeContext then ScopeContext.ScopeContext else nil,
@@ -146,6 +151,7 @@ local Primitives = {
 	--- is `spektr/button` in the components tier, which embeds this.
 	Pressable = Pressable,
 	PressableFrame = Pressable,
+	Checkbox = Checkbox,
 	WindowTopbar = PrimitiveWindowTopbar,
 	TextInput = TextInput,
 	TextInputFrame = TextInput,
@@ -195,6 +201,7 @@ return {
 	TreeController = TreeController,
 	ScrollController = ScrollController,
 	createPressable = createPressable,
+	createCheckbox = createCheckbox,
 	createContextMenu = createContextMenu,
 	For = For,
 	KeyedList = For,
@@ -202,6 +209,7 @@ return {
 	SurfaceFrame = ScopedSurface,
 	Pressable = Pressable,
 	PressableFrame = Pressable,
+	Checkbox = Checkbox,
 	TextInput = TextInput,
 	TextInputFrame = TextInput,
 	TextInputManager = TextInputManager,
@@ -217,6 +225,7 @@ return {
 	TreeView = TreeView,
 	Styled = if PrimitiveScrollbar then PrimitiveScrollbar.Styled else nil,
 	PointerRouter = PointerRouter,
+	SelectionRouter = SelectionRouter,
 	--- NOTE (ms-51 M14): top-level `Pressable` is the PRIMITIVE, above. The
 	--- router's low-level registration function of the same name used to be
 	--- exported here too and, being declared later, silently won the key. It is
