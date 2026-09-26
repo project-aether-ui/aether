@@ -105,24 +105,43 @@ end
 --- A THIRD RULE, AND THE ONE THAT MAKES THE OTHER TWO HOLD.
 ---
 --- The first two ask what a module requires DIRECTLY. A core module that
---- required a non-core sibling would pass both while reaching vide through it,
---- because the coupling would be one hop away. The boundary has no outward edges
---- today -- every module under it requires nothing at all -- and this is what
---- keeps that true rather than lucky.
+--- required a module outside `BOUNDARY` would pass both while reaching vide
+--- through it, because the coupling would be one hop away.
 ---
---- It is also the difference between a directory and a package. A package cannot
---- reach its consumer because the resolver will not let it; a directory can, and
---- this rule is the resolver we do not have.
+--- RESOLVED, NOT JUST READ. This used to refuse any `../`, on the reasoning
+--- that the only shape staying inside the boundary from one directory is a
+--- sibling. That was true when `BOUNDARY` named one directory; it names two
+--- now, and `src/core/` reaching `src/controllers/` is a `../` that never
+--- leaves it -- `createRadioGroup.luau` reusing `SelectionModel` the same way
+--- `createRadioGroup`'s own milestone plan asked it to. Resolving the path and
+--- checking it against `BOUNDARY` is what the rule was already claiming to
+--- do; refusing every `../` on sight was a stricter rule wearing this one's
+--- name.
+local function resolvePath(fromDir: string, target: string): string
+	local parts: { string } = {}
+	for segment in string.gmatch(fromDir, "[^/]+") do
+		table.insert(parts, segment)
+	end
+	for segment in string.gmatch(target, "[^/]+") do
+		if segment == ".." then
+			table.remove(parts)
+		elseif segment ~= "." then
+			table.insert(parts, segment)
+		end
+	end
+	return table.concat(parts, "/")
+end
+
 local function reachesOutsideTheBoundary(withStrings: string, path: string): string?
+	local dir = string.match(path, "^(.*)/[^/]+$") or ""
 	for target in string.gmatch(withStrings, 'require%("([^"]+)"%)') do
 		--- An alias or a package is not a sibling module and is not ours to judge
 		--- here; rules one and two already refuse the framework by name.
 		if string.sub(target, 1, 1) ~= "." then
 			continue
 		end
-		--- `./x` and `../x` from a module already inside the boundary: the only
-		--- shape that stays inside is a sibling, which is `./`.
-		if string.sub(target, 1, 3) == "../" then
+		local resolved = resolvePath(dir, target)
+		if not inBoundary(resolved) then
 			return `requires \`{target}\`, which leaves the boundary`
 		end
 	end
