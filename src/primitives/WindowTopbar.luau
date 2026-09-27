@@ -132,7 +132,19 @@ local function WindowTopbar(props: WindowTopbarProps): any
 				return if isCloseHovered() or isClosePressed() then 0.2 else 1
 			end,
 			BorderSizePixel = 0,
-			OnPress = function()
+			--- `OnActivated`, NOT `OnPressed` -- confirmed as a real typo by
+			--- milestone 56 sprint 1's own `warn()` fix, which is what let
+			--- this surface at all rather than crashing under Dew.
+			--- `OnPressed` fires on press-DOWN alone (`createPressable.luau`'s
+			--- own signature takes `(x, y)`, the point of contact, precisely
+			--- because it fires before a release exists) -- closing the
+			--- window on that would fire even when a press started here and
+			--- was dragged away before release, the one case a close button
+			--- most needs to still be cancellable. `OnActivated` is press
+			--- AND release, inside, matching how every other real
+			--- click-to-do-a-thing button in this codebase is wired
+			--- (`ContextMenu`'s own "Open menu" demo, for one).
+			OnActivated = function()
 				if props.OnClose then
 					props.OnClose()
 				end

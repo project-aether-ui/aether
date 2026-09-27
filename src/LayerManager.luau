@@ -74,7 +74,17 @@ function LayerManager.GetDisplayOrder(layer: string | number): number
 		return num
 	end
 
-	warn(`[LayerManager] Unknown layer '{layer}', defaulting DisplayOrder to 1000`)
+	--- `warn` DOES NOT EXIST UNDER DEW'S REAL VM (milestone 56 sprint 1,
+	--- confirmed directly: `type(warn)` is `nil` there). Guarded rather than
+	--- required through `Deps`, matching `src/core/Warn.luau`'s own reasoning
+	--- for the same gap in Layer 1 -- this is a fallback for an ambient
+	--- global a host may or may not provide, not something worth a shared
+	--- module for its one call site here.
+	if type(warn) == "function" then
+		(warn :: any)(`[LayerManager] Unknown layer '{layer}', defaulting DisplayOrder to 1000`)
+	elseif type(print) == "function" then
+		print(`[LayerManager] Unknown layer '{layer}', defaulting DisplayOrder to 1000`)
+	end
 	return 1000
 end
 
