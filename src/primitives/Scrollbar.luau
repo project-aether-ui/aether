@@ -15,6 +15,7 @@ local ScrollController = require("../controllers/ScrollController")
 local PressableFrame = require("./Pressable")
 local PointerRouter = require("../PointerRouter")
 local InputScope = require("../InputScope")
+local createDraggable = require("../core/createDraggable").createDraggable
 
 --- ms-51 M16: the motion SEAM, not Flux. Aether is a genuine consumer of
 --- springs, so this edge could not be reversed like the component seams —
@@ -134,11 +135,13 @@ local function Scrollbar(props: ScrollbarProps): any
 	local axis = props.Axis or "Vertical"
 	local isVertical = axis == "Vertical"
 	local isHovered = source(false)
-	local isDragging = source(false)
+	--- Set once `drag` (below) exists -- forward-declared so the closures
+	--- that read it above that point (`renderedControllerOffset`,
+	--- `hoverTarget`, `isIdle`) capture this same slot rather than one that
+	--- never gets the real machine's source.
+	local isDragging: any = nil
 	local revealHovered = source(false)
 	local activityStamp = source(now())
-	local dragStartPos = 0
-	local dragStartOffset = 0
 	local trackSurface: GuiObject? = nil
 
 	local controllerOffset = source(if props.Controller and props.Controller.GetOffset then props.Controller.GetOffset() else 0)
@@ -312,53 +315,54 @@ local function Scrollbar(props: ScrollbarProps): any
 		end
 	end
 
-	local function stopDrag()
-		if isDragging() then
-			isDragging(false)
+	--- DRAG, THROUGH `createDraggable` (milestone 58) -- extracted from what
+	--- used to be a hand-rolled `isDragging`/`dragStartPos`/`dragStartOffset`
+	--- and a private `PointerRouter.OnPointerMove` subscription right here,
+	--- once `Scrollbar.luau` turned out to be the real consumer that shape
+	--- needed (ms-52 M2 first built it directly, replacing an even older
+	--- `UserInputService.InputChanged` connection that made thumb drag the
+	--- one part of this primitive that only existed in Roblox).
+	---
+	--- Drag END still needs no listener of its own: `OnPressUp` below is
+	--- `drag.Stop` directly, wired to the Pressable's OnReleased, which the
+	--- router fires on the record the press BEGAN on wherever the release
+	--- lands.
+	local drag = createDraggable({
+		Router = PointerRouter,
+		Source = source,
+		Axis = axis,
+		OnDragStart = function()
+			markActivity()
+			if props.OnDragStart then
+				props.OnDragStart()
+			end
+		end,
+		OnDragEnd = function()
 			markActivity()
 			if props.OnDragEnd then
 				props.OnDragEnd()
 			end
-		end
-	end
-
-	--- DRAG, THROUGH THE ROUTER (ms-52 M2).
-	---
-	--- This used to be a private `UserInputService.InputChanged` connection behind
-	--- `if UserInputService then`, which made the thumb's drag the one part of this
-	--- primitive that only existed in Roblox. The second host proved it: a real
-	--- ScrollingFrame's thumb laid out, hit-tested and pressed correctly off-engine
-	--- and then would not move, because the entire branch was skipped.
-	---
-	--- The router already owns the single UserInputService connection in Roblox, so
-	--- reading movement from it is the same signal by a portable route -- and one
-	--- shared connection instead of one per scrollbar on screen.
-	---
-	--- Drag END needs no listener at all: `OnPressUp` is wired to the Pressable's
-	--- OnReleased, which the router fires on the record the press BEGAN on wherever
-	--- the release lands. That is the behaviour the old global InputEnded handler
-	--- was approximating.
-	local unsubscribeMove = PointerRouter.OnPointerMove(function(x: number, y: number)
-		if not isDragging() then return end
-		local currentPos = if isVertical then y else x
-		local delta = currentPos - dragStartPos
-		markActivity()
-		if props.OnThumbDrag then
-			props.OnThumbDrag(delta, dragStartOffset)
-		elseif props.Controller and props.Controller.ScrollTo then
-			local tLen = getTrackLength()
-			local thumbLen = getThumbSize()
-			local maxScr = if props.Controller.GetMaxScroll then props.Controller.GetMaxScroll() else 0
-			if maxScr > 0 and tLen > thumbLen then
-				local targetThumbPos = (dragStartOffset - buttonSpan) + delta
-				local targetScroll = ScrollController.computeScrollFromThumb(targetThumbPos, tLen, thumbLen, maxScr)
-				props.Controller.ScrollTo(targetScroll)
+		end,
+		OnDrag = function(delta: number, startOffset: number)
+			markActivity()
+			if props.OnThumbDrag then
+				props.OnThumbDrag(delta, startOffset)
+			elseif props.Controller and props.Controller.ScrollTo then
+				local tLen = getTrackLength()
+				local thumbLen = getThumbSize()
+				local maxScr = if props.Controller.GetMaxScroll then props.Controller.GetMaxScroll() else 0
+				if maxScr > 0 and tLen > thumbLen then
+					local targetThumbPos = (startOffset - buttonSpan) + delta
+					local targetScroll = ScrollController.computeScrollFromThumb(targetThumbPos, tLen, thumbLen, maxScr)
+					props.Controller.ScrollTo(targetScroll)
+				end
 			end
-		end
-	end)
+		end,
+	})
+	isDragging = drag.IsDragging
 
 	if cleanup then
-		cleanup(unsubscribeMove)
+		cleanup(drag.Destroy)
 	end
 
 	-- Wire external Controls table if supplied
@@ -445,19 +449,15 @@ local function Scrollbar(props: ScrollbarProps): any
 		IsDragging = isDragging,
 		IsHovered = isHovered,
 		Transparency = thumbTransparency,
-		OnPressDown = function()
-			isDragging(true)
-			markActivity()
-			local px, py = InputScope.GetPointerPosition()
-			dragStartPos = if isVertical then py else px
-			dragStartOffset = getThumbOffset()
-			if props.OnDragStart then
-				props.OnDragStart()
-			end
+		--- `(x, y)` ARRIVE FROM THE PRESS ITSELF NOW (milestone 58) --
+		--- `PointerRouter.Pressable`'s own `OnPressed(x, y)` already supplies
+		--- real coordinates at every call site, so `drag.Start` needs no
+		--- `InputScope.GetPointerPosition` re-query the way the hand-rolled
+		--- version here used to.
+		OnPressDown = function(x: number, y: number)
+			drag.Start(getThumbOffset(), x, y)
 		end,
-		OnPressUp = function()
-			stopDrag()
-		end,
+		OnPressUp = drag.Stop,
 	}
 
 	local defaultThumb = function()
