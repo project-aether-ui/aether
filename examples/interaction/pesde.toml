@@ -42,7 +42,7 @@ environment = "roblox"
 lib = "interaction.luau"
 
 [dependencies]
-aether = { repo = "project-aether-ui/aether", rev = "f9ae9ba9c549fdcacf8c5214651ba1d6337baa53" }
+aether = { repo = "project-aether-ui/aether", rev = "d5978ef9616d27278b8d303f24d6f08192df4421" }
 # PEER, NOT BUNDLED, per aether's own `pesde.toml`: aether drives vide but
 # does not choose which copy a consumer gets, so this package installs its
 # own, the same pin `dashboard`/`examples/aether/pressable` already use.

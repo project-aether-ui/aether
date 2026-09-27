@@ -14,22 +14,22 @@ repo = "https://github.com/es9-dev/vide"
 tree_id = "730e7398fc80d6b26b7aa0c761960498283850db"
 new_structure = true
 
-[graph."spektr/aether@0.0.0-f7d9fb11ad257b5a9b137ceb5655825561e8dc5f roblox"]
-direct = ["aether", { repo = "https://github.com/project-aether-ui/aether", rev = "f9ae9ba9c549fdcacf8c5214651ba1d6337baa53" }, "standard"]
+[graph."spektr/aether@0.0.0-1b1a9b44f2d37a19b52927892ee1ec1ee5b4539b roblox"]
+direct = ["aether", { repo = "https://github.com/project-aether-ui/aether", rev = "d5978ef9616d27278b8d303f24d6f08192df4421" }, "standard"]
 
-[graph."spektr/aether@0.0.0-f7d9fb11ad257b5a9b137ceb5655825561e8dc5f roblox".dependencies]
+[graph."spektr/aether@0.0.0-1b1a9b44f2d37a19b52927892ee1ec1ee5b4539b roblox".dependencies]
 vide = ["centau/vide@0.0.0-730e7398fc80d6b26b7aa0c761960498283850db roblox", "peer"]
 Virtual = ["spektr/virtual@0.0.0-b956a128e07be89ff24225f8870a06741c79a993 roblox", "standard"]
 
-[graph."spektr/aether@0.0.0-f7d9fb11ad257b5a9b137ceb5655825561e8dc5f roblox".pkg_ref]
+[graph."spektr/aether@0.0.0-1b1a9b44f2d37a19b52927892ee1ec1ee5b4539b roblox".pkg_ref]
 ref_ty = "git"
 repo = "https://github.com/project-aether-ui/aether"
-tree_id = "f7d9fb11ad257b5a9b137ceb5655825561e8dc5f"
+tree_id = "1b1a9b44f2d37a19b52927892ee1ec1ee5b4539b"
 new_structure = true
 
-[graph."spektr/aether@0.0.0-f7d9fb11ad257b5a9b137ceb5655825561e8dc5f roblox".pkg_ref.dependencies]
+[graph."spektr/aether@0.0.0-1b1a9b44f2d37a19b52927892ee1ec1ee5b4539b roblox".pkg_ref.dependencies]
 vide = [{ repo = "https://github.com/es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }, "peer"]
-Virtual = [{ repo = "https://github.com/project-aether-ui/aether", rev = "f9ae9ba9c549fdcacf8c5214651ba1d6337baa53", path = "packages/virtual" }, "standard"]
+Virtual = [{ repo = "https://github.com/project-aether-ui/aether", rev = "d5978ef9616d27278b8d303f24d6f08192df4421", path = "packages/virtual" }, "standard"]
 
 [graph."spektr/virtual@0.0.0-b956a128e07be89ff24225f8870a06741c79a993 roblox".pkg_ref]
 ref_ty = "git"
