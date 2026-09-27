@@ -4,6 +4,27 @@ local InputScope = require("./InputScope")
 
 local Deps = require("./Deps")
 local isRoblox = Deps.Host.Environment == "Roblox"
+--- DEW'S OWN NATIVE `TextBox`, NOT `HandleKey` BELOW -- confirmed against
+--- `host/src/datamodel/input.rs` directly: Dew's keyboard delivery
+--- (`WM_CHAR`/Backspace) mutates a focused, natively-classed `TextBox`
+--- instance's own `Text` property and fires `PropertyChangedSignal("Text")`
+--- -- it never calls any Luau callback for a keystroke, so `HandleKey`'s own
+--- host-agnostic editor (this file's header comment below, written when Dew
+--- had no keyboard delivery at all) can never be reached under Dew no matter
+--- what a caller wires up. A hidden native `TextBox`, focused the same way
+--- Roblox's proxy already is, is the only surface that actually receives a
+--- key under Dew.
+---
+--- DEW'S NATIVE `TextBox` HAS NO CURSOR OR SELECTION MODEL AT ALL -- `char`
+--- always appends, `Backspace` always removes the last character, and
+--- neither reads nor writes any `CursorPosition`/`SelectionStart` property
+--- (there is not one). Clicking to place the caret midstring, arrow-key
+--- navigation and click-drag selection all still work as PURELY VISUAL
+--- state in `TextInput.luau`'s own display, but typing itself always lands
+--- at the end regardless of where that visual caret sits -- a real,
+--- Dew-side limitation of what its native `TextBox` can do today, not
+--- something this module can paper over.
+local isDew = Deps.Host.Environment == "Dew"
 local Players = Deps.Host.Services.Players
 
 local TextInputManager = {}
@@ -17,6 +38,10 @@ export type FieldSession = {
 	OnCommitted: ((newText: string, enterPressed: boolean) -> ())?,
 	OnFocusLost: (() -> ())?,
 	GetBounds: (() -> (Vector2, Vector2))?, -- (AbsolutePosition, AbsoluteSize)
+	--- DEW ONLY. The proxy `TextBox` has no ambient screen to live under the
+	--- way Roblox's has `PlayerGui` -- it is parented under the focused
+	--- field's own instance instead, moved here each time focus changes.
+	Parent: any?,
 }
 
 local activeSession: FieldSession? = nil
@@ -102,6 +127,57 @@ local function ensureProxy()
 				TextInputManager.Blur(false)
 			end)
 		end
+	elseif isDew then
+		--- NO `PlayerGui` TO PARENT UNDER -- `Focus()` below sets `.Parent`
+		--- to the focused field's own instance each time, so a value here is
+		--- only ever transient (Dew tolerates a parentless instance between
+		--- focus calls the same way an unparented `Frame` is tolerated
+		--- elsewhere in this codebase).
+		local box = Instance.new("TextBox")
+		box.Name = "Aether_VirtualInputProxy"
+		box.Size = UDim2.fromOffset(1, 1)
+		box.Position = UDim2.fromOffset(-1000, -1000)
+		box.BackgroundTransparency = 1
+		box.TextTransparency = 1
+		box.BorderSizePixel = 0
+
+		proxyTextBox = box
+
+		box:GetPropertyChangedSignal("Text"):Connect(function()
+			if activeSession then
+				activeSession.SetText(box.Text)
+				if activeSession.OnChanged then
+					activeSession.OnChanged(box.Text)
+				end
+			end
+		end)
+
+		--- SAME BOUNDS-CHECK RECAPTURE AS ROBLOX'S OWN BRANCH ABOVE, for the
+		--- same reason: a click that only moved the caret inside the field
+		--- (handled entirely as visual state -- see the header) still costs
+		--- this proxy its native focus, and losing it there would end the
+		--- session on every click rather than only on a click elsewhere.
+		box.FocusLost:Connect(function(enterPressed)
+			if not activeSession then return end
+			if enterPressed then
+				TextInputManager.Blur(true)
+				return
+			end
+
+			if activeSession.GetBounds then
+				local ptrX, ptrY = InputScope.GetPointerPosition()
+				local pos, size = activeSession.GetBounds()
+				if ptrX >= (pos.X - 4) and ptrX <= (pos.X + size.X + 4)
+					and ptrY >= (pos.Y - 4) and ptrY <= (pos.Y + size.Y + 4) then
+					pcall(function()
+						proxyTextBox:CaptureFocus()
+					end)
+					return
+				end
+			end
+
+			TextInputManager.Blur(false)
+		end)
 	end
 
 	if not proxyTextBox then
@@ -155,6 +231,15 @@ function TextInputManager.Focus(field: FieldSession, initialCursorPos: number?, 
 		local pos, size = field.GetBounds()
 		proxyTextBox.Position = UDim2.fromOffset(pos.X, pos.Y)
 		proxyTextBox.Size = UDim2.fromOffset(math.max(1, size.X), math.max(1, size.Y))
+	end
+
+	--- DEW ONLY. See `FieldSession.Parent`'s own doc comment -- there is no
+	--- ambient screen to park this proxy under once and forget, the way
+	--- Roblox's own `PlayerGui` lets the branch above.
+	if isDew and field.Parent then
+		pcall(function()
+			proxyTextBox.Parent = field.Parent
+		end)
 	end
 
 	pcall(function()

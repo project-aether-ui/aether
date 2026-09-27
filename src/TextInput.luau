@@ -290,6 +290,10 @@ local function TextInput(props: TextInputProps)
 				end
 				return Vector2.zero, Vector2.zero
 			end,
+			--- DEW ONLY (`TextInputManager.FieldSession.Parent`'s own doc
+			--- comment). Ignored entirely by the Roblox branch, which parks
+			--- its proxy in `PlayerGui` once instead.
+			Parent = frameRef,
 		}, initPos, initSel)
 	end
 
