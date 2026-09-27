@@ -14,7 +14,6 @@
 
 
 local Deps = require("./Deps")
-local isRoblox = Deps.Host.Environment == "Roblox"
 local UserInputService = Deps.Host.Services.UserInputService
 local GuiService = Deps.Host.Services.GuiService
 
@@ -22,7 +21,7 @@ local ScreenCoords = {}
 
 --- Returns the top and bottom GuiInset vectors (topbar / notch insets) safely.
 function ScreenCoords.GetGuiInset(): (Vector2, Vector2)
-	if not isRoblox or not GuiService then
+	if not GuiService then
 		return Vector2.zero, Vector2.zero
 	end
 	local ok, topInset, bottomInset = pcall(function()
@@ -49,10 +48,6 @@ end
 --- Returns the pointer/input position in Viewport / Safe-Area space (Y=0 is below topbar).
 --- Guaranteed to return Viewport Space coordinates regardless of input type.
 function ScreenCoords.GetViewportPosition(input: (InputObject | Vector3 | Vector2)?): Vector2
-	if not isRoblox then
-		return Vector2.zero
-	end
-
 	if typeof(input) == "Instance" and input:IsA("InputObject") then
 		return Vector2.new(input.Position.X, input.Position.Y)
 	elseif typeof(input) == "Vector3" or typeof(input) == "Vector2" then
@@ -69,10 +64,6 @@ end
 --- Matches GuiObject.AbsolutePosition 1:1.
 --- Guaranteed to return Screen Space coordinates regardless of input type.
 function ScreenCoords.GetScreenPosition(input: (InputObject | Vector3 | Vector2)?): Vector2
-	if not isRoblox then
-		return Vector2.zero
-	end
-
 	if typeof(input) == "Instance" and input:IsA("InputObject") then
 		return ScreenCoords.ViewportToScreen(Vector2.new(input.Position.X, input.Position.Y))
 	elseif typeof(input) == "Vector3" or typeof(input) == "Vector2" then
