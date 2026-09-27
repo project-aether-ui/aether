@@ -27,6 +27,11 @@
 	ZIndex. Grepping for `Raw` shows none of them, which makes them precisely the
 	entries most likely to be left out of a hand-written list. The recorder wraps
 	the whole Scene, not one function.
+
+	`Enum`/`Vector2`/`UDim2`/`UDim` READ AS BARE GLOBALS, NOT `host.Vocabulary`
+	(milestone 56 sprint 2) -- see `LayoutCache.test.luau`'s own header for
+	why: `.Vocabulary` is not part of `Host.luau`'s contract, only an extra
+	the sibling `luau-datamodel` package's `.new()` happens to carry.
 ]=]
 local T = require("@testkit")
 local Aether = require("../../src/api")
@@ -73,7 +78,6 @@ end
 --- would report a much smaller read set and pass while proving very little.
 local function buildScene(): (any, any)
 	local host = Aether.Host.detect()
-	local V = host.Vocabulary
 	local create = host.create
 
 	local rows = {}
@@ -82,8 +86,8 @@ local function buildScene(): (any, any)
 			Name = `Row{i}`,
 			Text = `row {i}`,
 			TextSize = 14,
-			AutomaticSize = V.Enum.AutomaticSize.XY,
-			AnchorPoint = V.Vector2.new(0, 0),
+			AutomaticSize = Enum.AutomaticSize.XY,
+			AnchorPoint = Vector2.new(0, 0),
 			LayoutOrder = i,
 			ZIndex = i,
 		})
@@ -91,31 +95,31 @@ local function buildScene(): (any, any)
 
 	local root = create("Frame")({
 		Name = "Root",
-		Size = V.UDim2.fromScale(1, 1),
+		Size = UDim2.fromScale(1, 1),
 		create("Frame")({
 			Name = "Padded",
-			Size = V.UDim2.fromScale(1, 1),
+			Size = UDim2.fromScale(1, 1),
 			ClipsDescendants = true,
 			create("UIPadding")({
-				PaddingLeft = V.UDim.new(0, 8),
-				PaddingTop = V.UDim.new(0, 8),
-				PaddingRight = V.UDim.new(0, 8),
-				PaddingBottom = V.UDim.new(0, 8),
+				PaddingLeft = UDim.new(0, 8),
+				PaddingTop = UDim.new(0, 8),
+				PaddingRight = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
 			}),
 			create("UIListLayout")({
-				Padding = V.UDim.new(0, 4),
-				FillDirection = V.Enum.FillDirection.Vertical,
+				Padding = UDim.new(0, 4),
+				FillDirection = Enum.FillDirection.Vertical,
 			}),
 			create("ScrollingFrame")({
 				Name = "Scroller",
-				Size = V.UDim2.new(1, 0, 0, 200),
-				CanvasPosition = V.Vector2.new(0, 20),
+				Size = UDim2.new(1, 0, 0, 200),
+				CanvasPosition = Vector2.new(0, 20),
 				LayoutOrder = 1,
 				rows[1], rows[2], rows[3],
 			}),
 			create("Frame")({
 				Name = "Scaled",
-				Size = V.UDim2.fromOffset(100, 100),
+				Size = UDim2.fromOffset(100, 100),
 				Visible = true,
 				LayoutOrder = 2,
 				create("UIScale")({ Scale = 1.5 }),

@@ -42,18 +42,27 @@ local DataModel = Aether.Host.DataModel
 ---
 --- THAT IS THE ASSERTION. If the predicate can accept this, it is not asking who
 --- the vendor is.
+--- BARE GLOBALS, NOT `host.Vocabulary` (milestone 56 sprint 2). `.Vocabulary`
+--- is not part of `Host.luau`'s own declared contract at all -- it is an
+--- extra field the sibling `luau-datamodel` package's own `.new()` happens
+--- to carry, which this file copied without realising it is vendor-specific.
+--- Confirmed directly: `Aether.Host.detect()` under a real engine (Dew,
+--- Roblox) returns a `DataModel` host whose `.Vocabulary` is `nil`, while
+--- every conforming environment -- the real engines and the pure-Luau
+--- double alike -- already provides `UDim2`/`Color3`/etc as bare globals,
+--- which is the language `verify_nothing_sniffs_the_engine`'s own header
+--- says every module in this tree is entitled to read directly.
 local function faithfulEnvironment(): DataModel.Environment
 	local host = Aether.Host.detect()
-	local V = host.Vocabulary
 	return {
 		Instance = host.Instance,
 		typeof = host.typeof,
-		UDim = V.UDim,
-		UDim2 = V.UDim2,
-		Vector2 = V.Vector2,
-		Color3 = V.Color3,
-		Rect = V.Rect,
-		Enum = V.Enum,
+		UDim = UDim,
+		UDim2 = UDim2,
+		Vector2 = Vector2,
+		Color3 = Color3,
+		Rect = Rect,
+		Enum = Enum,
 	}
 end
 

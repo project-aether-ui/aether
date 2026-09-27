@@ -72,6 +72,26 @@
 	close. The `Child` form's own binding
 	(`action(function(node) hoverHandle.Bind(node) end)`) carries no such
 	guard, so it is what this suite exercises.
+
+	`UDim2` READ AS A BARE GLOBAL, NOT `host.Vocabulary.UDim2` (milestone 56
+	sprint 2) -- `.Vocabulary` is not part of `Host.luau`'s own contract, only
+	an extra the sibling `luau-datamodel` package's `.new()` happens to carry.
+	Confirmed directly: under `dew test`'s real environment, `Deps.Host`
+	resolves the real `DataModel` branch, whose `.Vocabulary` is `nil` --
+	a fourth identity gap this suite's own header did not have sprint 3's
+	evidence to name yet, alongside the `root`/`SetBounds`/`typeof` ones
+	above.
+
+	`applySolvedBounds` NOW TRIES `host.SetBounds` FIRST (also sprint 2).
+	Sprint 3 had this suite write plain `AbsolutePosition`/`AbsoluteSize`
+	tables unconditionally, believing no host on this machine could take a
+	real `SetBounds` call -- true of the sibling double, false of `dew
+	test`'s real `DataModel` branch, whose typed properties reject a plain
+	table where a real `Vector2` belongs, surfacing as an opaque "error in
+	error handling" once this suite's own outer `pcall` tried to carry it
+	back out. `dew test` proved the fix: a vanilla, unpatched `Live.Session`
+	passes this whole suite clean against a real host, so the manual
+	fallback only needs to run where `SetBounds` itself fails first.
 ]=]
 local T = require("@testkit")
 local Deps = require("../../src/Deps")
@@ -80,18 +100,28 @@ local Layout = require("../../src/core/Layout")
 
 local host = Deps.Host
 local Scene = host.Scene
-local V = host.Vocabulary
 local create = Deps.create
 
 local VIEWPORT = { X = 0, Y = 0, Width = 300, Height = 200 }
 
---- Stand-in for `Host.SetBounds`, which cannot accept a `Deps.create`-built
---- node on this host (see the header). Writes the plain fields the patched
---- `Scene.Bounds` below reads back.
+--- `host.SetBounds` FIRST, PLAIN FIELDS ONLY ON FAILURE (milestone 56
+--- sprint 2's own addition) -- the real `DataModel` branch `dew test`
+--- resolves has no trouble with `SetBounds` at all (confirmed directly: a
+--- vanilla, unpatched `Live.Session` passes this whole suite clean under
+--- real Dew) and its `AbsolutePosition`/`AbsoluteSize` are real typed
+--- properties, not plain tables -- writing `{X=.., Y=..}` into them
+--- unconditionally, which this function used to do, is what a real host
+--- rejected with an opaque "error in error handling" the header's own
+--- workaround was never trying to provoke. Only the sibling
+--- `luau-datamodel` double's own `SetBounds` needs the manual fallback this
+--- keeps below it.
 local function applySolvedBounds(root: any)
 	for _, item in ipairs(Layout.Solve(Scene, root, VIEWPORT)) do
-		item.Node.AbsolutePosition = { X = item.Rect.X, Y = item.Rect.Y }
-		item.Node.AbsoluteSize = { X = item.Rect.Width, Y = item.Rect.Height }
+		local ok = pcall(host.SetBounds, item.Node, item.Rect.X, item.Rect.Y, item.Rect.Width, item.Rect.Height)
+		if not ok then
+			item.Node.AbsolutePosition = { X = item.Rect.X, Y = item.Rect.Y }
+			item.Node.AbsoluteSize = { X = item.Rect.Width, Y = item.Rect.Height }
+		end
 	end
 end
 
@@ -131,14 +161,14 @@ local function testTooltipBadgeReachesTheTreeOnHoverDwell()
 			local root = create("Frame")({
 				Name = "Root",
 				Parent = screen,
-				Size = V.UDim2.fromScale(1, 1),
+				Size = UDim2.fromScale(1, 1),
 				Aether.Tooltip({
 					Content = "hello",
 					Delay = 0.05,
 					Child = create("Frame")({
 						Name = "Anchor",
-						Size = V.UDim2.fromOffset(120, 40),
-						Position = V.UDim2.fromOffset(20, 20),
+						Size = UDim2.fromOffset(120, 40),
+						Position = UDim2.fromOffset(20, 20),
 					}),
 				}),
 			})

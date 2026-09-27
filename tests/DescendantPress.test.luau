@@ -23,6 +23,13 @@
 	owns its descendants' presses, once, and no child has to remember anything --
 	a child that must remember is a rule the next child does not inherit, which is
 	how the two hosts drifted apart to begin with.
+
+	`UDim2` READ AS A BARE GLOBAL, NOT `host.Vocabulary.UDim2` (milestone 56
+	sprint 2) -- `InstallVocabulary()` below is what actually installs it as a
+	global for a host that needs one; `.Vocabulary` itself is not part of
+	`Host.luau`'s own contract, only an extra the sibling `luau-datamodel`
+	package's `.new()` happens to carry, which this file read without ever
+	needing to.
 ]=]
 local T = require("@testkit")
 local Aether = require("../src/api")
@@ -58,8 +65,8 @@ local function fixture(receives: boolean)
 
 		child = host.create("Frame")({
 			Name = "Child",
-			Size = host.Vocabulary.UDim2.fromOffset(80, 40),
-			Position = host.Vocabulary.UDim2.fromOffset(40, 40),
+			Size = UDim2.fromOffset(80, 40),
+			Position = UDim2.fromOffset(40, 40),
 			BackgroundTransparency = 0,
 			ZIndex = 5,
 			host.action(function(rbx: any)
@@ -69,8 +76,8 @@ local function fixture(receives: boolean)
 
 		root = host.create("Frame")({
 			Name = "Region",
-			Size = host.Vocabulary.UDim2.fromOffset(300, 200),
-			Position = host.Vocabulary.UDim2.fromOffset(10, 10),
+			Size = UDim2.fromOffset(300, 200),
+			Position = UDim2.fromOffset(10, 10),
 			BackgroundTransparency = 0,
 			host.action(function(rbx: any)
 				regionPress.Bind(rbx)

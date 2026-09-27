@@ -21,6 +21,13 @@
 	with itself perfectly. So the cases that matter here are the ones where
 	something moves, and the comparison is always against a solve with the cache
 	switched OFF -- never against the cache's own previous answer.
+
+	`UDim2`/`UDim` READ AS BARE GLOBALS, NOT `host.Vocabulary` (milestone 56
+	sprint 2) -- `.Vocabulary` is not part of `Host.luau`'s own contract, only
+	an extra the sibling `luau-datamodel` package's `.new()` happens to carry.
+	Confirmed directly: `Aether.Host.detect()` under a real engine returns a
+	host whose `.Vocabulary` is `nil`, which is what made every case here fail
+	under `dew test` and nowhere else.
 ]=]
 local T = require("@testkit")
 local Aether = require("../../src/api")
@@ -35,7 +42,6 @@ Layout.SetCacheEnabled(true)
 
 local function fixture()
 	local host = Aether.Host.detect()
-	local V = host.Vocabulary
 	local create = host.create
 
 	local rows = {}
@@ -44,32 +50,32 @@ local function fixture()
 			Name = `Row{i}`,
 			Text = `row {i}`,
 			TextSize = 14,
-			Size = V.UDim2.new(1, 0, 0, 30),
+			Size = UDim2.new(1, 0, 0, 30),
 			LayoutOrder = i,
 		})
 	end
 
 	local moving = create("Frame")({
 		Name = "Moving",
-		Size = V.UDim2.fromOffset(60, 40),
-		Position = V.UDim2.fromOffset(10, 10),
+		Size = UDim2.fromOffset(60, 40),
+		Position = UDim2.fromOffset(10, 10),
 	})
 
 	local root = create("Frame")({
 		Name = "Root",
-		Size = V.UDim2.fromScale(1, 1),
+		Size = UDim2.fromScale(1, 1),
 		create("Frame")({
 			Name = "Static",
-			Size = V.UDim2.new(1, 0, 0, 150),
+			Size = UDim2.new(1, 0, 0, 150),
 			ClipsDescendants = true,
-			create("UIPadding")({ PaddingLeft = V.UDim.new(0, 8), PaddingTop = V.UDim.new(0, 8) }),
-			create("UIListLayout")({ Padding = V.UDim.new(0, 4) }),
+			create("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingTop = UDim.new(0, 8) }),
+			create("UIListLayout")({ Padding = UDim.new(0, 4) }),
 			rows[1], rows[2], rows[3], rows[4],
 		}),
 		create("Frame")({
 			Name = "Holder",
-			Size = V.UDim2.new(1, 0, 0, 100),
-			Position = V.UDim2.fromOffset(0, 160),
+			Size = UDim2.new(1, 0, 0, 100),
+			Position = UDim2.fromOffset(0, 160),
 			moving,
 		}),
 	})
@@ -156,14 +162,13 @@ end
 local function testAChangedNodeInvalidatesItAndItsAncestors()
 	local host, root, moving = fixture()
 	local Scene = host.Scene
-	local V = host.Vocabulary
 	Layout.ClearCache()
 
 	local before = rects(Layout.Solve(Scene, root, VIEWPORT, host), Scene)
 
 	--- MOVE ONE NODE. A cache that never invalidates passes every other case in
 	--- this file; this is the one it cannot.
-	moving.Position = V.UDim2.fromOffset(90, 55)
+	moving.Position = UDim2.fromOffset(90, 55)
 
 	Layout.ResetCacheStats()
 	local cached = rects(Layout.Solve(Scene, root, VIEWPORT, host), Scene)
@@ -190,7 +195,6 @@ end
 local function testResizingAParentReflowsItsChildren()
 	local host, root = fixture()
 	local Scene = host.Scene
-	local V = host.Vocabulary
 	Layout.ClearCache()
 	Layout.Solve(Scene, root, VIEWPORT, host)
 
@@ -204,7 +208,7 @@ local function testResizingAParentReflowsItsChildren()
 		end
 	end
 	assert(static, "the fixture should contain Static")
-	static.Size = V.UDim2.new(0.5, 0, 0, 150)
+	static.Size = UDim2.new(0.5, 0, 0, 150)
 
 	local cached = rects(Layout.Solve(Scene, root, VIEWPORT, host), Scene)
 	local truth = uncached(Scene, root, host)
@@ -218,7 +222,6 @@ end
 local function testAddingAndRemovingChildren()
 	local host, root = fixture()
 	local Scene = host.Scene
-	local V = host.Vocabulary
 	Layout.ClearCache()
 	Layout.Solve(Scene, root, VIEWPORT, host)
 
@@ -234,8 +237,8 @@ local function testAddingAndRemovingChildren()
 	--- its child list moved, which is why the child list is part of the key.
 	local extra = host.create("Frame")({
 		Name = "Extra",
-		Size = V.UDim2.fromOffset(20, 20),
-		Position = V.UDim2.fromOffset(5, 60),
+		Size = UDim2.fromOffset(20, 20),
+		Position = UDim2.fromOffset(5, 60),
 	})
 	extra.Parent = holder
 
@@ -257,18 +260,17 @@ end
 
 local function testAScaledSubtreeDoesNotCompound()
 	local host = Aether.Host.detect()
-	local V = host.Vocabulary
 	local create = host.create
 	Layout.ClearCache()
 
-	local inner = create("Frame")({ Name = "Inner", Size = V.UDim2.fromOffset(50, 50) })
+	local inner = create("Frame")({ Name = "Inner", Size = UDim2.fromOffset(50, 50) })
 	local root = create("Frame")({
 		Name = "Root",
-		Size = V.UDim2.fromScale(1, 1),
+		Size = UDim2.fromScale(1, 1),
 		create("Frame")({
 			Name = "Scaled",
-			Size = V.UDim2.fromOffset(100, 100),
-			Position = V.UDim2.fromOffset(20, 20),
+			Size = UDim2.fromOffset(100, 100),
+			Position = UDim2.fromOffset(20, 20),
 			create("UIScale")({ Scale = 1.5 }),
 			inner,
 		}),
