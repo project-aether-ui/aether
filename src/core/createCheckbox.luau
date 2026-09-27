@@ -193,6 +193,9 @@ local function createCheckbox(options: Options): Checkbox
 				elseif MACHINE_OPTIONS[key :: any] or value == nil then
 					continue
 				elseif type(key) == "string" and string.match(key, "^On%u") then
+					--- LOUD NOW, NOT SILENT (milestone 54 sprint 5) -- see
+					--- createPressable's own identical comment.
+					warn(`createCheckbox: "{key}" is not a handler this machine recognises and was dropped`)
 					continue
 				else
 					props[key] = value

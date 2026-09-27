@@ -282,6 +282,9 @@ local function createTabs(options: Options): Tabs
 					elseif TAB_MACHINE_OPTIONS[k :: any] or v == nil then
 						continue
 					elseif type(k) == "string" and string.match(k, "^On%u") then
+						--- LOUD NOW, NOT SILENT (milestone 54 sprint 5) --
+						--- see createPressable's own identical comment.
+						warn(`createTabs: "{k}" is not a handler this machine recognises and was dropped`)
 						continue
 					else
 						props[k] = v

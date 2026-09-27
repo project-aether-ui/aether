@@ -246,6 +246,14 @@ local function testNothingTheMachineOwnsReachesTheElement()
 	assert(props.Visible == true, "anything the machine does not claim should pass through")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local m = machine()
+	local props = m.GetRootProps({ OnChecked = function() end })
+	assert(props.OnChecked == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
 T.test("it refuses to run without a pointer router", testItRefusesToRunWithoutARouter, "math")
 T.test("it refuses to run without a selection router", testItRefusesToRunWithoutASelectionRouter, "math")
 T.test("it starts unchecked", testItStartsUnchecked, "math")
@@ -260,5 +268,10 @@ T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesN
 T.test("destroy releases both registrations", testDestroyReleasesBothRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
 T.test("nothing the machine owns reaches the element", testNothingTheMachineOwnsReachesTheElement, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
 
 return T.run("createCheckbox")
