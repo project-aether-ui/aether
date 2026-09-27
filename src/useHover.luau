@@ -37,7 +37,6 @@
 
 
 local Deps = require("./Deps")
-local isRoblox = Deps.Host.Environment == "Roblox"
 local PointerRouter = require("./PointerRouter")
 local InputScope = require("./InputScope")
 

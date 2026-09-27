@@ -8,7 +8,6 @@
 local FloatingMath = require("./core/FloatingMath")
 local ScreenCoords = require("./ScreenCoords")
 local Deps = require("./Deps")
-local isRoblox = Deps.Host.Environment == "Roblox"
 
 --- The scene contract, not the engine (ms-51 M16 part 3). Anchor geometry is
 --- the same question hit-testing asks, so it goes through the same door.
@@ -89,7 +88,7 @@ local function getViewportRect(customGetter: (() -> Rect)?): Rect
 		return customGetter()
 	end
 
-	if isRoblox and Workspace then
+	if Workspace then
 		local cam = Workspace.CurrentCamera
 		if cam then
 			local vSize = cam.ViewportSize
@@ -149,7 +148,7 @@ local function useFloating(props: FloatingProps): FloatingHandle
 	end)
 
 	-- Frame bus update for moving anchors
-	if isRoblox and RunService and RunService:IsClient() then
+	if RunService and RunService:IsClient() then
 		local conn = RunService.RenderStepped:Connect(update)
 		if scopedCleanup then
 			scopedCleanup(function()
