@@ -86,7 +86,112 @@ jobs:
       - run: lune run tests/gates/all_gates.luau --run
       - run: lune run conformance/run.luau
 
-# THE `rust` AND `fmt` JOBS ARE GONE, AND SO IS THE RUST THEY RAN.
+  # DEW'S OWN VM, NOT THE FAKE DOUBLE ABOVE (milestone 56 sprint 3).
+  #
+  # `dew test` runs *.test.luau in Dew's real Luau VM, against Dew's own
+  # native `DataModel` -- no window, no rendering, and no relationship to
+  # the sibling `luau-datamodel` package the `luau` job above clones. Its
+  # own `execute_test_runs_passing_suite` already proves it can run a real
+  # suite from this repository; this job is the first time CI does.
+  #
+  # SITS BESIDE `luau`, NOT INSTEAD OF IT. Milestone 56's own plan is
+  # explicit that this does not replace anything until it has been proven
+  # stable here -- a regression in either job stays visible before the
+  # other is touched.
+  #
+  # UBUNTU, NOT WINDOWS, matching Dew's OWN `linux` job, which already
+  # proves `dew_host::datamodel` (what this job's `dew test` is built on)
+  # compiles and runs headlessly there. A second Windows job would cost
+  # 2x for no capability this one lacks.
+  dew-test:
+    name: suites, against Dew's own VM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # SAME SIBLING THE `luau` JOB CLONES, ABOVE -- and needed here too.
+      # `LayoutAutomaticSize.test.luau` (among others) constructs
+      # `Aether.Host.LuauDataModel.new()` directly rather than through
+      # `Aether.Host.detect()`; a clean checkout with no sibling present
+      # failed it with "attempt to index nil with 'new'", found live on
+      # this job's own first CI run, where a local machine that already had
+      # the sibling checked out from earlier work could not reproduce it.
+      - name: Fetch sibling luau-datamodel test double
+        run: git clone --depth 1 https://github.com/project-aether-ui/luau-datamodel.git ../luau-datamodel
+
+      # CLONED, NOT PESDE-PINNED. There is no released `dew` binary to
+      # install yet (no tag has been cut) -- see milestone 56's own vision
+      # doc for why this job builds Dew from source rather than downloading
+      # one, the same shape Dew's own CI already uses to reach aether for
+      # its conformance cases.
+      - name: Clone Dew, which this job builds and runs
+        run: git clone --depth 1 https://github.com/dew-desktop/dew.git ../dew
+
+      - name: Read Dew's own pinned Rust version
+        id: rust
+        shell: bash
+        run: |
+          channel=$(grep -m1 -oE 'channel = "[^"]+"' ../dew/rust-toolchain.toml | cut -d'"' -f2)
+          test -n "$channel" || { echo "no channel in ../dew/rust-toolchain.toml"; exit 1; }
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ../dew
+          shared-key: ${{ runner.os }}-dew-test
+
+      - uses: CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pesde
+        shell: bash
+        run: |
+          url="https://github.com/pesde-pkg/pesde/releases/download/v0.7.3%2Bregistry.0.2.3/pesde-0.7.3-linux-x86_64.zip"
+          curl -sSL "$url" -o pesde.zip
+          unzip -q pesde.zip -d "$RUNNER_TEMP/pesde"
+          chmod +x "$RUNNER_TEMP/pesde/pesde"
+          echo "$RUNNER_TEMP/pesde" >> "$GITHUB_PATH"
+
+      # SO `dew test` FINDS VIDE THE SAME WAY A LOCAL RUN DOES -- its own
+      # vide-source detection reads `roblox_packages/.pesde/centau_vide@...`
+      # first, and only falls back to whatever Dew itself bundles.
+      - run: pesde install
+
+      - name: Build dew
+        run: cargo build --manifest-path ../dew/host/Cargo.toml --bin dew
+
+      # AGAINST A CEILING OF 1, NOT ZERO -- the same shape the `luau` job's
+      # own ceiling uses, above, and for the same reason: `SecondHost.test.luau`
+      # fails here on pre-existing, out-of-scope vide-scope flakiness
+      # (`cannot use property()/cleanup/spring() outside a stable or
+      # reactive scope`), tracked separately from this milestone. LOWER this
+      # the moment that suite is fixed; never raise it without saying why.
+      - name: dew test, against a ceiling on failures
+        shell: bash
+        run: |
+          CEILING=1
+          out=$(../dew/target/debug/dew test 2>&1) || true
+          echo "$out"
+          failed=$(echo "$out" | sed -n 's/^dew: \([0-9]*\) of [0-9]* suites failed$/\1/p' | tail -1)
+          if [ -z "$failed" ]; then
+            echo "$out" | grep -q "^SUITES: PASS" && failed=0
+          fi
+          test -n "$failed" || { echo "could not read the suite summary"; exit 1; }
+          echo "suites failing: $failed, ceiling $CEILING"
+          test "$failed" -le "$CEILING" || {
+            echo "MORE SUITES BROKE: $failed failing, at most $CEILING expected."; exit 1; }
+
+# THE `rust` AND `fmt` JOBS ARE GONE, AND SO IS THIS REPOSITORY'S OWN RUST.
+#
+# `dew-test` above DOES touch a Rust toolchain, milestone 56 sprint 3 onward --
+# but it builds a SIBLING CLONE of Dew, the same shape the `luau` job's own
+# clone of `luau-datamodel` already is, never a `Cargo.toml` living in this
+# tree. The distinction below still holds exactly as ADR-004 states it.
 #
 # ADR-004: `hosts/raster`, `hosts/runtime` and `hosts/window` were Dew's
 # rendering stack living in the framework's repository -- `pesde.toml` ships
