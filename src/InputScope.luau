@@ -43,7 +43,6 @@
 
 
 local Deps = require("./Deps")
-local isRoblox = Deps.Host.Environment == "Roblox"
 local LayerManager = require("./LayerManager")
 local HitTest = require("./HitTest")
 
