@@ -83,6 +83,12 @@ export type Pressable = {
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
+	--- The bound actions and nothing else -- no `Name`, no
+	--- `BackgroundTransparency`, no cosmetic default of any kind. For a
+	--- caller with an already-styled element who never wanted `GetRootProps`'
+	--- "fully defaulted bare Frame" convenience in the first place. Milestone
+	--- 54 sprint 3.
+	GetActionProps: () -> { [any]: any },
 	Destroy: () -> (),
 }
 
@@ -226,6 +232,15 @@ local function createPressable(options: Options): Pressable
 		return props
 	end
 
+	--- `GetRootProps()` WITH NO OVERRIDES AND NO COSMETIC DEFAULTS -- the
+	--- array part only, built directly rather than by filtering
+	--- `getRootProps()`'s own result, since that result mixes the two and
+	--- `ipairs` skipping the string keys is exactly the tax this getter
+	--- exists to remove from every caller by hand.
+	local function getActionProps(): { [any]: any }
+		return { action(handle.Bind) }
+	end
+
 	local destroyed = false
 	local function destroy()
 		if destroyed then
@@ -241,6 +256,7 @@ local function createPressable(options: Options): Pressable
 		IsHovered = isHovered,
 		IsPressed = isPressed,
 		GetRootProps = getRootProps,
+		GetActionProps = getActionProps,
 		Destroy = destroy,
 	}
 end

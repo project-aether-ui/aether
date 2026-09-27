@@ -83,6 +83,9 @@ export type RadioOption = {
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
+	--- The bound actions and nothing else -- see `createPressable`'s own
+	--- identical field. Milestone 54 sprint 3.
+	GetActionProps: () -> { [any]: any },
 	Destroy: () -> (),
 }
 
@@ -309,6 +312,23 @@ local function createRadioGroup(options: Options): RadioGroup
 			return props
 		end
 
+		--- THE ARRAY PART, BUILT DIRECTLY -- see `createCheckbox`'s own
+		--- identical getter.
+		local function getActionProps(): { [any]: any }
+			local props = {}
+			for _, entry in ipairs(pressable.GetActionProps()) do
+				table.insert(props, entry)
+			end
+			table.insert(
+				props,
+				action(function(element: any)
+					state.boundElement = element
+					selectionHandle.Bind(element)
+				end)
+			)
+			return props
+		end
+
 		local destroyed = false
 		local function destroy()
 			if destroyed then
@@ -324,6 +344,7 @@ local function createRadioGroup(options: Options): RadioGroup
 			IsHovered = pressable.IsHovered,
 			IsPressed = pressable.IsPressed,
 			GetRootProps = getRootProps,
+			GetActionProps = getActionProps,
 			Destroy = destroy,
 		}
 		optionMachines[key] = radioOption
