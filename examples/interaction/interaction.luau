@@ -480,26 +480,13 @@ vide.root(function()
 
 		advance(160)
 
-		--- `ContextMenu.luau`'s OWN WRAPPER NEVER FORWARDS AN UNRECOGNISED
-		--- PROP -- unlike `Checkbox.luau`, which spreads its whole `props`
-		--- table into `create("Frame")(machine.GetRootProps(props))`,
-		--- `ContextMenu.luau` builds its surface from a hand-picked table of
-		--- exactly the keys it names (`IsOpen`, `OnClose`, `AnchorPosition`,
-		--- `Position`, `Size`, `Items`, `RenderItem`) and nothing else, so a
-		--- `Parent` prop handed in here is silently dropped -- the menu opens
-		--- (`isOpen` genuinely flips true) and is never actually parented
-		--- anywhere, which reads exactly like "nothing happened" from the
-		--- caller's side. `.Parent` is set on the returned handle instead,
-		--- the same way Dew's own working `examples/aether/contextmenu`
-		--- nests the same call as a CHILD of another `create()` rather than
-		--- naming `Parent` at all -- two different fixes for the one bug,
-		--- found here rather than fixed in `ContextMenu.luau` itself.
-		--- `Position`/`Size` also still need to be explicit: `useFloating`'s
-		--- own computed position is never applied to the surface it returns,
-		--- and `Width` is declared on `ContextMenuProps` but never read
-		--- anywhere in the file -- two more latent bugs alongside the first,
-		--- none of them introduced by this milestone's own sprints.
-		local menu = Aether.ContextMenu({
+		--- `Position`/`Size` STILL NEED TO BE EXPLICIT: `useFloating`'s own
+		--- computed position is never applied to the surface it returns, and
+		--- `Width` is declared on `ContextMenuProps` but never read anywhere
+		--- in the file -- two latent bugs found alongside `Parent`'s own
+		--- (now fixed in `ContextMenu.luau`), neither introduced by this
+		--- milestone's own sprints.
+		Aether.ContextMenu({
 			IsOpen = isOpen,
 			OnClose = function()
 				isOpen(false)
@@ -510,8 +497,8 @@ vide.root(function()
 			Items = function()
 				return items
 			end,
+			Parent = body,
 		})
-		menu.Parent = body
 	end
 
 	----------------------------------------------------------------------
@@ -626,16 +613,9 @@ vide.root(function()
 			ViewportSize = VIEWPORT_HEIGHT,
 		})
 
-		--- `.Parent` SET ON THE RETURN, NOT PASSED IN -- the same shape the
-		--- CONTEXT MENU section above already needed, for the same class of
-		--- reason. `TreeView.luau`'s own virtualized branch builds its
-		--- `VirtualList` call by hand, forwarding `Size`/`Position`/
-		--- `AnchorPoint`/`Visible`/`ZIndex`/`LayoutOrder` -- but not `Parent`,
-		--- which `TreeViewProps` never even declares. A `Parent` handed in
-		--- here would silently build the whole tree and attach it nowhere --
-		--- found by this demo, not fixed in `TreeView.luau` itself.
-		local tree = Aether.TreeView({
+		Aether.TreeView({
 			Name = "TreeViewDemo",
+			Parent = body,
 			Position = UDim2.new(0, 16, 0, treeY),
 			Size = UDim2.new(1, -32, 0, VIEWPORT_HEIGHT),
 			Estimate = ROW_HEIGHT,
@@ -695,7 +675,6 @@ vide.root(function()
 				})
 			end,
 		})
-		tree.Parent = body
 
 		advance(ROW_HEIGHT * 5 + 8)
 	end
@@ -772,21 +751,15 @@ vide.root(function()
 	-- rather than this file declaring a number that drifts the next time a
 	-- row's height changes.
 	--
-	-- `.Parent` SET ON THE RETURN, NOT PASSED IN -- a fourth instance of the
-	-- same defect shape this milestone's demo keeps finding (Context Menu,
-	-- Tree View, now this): `ScrollArea.luau`'s own final `create("Frame")`
-	-- hardcodes `BackgroundTransparency = 1` and never reads `props.Parent`,
-	-- `props.BackgroundColor3` or `props.BackgroundTransparency` at all, so
-	-- all three were silently dropped when handed in here -- found by this
-	-- demo, not fixed in `ScrollArea.luau` itself.
 	----------------------------------------------------------------------
 
 	sectionTitle("SCROLL AREA")
 
 	do
 		local at = advance(4)
-		local scrollArea = Aether.ScrollArea({
+		Aether.ScrollArea({
 			Name = "ScrollAreaDemo",
+			Parent = body,
 			Position = UDim2.new(0, 16, 0, at),
 			Size = UDim2.new(1, -32, 0, 160),
 			Content = function()
@@ -805,7 +778,6 @@ vide.root(function()
 				return rows
 			end,
 		})
-		scrollArea.Parent = body
 
 		advance(164)
 	end

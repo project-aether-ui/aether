@@ -41,6 +41,7 @@ export type TreeViewProps<T> = {
 	Visible: any?,
 	ZIndex: number?,
 	LayoutOrder: any?,
+	Parent: Instance?,
 
 	-- Tree Data & State
 	Roots: (() -> { T }) | { T },
@@ -130,6 +131,7 @@ local function TreeView<T>(props: TreeViewProps<T>): any
 	if shouldVirtualize and VirtualList then
 		return VirtualList({
 			Name = props.Name or "TreeView",
+			Parent = props.Parent,
 			Size = props.Size or udim2New(1, 0, 1, 0),
 			Position = props.Position or udim2New(0, 0, 0, 0),
 			AnchorPoint = props.AnchorPoint,
@@ -152,6 +154,7 @@ local function TreeView<T>(props: TreeViewProps<T>): any
 		local For = Deps.For
 		return create("Frame")({
 			Name = props.Name or "TreeView",
+			Parent = props.Parent,
 			Size = props.Size or udim2New(1, 0, 1, 0),
 			Position = props.Position or udim2New(0, 0, 0, 0),
 			BackgroundTransparency = 1,
