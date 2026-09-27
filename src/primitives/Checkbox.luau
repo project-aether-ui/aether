@@ -15,11 +15,15 @@
 	this file supplies the four things the machine cannot have -- the two
 	routers, vide's `source`, vide's `action` -- and creates one element out
 	of what comes back.
+
+	ROUTER AND SELECTION ARE AMBIENT (milestone 54 sprint 2), read through
+	`RouterContext` the same way `Scope` is read through `ScopeContext` --
+	an explicit `Router`/`Selection` prop still wins when a caller passes
+	one, exactly the precedence `Scope` already has.
 ]=]
 
 local Deps = require("../Deps")
-local PointerRouter = require("../PointerRouter")
-local SelectionRouter = require("../SelectionRouter")
+local RouterContext = require("../RouterContext")
 local ScopeContext = require("../ScopeContext")
 
 local createCheckbox = require("../core/createCheckbox").createCheckbox
@@ -28,8 +32,14 @@ local vide = Deps.vide
 local create = vide.create
 local cleanup = vide.cleanup
 local useScope = ScopeContext.useScope
+local useRouter = RouterContext.useRouter
+local useSelection = RouterContext.useSelection
 
 export type CheckboxProps = {
+	--- Overridable the same way `Scope` is; omit to use whatever is ambient.
+	Router: any?,
+	Selection: any?,
+
 	--- PointerRouter semantics, the same as `Pressable`'s own.
 	Scope: any?,
 	Layer: string?,
@@ -62,8 +72,8 @@ export type CheckboxProps = {
 
 local function Checkbox(props: CheckboxProps)
 	local machine = createCheckbox({
-		Router = PointerRouter,
-		Selection = SelectionRouter,
+		Router = if props.Router ~= nil then props.Router else useRouter(),
+		Selection = if props.Selection ~= nil then props.Selection else useSelection(),
 		Source = vide.source,
 		Action = vide.action,
 

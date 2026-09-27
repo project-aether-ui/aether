@@ -33,18 +33,20 @@
 ]=]
 
 local Deps = require("../Deps")
-local PointerRouter = require("../PointerRouter")
-local SelectionRouter = require("../SelectionRouter")
+local RouterContext = require("../RouterContext")
 
 local coreTabs = require("../core/createTabs")
 local createTabs = coreTabs.createTabs
 
 local vide = Deps.vide
+local useRouter = RouterContext.useRouter
+local useSelection = RouterContext.useSelection
 
 export type Options = {
-	--- Overridable the same way `Checkbox`'s own `Scope` is -- default to the
-	--- real singletons, but a caller that already has a fake double (or a
-	--- second router) can still hand one over explicitly.
+	--- Overridable the same way `Checkbox`'s own `Scope` is -- default to
+	--- whatever is ambient (milestone 54 sprint 2's `RouterContext`, itself
+	--- defaulting to the real singletons), but a caller that already has a
+	--- fake double (or a second router) can still hand one over explicitly.
 	Router: coreTabs.Router?,
 	Selection: coreTabs.Selection?,
 	--- Overridable for the same reason `Router`/`Selection` are: a host with
@@ -65,8 +67,8 @@ export type Options = {
 
 local function Tabs(options: Options): coreTabs.Tabs
 	return createTabs({
-		Router = if options.Router ~= nil then options.Router else PointerRouter,
-		Selection = if options.Selection ~= nil then options.Selection else SelectionRouter,
+		Router = if options.Router ~= nil then options.Router else useRouter(),
+		Selection = if options.Selection ~= nil then options.Selection else useSelection(),
 		Source = if options.Source ~= nil then options.Source else vide.source,
 		Action = if options.Action ~= nil then options.Action else vide.action,
 

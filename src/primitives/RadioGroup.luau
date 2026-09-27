@@ -19,16 +19,18 @@
 ]=]
 
 local Deps = require("../Deps")
-local PointerRouter = require("../PointerRouter")
-local SelectionRouter = require("../SelectionRouter")
+local RouterContext = require("../RouterContext")
 
 local coreRadioGroup = require("../core/createRadioGroup")
 local createRadioGroup = coreRadioGroup.createRadioGroup
 
 local vide = Deps.vide
+local useRouter = RouterContext.useRouter
+local useSelection = RouterContext.useSelection
 
 export type Options = {
-	--- Overridable the same way `Checkbox`'s own `Scope` is.
+	--- Overridable the same way `Checkbox`'s own `Scope` is -- default to
+	--- whatever is ambient (milestone 54 sprint 2's `RouterContext`).
 	Router: coreRadioGroup.Router?,
 	Selection: coreRadioGroup.Selection?,
 	Source: coreRadioGroup.SourceFactory?,
@@ -45,8 +47,8 @@ export type Options = {
 
 local function RadioGroup(options: Options): coreRadioGroup.RadioGroup
 	return createRadioGroup({
-		Router = if options.Router ~= nil then options.Router else PointerRouter,
-		Selection = if options.Selection ~= nil then options.Selection else SelectionRouter,
+		Router = if options.Router ~= nil then options.Router else useRouter(),
+		Selection = if options.Selection ~= nil then options.Selection else useSelection(),
 		Source = if options.Source ~= nil then options.Source else vide.source,
 		Action = if options.Action ~= nil then options.Action else vide.action,
 
