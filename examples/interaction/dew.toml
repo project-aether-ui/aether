@@ -1,0 +1,14 @@
+# Interaction
+#
+# One checkbox, one radio group, one tab bar -- end to end, with no fake
+# Router/Selection double anywhere in it (milestone 54 sprint 6). Every
+# create*/Aether.* call site that existed anywhere in this tree before this
+# was either prose in a doc comment or wired to a fake double for a test;
+# this is the first real screen.
+
+id = "interaction"
+name = "Aether Interaction"
+description = "A checkbox, a radio group and a tab bar, built with Aether's own Primitives"
+
+# NO PERMISSIONS. It reads and writes only its own in-memory state.
+permissions = ["widget"]
