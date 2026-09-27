@@ -119,6 +119,15 @@ local Core = {
 local Runtime = {
 	For = For,
 	KeyedList = For,
+	--- MOVED HERE FROM `Primitives`. `VirtualList` owns no interaction state
+	--- of its own -- its windowing arithmetic already lives in
+	--- `core/VirtualWindow` and the sibling `spektr/virtual` package, both
+	--- framework-free and headless-testable on their own, and what stays in
+	--- this file is only instance pooling, mounting and positioning over
+	--- whichever supplies the numbers. That is a rendering-economy tool, the
+	--- same job `For` already does, not a Checkbox-shaped interaction
+	--- primitive.
+	VirtualList = VirtualList,
 }
 
 -- Domain 2: Arbitration & Interaction Engines
@@ -178,7 +187,6 @@ local Primitives = {
 	ScrollBar = PrimitiveScrollbar,
 	Scrollbar = PrimitiveScrollbar,
 	ScrollingFrame = ScrollingFrame,
-	VirtualList = VirtualList,
 	TreeView = TreeView,
 	Text = Text,
 }
