@@ -8,6 +8,14 @@
 ]=]
 
 local Deps = require("../Deps")
+--- KEPT DELIBERATELY (milestone 57): the two remaining uses below
+--- (`updateContent`/`updateVp`'s own `GetPropertyChangedSignal` measurement)
+--- each have a working, documented off-engine fallback already built for
+--- them (`Scene.Bounds` polling, ms-53 D2) that a live-verified capability
+--- conversion could silently stop reaching. Converting them needs an actual
+--- running Dew window to confirm `GetPropertyChangedSignal("AbsoluteSize")`
+--- fires with a correct value at the moment `task.defer` reads it, not just
+--- a headless pass -- not done here.
 local isRoblox = Deps.Host.Environment == "Roblox"
 local ScrollController = require("../controllers/ScrollController")
 local Scrollbar = require("./Scrollbar")
@@ -133,7 +141,7 @@ local function resolveWheelTarget(px: number, py: number): ScrollOwner?
 		local isOver = false
 		if HitTest and HitTest.ContainsVisible then
 			isOver = HitTest.ContainsVisible(surface, px, py)
-		elseif isRoblox and surface.AbsolutePosition and surface.AbsoluteSize then
+		elseif surface.AbsolutePosition and surface.AbsoluteSize then
 			local pos = surface.AbsolutePosition
 			local sz = surface.AbsoluteSize
 			isOver = px >= pos.X and px <= pos.X + sz.X and py >= pos.Y and py <= pos.Y + sz.Y

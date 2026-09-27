@@ -513,13 +513,13 @@ local function Scrollbar(props: ScrollbarProps): any
 		}
 		local slotThumb = parts.Thumb(thumbState)
 		thumbElement = slotThumb
-		if isRoblox and slotThumb and typeof(slotThumb) == "Instance" and (slotThumb :: any):IsA("GuiObject") then
+		if slotThumb and typeof(slotThumb) == "Instance" and (slotThumb :: any):IsA("GuiObject") then
 			thumbPressable.Bind(slotThumb :: any)
 		end
 	elseif props.RenderThumb then
 		local slotThumb = props.RenderThumb(thumbProps)
 		thumbElement = slotThumb
-		if isRoblox and slotThumb and typeof(slotThumb) == "Instance" and (slotThumb :: any):IsA("GuiObject") then
+		if slotThumb and typeof(slotThumb) == "Instance" and (slotThumb :: any):IsA("GuiObject") then
 			thumbPressable.Bind(slotThumb :: any)
 		end
 	else
@@ -655,6 +655,10 @@ local function Scrollbar(props: ScrollbarProps): any
 			action(trackPressable.Bind),
 			action(function(rbx: GuiObject)
 				trackSurface = rbx
+				--- KEPT (milestone 57): calls `task.defer` below, which Dew does not
+				--- implement at all (`grep` across Dew's own host source, zero
+				--- hits) -- a real vendor-only gate, not a disguised capability
+				--- check on `rbx` itself.
 				if isRoblox and rbx and typeof(rbx) == "Instance" and rbx:IsA("GuiObject") then
 					local function updateTrack()
 						if rbx.AbsoluteSize then
