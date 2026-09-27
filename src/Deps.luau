@@ -167,9 +167,4 @@ return {
 	cleanup = scopedCleanup,
 
 	Virtual = VirtualPkg,
-	--- STILL A VENDOR TEST, AND STILL THE RIGHT ONE. Its consumers ask "am I in
-	--- the engine" about engine-only affordances -- `Enum.Font.GothamMedium`
-	--- against the string "GothamMedium" in WindowTopbar, for one -- rather than
-	--- asking which DataModel they are on. That second question is `Host.Name`.
-	isRoblox = isRobloxEngine,
 }

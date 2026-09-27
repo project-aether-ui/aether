@@ -16,7 +16,6 @@ local PointerRouter = require("./PointerRouter")
 local source = Deps.source
 local spring = Deps.spring
 local root = Deps.root
-local isRoblox = Deps.isRoblox
 local RunService = Deps.Host.Services.RunService
 
 local ScreenStack = require("./ScreenStack")
@@ -195,7 +194,7 @@ function TransitionOrchestrator.Settle()
 	end
 end
 
-if isRoblox and RunService then
+if RunService then
 	RunService.Heartbeat:Connect(TransitionOrchestrator.Settle)
 elseif PointerRouter and PointerRouter.OnFrame then
 	--- Off-engine the frame bus is what a host pumps -- `Live.Session.Step` calls
