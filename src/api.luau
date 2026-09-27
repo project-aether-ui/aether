@@ -31,6 +31,8 @@ local TreeController = require("./controllers/TreeController")
 local ScrollController = require("./controllers/ScrollController")
 local createPressable = require("./core/createPressable").createPressable
 local createCheckbox = require("./core/createCheckbox").createCheckbox
+local createRadioGroup = require("./core/createRadioGroup").createRadioGroup
+local createTabs = require("./core/createTabs").createTabs
 local createContextMenu = require("./core/createContextMenu").createContextMenu
 
 local LayerManager = require("./LayerManager")
@@ -103,6 +105,8 @@ local Controllers = {
 local Core = {
 	createPressable = createPressable,
 	createCheckbox = createCheckbox,
+	createRadioGroup = createRadioGroup,
+	createTabs = createTabs,
 	createContextMenu = createContextMenu,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
@@ -202,6 +206,8 @@ return {
 	ScrollController = ScrollController,
 	createPressable = createPressable,
 	createCheckbox = createCheckbox,
+	createRadioGroup = createRadioGroup,
+	createTabs = createTabs,
 	createContextMenu = createContextMenu,
 	For = For,
 	KeyedList = For,

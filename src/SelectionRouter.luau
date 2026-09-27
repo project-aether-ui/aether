@@ -1,47 +1,49 @@
 --!strict
 --[[
-	Aether · SelectionRouter -- keyboard activation, through GuiService's own
-	SelectedObject and the same InputBegan a pointer press already reaches.
+	Aether · SelectionRouter -- keyboard activation and roving focus, through
+	GuiService's own SelectedObject and the same InputBegan a pointer press
+	already reaches.
 
 	MIRRORS PointerRouter'S OWN SHAPE ON PURPOSE: a table of factories reached
 	through `Deps.Host.Services` rather than taken as an argument, so this
-	file is what a real binding hands `createCheckbox` as its `Selection`
-	port, and a test hands a fake with the identical `Selectable(props) ->
-	handle` shape instead.
+	file is what a real binding hands `createCheckbox`/`createRadioGroup` as
+	their `Selection` port, and a test hands a fake with the identical
+	`Selectable(props) -> handle` shape instead.
 
 	WHAT "SELECTED" MEANS HERE, faithfully rather than invented: the real
 	engine's own `GuiService.SelectedObject`, set by whatever drives keyboard
-	or gamepad navigation -- this file does not decide who gets selected, the
-	same way `PointerRouter` does not decide who gets clicked. `Selectable =
-	true` (set by `createCheckbox`'s own defaults) is what makes an element a
-	legal candidate; something else assigning `SelectedObject` is what
-	actually chooses one.
+	or gamepad navigation, or by `Select` below -- this file does not decide
+	who gets selected on its own initiative any more than `PointerRouter`
+	decides who gets clicked. `Selectable = true` (set by `createCheckbox`'s
+	own defaults) is what makes an element a legal candidate; assigning
+	`SelectedObject`, here or from elsewhere, is what actually chooses one.
 
-	ONE KEY, SPACE, and this is a real gap named rather than papered over.
-	Roblox's own `GuiButton.Activated` also fires for Enter and for a
-	gamepad's A button; this only answers Space, because that is this
-	milestone's own stated scope for a checkbox. Widening it to match the
-	engine's full activation set is later work, not assumed here.
+	ARROWS MOVE FOCUS; THEY DO NOT SELECT. `OnArrowNext`/`OnArrowPrevious` are
+	answered independently of `OnKeyActivate` -- a radio group's own roving
+	focus calls `Select` to move `SelectedObject` onto a sibling, and it takes
+	a SEPARATE activation key press to change which option is actually
+	checked. That split is a real behaviour decision, not an oversight: it
+	matches a roving-tabindex listbox rather than a native HTML radio group,
+	where an arrow key selects immediately. See createRadioGroup's own module
+	comment for why.
 ]]
 
 local Deps = require("./Deps")
+local coreSelection = require("./core/Selection")
 
 local UserInputService = Deps.Host.Services.UserInputService
 local GuiService = Deps.Host.Services.GuiService
 
 local SelectionRouter = {}
 
-export type SelectableProps = {
-	OnKeyActivate: (() -> ())?,
-}
+export type SelectableProps = coreSelection.SelectableProps
+export type SelectionHandle = coreSelection.SelectionHandle
 
-export type SelectionHandle = {
-	Bind: (element: any) -> (),
-	Destroy: () -> (),
-}
+local DEFAULT_ACTIVATION_KEYS = { Space = true }
 
 function SelectionRouter.Selectable(props: SelectableProps): SelectionHandle
 	local bound: any = nil
+	local activationKeys = props.ActivationKeys or DEFAULT_ACTIVATION_KEYS
 
 	--- ABSENT ON A HOST THAT OFFERS NEITHER, the same as `PointerRouter`
 	--- connecting nothing when `UserInputService` is nil -- a host reporting
@@ -56,18 +58,29 @@ function SelectionRouter.Selectable(props: SelectableProps): SelectionHandle
 			if input.UserInputType ~= Enum.UserInputType.Keyboard then
 				return
 			end
-			if input.KeyCode ~= Enum.KeyCode.Space then
-				return
-			end
 			if not bound or not GuiService then
 				return
 			end
-			--- `==` COMPARES REAL IDENTITY, the same handle `Bind` was
-			--- called with against the same handle `GuiService` hands back --
-			--- proven on the DataModel host by `Instance` caching one
-			--- userdata per id, and by the engine's own semantics natively.
-			if GuiService.SelectedObject == bound and props.OnKeyActivate then
-				props.OnKeyActivate()
+			--- `==` COMPARES REAL IDENTITY, the same handle `Bind` was called
+			--- with against the same handle `GuiService` hands back -- proven
+			--- on the DataModel host by `Instance` caching one userdata per
+			--- id, and by the engine's own semantics natively.
+			if GuiService.SelectedObject ~= bound then
+				return
+			end
+
+			if activationKeys[input.KeyCode.Name] then
+				if props.OnKeyActivate then
+					props.OnKeyActivate()
+				end
+			elseif input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Down then
+				if props.OnArrowNext then
+					props.OnArrowNext()
+				end
+			elseif input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Up then
+				if props.OnArrowPrevious then
+					props.OnArrowPrevious()
+				end
 			end
 		end)
 	end
@@ -82,6 +95,16 @@ function SelectionRouter.Selectable(props: SelectableProps): SelectionHandle
 			end
 		end,
 	}
+end
+
+--- Move keyboard/gamepad selection to `element` directly. Absent a
+--- `GuiService` (the host offers no selection concept at all), this is a
+--- no-op rather than an error -- the same shape `PointerRouter` answers a
+--- missing `UserInputService` with.
+function SelectionRouter.Select(element: any)
+	if GuiService then
+		GuiService.SelectedObject = element
+	end
 end
 
 return SelectionRouter
