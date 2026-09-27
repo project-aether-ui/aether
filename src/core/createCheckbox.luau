@@ -68,6 +68,9 @@ export type Checkbox = {
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
+	--- The bound actions and nothing else -- see `createPressable`'s own
+	--- identical field. Milestone 54 sprint 3.
+	GetActionProps: () -> { [any]: any },
 	Destroy: () -> (),
 }
 
@@ -211,6 +214,19 @@ local function createCheckbox(options: Options): Checkbox
 		return props
 	end
 
+	--- THE ARRAY PART, BUILT DIRECTLY, the same reason `createPressable`'s
+	--- own `getActionProps` is: `pressable.GetActionProps()` already carries
+	--- no cosmetic defaults, so this only has to add this machine's own
+	--- selection bind alongside it.
+	local function getActionProps(): { [any]: any }
+		local props = {}
+		for _, entry in ipairs(pressable.GetActionProps()) do
+			table.insert(props, entry)
+		end
+		table.insert(props, action(selectionHandle.Bind))
+		return props
+	end
+
 	local destroyed = false
 	local function destroy()
 		if destroyed then
@@ -226,6 +242,7 @@ local function createCheckbox(options: Options): Checkbox
 		IsHovered = pressable.IsHovered,
 		IsPressed = pressable.IsPressed,
 		GetRootProps = getRootProps,
+		GetActionProps = getActionProps,
 		Destroy = destroy,
 	}
 end
