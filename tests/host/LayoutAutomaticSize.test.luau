@@ -58,10 +58,26 @@ local function measure(text: string, _size: number): (number, number)
 	return #text * 10, 20
 end
 
+--- `Aether.Host.detect()`, NOT `Aether.Host.LuauDataModel.new()` (milestone
+--- 56 sprint 4). The external `luau-datamodel` package is retired: this
+--- suite now runs exclusively through `dew test`, where `detect()` resolves
+--- Dew's own real `DataModel` host. `UDim`/`UDim2` are read as bare globals
+--- (matching every real primitive in this codebase, and Sprint 2's own
+--- fix), packed into a small table here only so every existing `V.UDim2`
+--- call site below keeps working unchanged.
+---
+--- `SetProvider` BELOW MAY DO NOTHING NOW, and that is correct rather than a
+--- regression: `Text.SetProvider`'s own contract "never clobbers one an
+--- application already installed" means Dew's own real font provider
+--- (installed once, ahead of this suite, by `dew_host::datamodel::install`)
+--- keeps `measure`'s crude 10px-per-character override from ever taking
+--- effect. `testTextStillMeasures` below no longer depends on which one
+--- won -- it compares `Layout.Solve`'s own result against `host.Text.Measure`
+--- for the SAME size, so either provider agrees with itself.
 local function fixture()
-	local host = Aether.Host.LuauDataModel.new()
+	local host = Aether.Host.detect()
 	host.Text.SetProvider(measure, "LayoutAutomaticSize suite")
-	return host, host.Vocabulary, host.create
+	return host, { UDim = UDim, UDim2 = UDim2 }, host.create
 end
 
 local function solveNamed(host: any, root: any): { [string]: any }
@@ -79,7 +95,7 @@ local function testGrowsToAnOffsetChild()
 	local root = create("Frame")({
 		Name = "Auto",
 		Size = V.UDim2.new(0, 0, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("Frame")({ Name = "Child", Size = V.UDim2.fromOffset(120, 40) }),
 	})
 	local r = solveNamed(host, root)
@@ -94,7 +110,7 @@ local function testAuthoredSizeIsAFloor()
 	local root = create("Frame")({
 		Name = "Auto",
 		Size = V.UDim2.new(0, 200, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("Frame")({ Name = "Child", Size = V.UDim2.fromOffset(50, 40) }),
 	})
 	local r = solveNamed(host, root)
@@ -107,7 +123,7 @@ local function testPaddingIsIncluded()
 	local root = create("Frame")({
 		Name = "Auto",
 		Size = V.UDim2.new(0, 0, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("UIPadding")({
 			PaddingLeft = V.UDim.new(0, 12),
 			PaddingRight = V.UDim.new(0, 12),
@@ -126,7 +142,7 @@ local function testMeasuresThroughAScaleSizedChild()
 	local root = create("Frame")({
 		Name = "Outer",
 		Size = V.UDim2.new(0, 0, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("Frame")({
 			Name = "Filler",
 			Size = V.UDim2.fromScale(1, 1),
@@ -155,7 +171,7 @@ local function testPaddingOnASkippedNodeStillCounts()
 	local root = create("Frame")({
 		Name = "Outer",
 		Size = V.UDim2.new(0, 0, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("Frame")({
 			Name = "Filler",
 			Size = V.UDim2.fromScale(1, 1),
@@ -175,12 +191,20 @@ end
 
 --- Text still measures, and it is the case that always worked -- so a change to
 --- child measurement must not break it.
+---
+--- `TextSize` IS EXPLICIT, not left to the host's own default (milestone 56
+--- sprint 4). This compared against `host.Text.Measure("abcde", 14)` on the
+--- assumption that 14 IS the default -- true on the external double, and on
+--- real Roblox, but Dew's own default `TextLabel.TextSize` is `8` (confirmed
+--- directly): the comparison silently measured two different sizes and
+--- failed the moment this suite ran against a real host for the first time.
 local function testTextStillMeasures()
 	local host, V, create = fixture()
 	local root = create("TextLabel")({
 		Name = "Label",
 		Size = V.UDim2.new(0, 0, 0, 20),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
+		TextSize = 14,
 		Text = "abcde",
 	})
 	local r = solveNamed(host, root)
@@ -195,7 +219,7 @@ local function testGrowsToAListLayout()
 	local root = create("Frame")({
 		Name = "Auto",
 		Size = V.UDim2.new(0, 100, 0, 0),
-		AutomaticSize = "Y",
+		AutomaticSize = Enum.AutomaticSize.Y,
 		create("UIListLayout")({ Padding = V.UDim.new(0, 4) }),
 		create("Frame")({ Name = "A", Size = V.UDim2.fromOffset(100, 30) }),
 		create("Frame")({ Name = "B", Size = V.UDim2.fromOffset(100, 30) }),
@@ -213,7 +237,7 @@ local function testUnmeasurableAxisIsReported()
 	local root = create("Frame")({
 		Name = "Auto",
 		Size = V.UDim2.new(0, 30, 0, 40),
-		AutomaticSize = "X",
+		AutomaticSize = Enum.AutomaticSize.X,
 		create("Frame")({ Name = "Scaled", Size = V.UDim2.fromScale(1, 1) }),
 	})
 	local r = solveNamed(host, root)
@@ -237,7 +261,7 @@ local function testALeafIsNotReported()
 	local root = create("TextLabel")({
 		Name = "Leaf",
 		Size = V.UDim2.new(0, 0, 0, 20),
-		AutomaticSize = "XY",
+		AutomaticSize = Enum.AutomaticSize.XY,
 		Text = "hi",
 	})
 	solveNamed(host, root)

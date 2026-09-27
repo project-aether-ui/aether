@@ -112,6 +112,34 @@ local function rgb(c: any): { number }?
 	}
 end
 
+--- Roblox and Dew's SHARED, REAL DEFAULT for an untouched `UIGradient.Color`:
+--- exactly two keypoints, pure white, at `Time` 0 and 1 -- confirmed
+--- directly (milestone 56 sprint 4). `gradientStops` below used to check
+--- `seq == nil` to tell "no Color authored" apart from a real ramp, which
+--- worked against the external `luau-datamodel` double (an unset property
+--- there really was `nil`) and NEVER worked against any real engine: a
+--- freshly created `UIGradient` already has a real, non-nil `ColorSequence`
+--- the instant it exists, the same way a `Frame` already has a real
+--- `BackgroundColor3`. So this exact default is what "no Color authored"
+--- has to mean instead -- a heuristic, since no conforming host can report
+--- "the author never touched this", but a safe one: an author who WANTED a
+--- flat white tint would still get it (a two-keypoint white ramp modulates
+--- nothing), and this is the one ColorSequence value every conforming host
+--- agrees an untouched `UIGradient` starts at.
+local function isUntouchedDefaultColor(kps: { any }): boolean
+	if #kps ~= 2 then
+		return false
+	end
+	for i, expectedTime in ipairs({ 0, 1 }) do
+		local kp = kps[i]
+		local c = (kp :: any).Value
+		if (kp :: any).Time ~= expectedTime or not c or c.R ~= 1 or c.G ~= 1 or c.B ~= 1 then
+			return false
+		end
+	end
+	return true
+end
+
 --- A ColorSequence as ordered stops. Roblox exposes `Keypoints`; a host that
 --- lacks the type answers nil and the display simply draws the flat fill, which
 --- is the pre-M2 behaviour rather than a wrong guess.
@@ -129,6 +157,9 @@ local function gradientStops(g: any): { any }?
 	end
 	local kps = (seq :: any).Keypoints
 	if type(kps) ~= "table" then
+		return nil
+	end
+	if isUntouchedDefaultColor(kps) then
 		return nil
 	end
 	local out = {}

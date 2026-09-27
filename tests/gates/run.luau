@@ -15,8 +15,13 @@
 	number, the flag and the "which gates got held back" bookkeeping all delete themselves.
 	Prefer removing the reason over tuning the workaround.
 
-	The inner dev loop is `lune run tests/run.luau` (~40 s, tier-filtered). THIS is the
-	before-you-push command, and it checks everything.
+	THE INNER DEV LOOP IS `dew test`, NOT `lune run tests/run.luau` any more
+	(milestone 56 sprint 4). Bare lune cannot build a host at all now --
+	`Aether.Host.detect()`'s fallback to the external `luau-datamodel`
+	double is retired -- so that command fails immediately on any suite
+	needing one. `dew test`, run from this repository against a local Dew
+	build, is the before-you-push command: the same suite discovery, a real
+	host instead of a hand-maintained one.
 
 	WHY THIS EXISTS (ms-47, 2026-08-08)
 
