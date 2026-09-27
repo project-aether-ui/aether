@@ -26,15 +26,23 @@
 
 	SELECTION IS BY CAPABILITY, never by configuration. `Host.detect()` returns
 	the DataModel host when the environment supplies a DataModel this framework can
-	drive, and the Luau test double otherwise. There is no flag to force the wrong
-	one, because every bug in this area has been a path that silently took the
-	wrong branch.
+	drive. There is no flag to force the wrong one, because every bug in this area
+	has been a path that silently took the wrong branch.
 
 	IT USED TO SELECT BY VENDOR -- `typeof(game) == "Instance"` -- and
 	DataModel.luau carries the argument for why that changed on 2026-09-04. The
 	short version is ADR-001's: there are two implementations of the standard,
 	Roblox in C++ and Dew in Rust, and a framework that runs on any conforming host
 	should not decide by looking for the name of one of them.
+
+	THE LUAU TEST DOUBLE IS GONE (milestone 56 sprint 4). `Host.LuauDataModel`
+	used to fall back to an external `luau-datamodel` package -- a sibling
+	checkout, not something this repository ships -- for testing without any
+	real engine at all. It was retired once `dew test` proved out: a real
+	Luau VM against Dew's own real, native `DataModel`, no window and no
+	hand-maintained second implementation to keep in sync with real vide.
+	Every suite that constructed it directly now goes through `Host.detect()`
+	instead, which a real engine always answers.
 ]]
 
 --- NOT `host/init.luau`. Lune resolves a DIRECTORY require by loading init.luau
@@ -42,11 +50,6 @@
 --- so `./DataModel` looked for a sibling of whoever required the folder. As a named
 --- file this is required by path and its siblings resolve normally.
 local DataModelHost = require("./DataModel")
-local TextModule = require("../core/Text")
-
-local okLuauDataModel, LuauDataModelHost = pcall(function()
-	return require("../../../luau-datamodel/LuauDataModel")
-end)
 
 export type Bounds = { X: number, Y: number, Width: number, Height: number }
 
@@ -109,13 +112,12 @@ export type Scene = {
 export type Host = {
 	Name: string,
 	--- WHICH ENVIRONMENT SUPPLIED THE HOST SERVICES, and not a second name for
-	--- the host. `Name` says what is being driven -- "DataModel", or
-	--- "LuauDataModel" for the test double -- and is the same on every
-	--- environment providing one, which is the whole claim. This says where
-	--- `Text` and `Clock` came from: "Roblox", "Dew", or "Luau".
+	--- the host. `Name` says what is being driven -- "DataModel" -- and is the
+	--- same on every environment providing one, which is the whole claim.
+	--- This says where `Text` and `Clock` came from: "Roblox" or "Dew".
 	---
-	--- IT EXISTS TO BE ASSERTED. Which branch `detect` took is invisible in a
-	--- rendered tree -- both hosts draw the same widget correctly -- so a suite
+	--- IT EXISTS TO BE ASSERTED. Which environment `detect` found is invisible
+	--- in a rendered tree -- both draw the same widget correctly -- so a suite
 	--- that wants to know has to be told by name rather than shown pixels.
 	Environment: string,
 
@@ -158,7 +160,6 @@ export type Host = {
 local Host = {}
 
 Host.DataModel = DataModelHost
-Host.LuauDataModel = if okLuauDataModel then LuauDataModelHost else nil
 
 local detected: Host? = nil
 
@@ -185,12 +186,6 @@ function Host.detect(vide: any?): Host
 	end
 	if DataModelHost.available() then
 		detected = DataModelHost.new(vide) :: any
-	elseif okLuauDataModel and LuauDataModelHost then
-		local h = LuauDataModelHost.new() :: any
-		if h.Text == nil or h.Text.MeasureWrapped == nil then
-			h.Text = TextModule
-		end
-		detected = h :: any
 	else
 		error("Aether requires a conforming DataModel host (Roblox or Dew). No DataModel host is available in this environment.")
 	end

@@ -550,8 +550,8 @@ end
 function DataModel.new(vide: any?): any
 	if not DataModel.available() then
 		error(
-			"Aether.Host.DataModel requires an environment providing a conforming DataModel; "
-				.. "use Aether.Host.LuauDataModel where there is none.",
+			"Aether.Host.DataModel requires an environment providing a conforming DataModel "
+				.. "(Roblox or Dew); run this through dew test where none is available.",
 			2
 		)
 	end

@@ -34,11 +34,12 @@ local DataModel = Aether.Host.DataModel
 
 --- A FAITHFUL NON-ROBLOX ENVIRONMENT, assembled from parts that already exist.
 ---
---- Mock instances from the test double, value types from `@lune/roblox`, and a
---- `typeof` that answers "Instance" for a mock the way an engine answers for a
---- real one. It is not a DataModel anyone should ship -- it is the test double,
---- and LuauDataModel.luau spends its header saying so -- but it satisfies every
---- clause of the probe, and it does so with no `game` in the process at all.
+--- `Instance`/`typeof` from `Aether.Host.detect()` -- Dew's own real
+--- `DataModel`, since milestone 56 sprint 4 retired the external
+--- `luau-datamodel` double this used to build from -- and value types read
+--- as bare globals (Sprint 2's own fix, `UDim2`/`Vector2`/etc, matching
+--- every real primitive in this codebase). `typeof` answers "Instance" for
+--- real, the same way any other conforming engine does.
 ---
 --- THAT IS THE ASSERTION. If the predicate can accept this, it is not asking who
 --- the vendor is.
@@ -251,10 +252,12 @@ local function testDepsBuildsWithTheResolvedHostsVide()
 		"Deps.create must be the resolved host's create"
 	)
 	--- AND IT IS THE HOST THIS ENVIRONMENT SELECTS, so that "one decision" is a
-	--- claim about the right decision. Under lune that is the test double.
+	--- claim about the right decision. The external `luau-datamodel` double
+	--- this used to fall back to under lune is retired (milestone 56 sprint
+	--- 4); this suite runs through `dew test` now, a real `DataModel`.
 	assert(
-		Deps.Host.Name == (if DataModel.available() then "DataModel" else "LuauDataModel"),
-		`Deps must build with the host detect() chooses here, got {tostring(Deps.Host.Name)}`
+		DataModel.available() and Deps.Host.Name == "DataModel",
+		`Deps must build with the real DataModel host detect() chooses here, got {tostring(Deps.Host.Name)}`
 	)
 end
 

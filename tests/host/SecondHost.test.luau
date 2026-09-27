@@ -15,14 +15,37 @@
 	what is asserted below is the arithmetic — that layout produces the RIGHT
 	rectangles, not merely some. A solver that quietly returned zeroes would still
 	"render", and would make every future audit a lie.
+
+	`Aether.Host.detect()`, NOT `Aether.Host.LuauDataModel.new()` (milestone 56
+	sprint 4). The external `luau-datamodel` package is retired; this suite
+	now runs exclusively through `dew test`. This is also what closes this
+	suite's own remaining pre-existing failures ("cannot use property()/
+	cleanup/spring() outside a stable or reactive scope"): the external
+	package built its OWN internal `vide` via `VideCore.full()`, a different
+	instance from the one every real Primitive here is built with
+	(`Deps.create`/`Deps.effect`), so `host.root` and `Deps.root` disagreed
+	about what scope a running effect was in. `detect()` is memoised
+	globally and `Deps.luau` already called it with the real, vendored
+	`vide` by the time this file's own top-level code runs, so `host.root`
+	IS `Deps.vide.root` here -- the same identity split milestone 55 sprint 3
+	found and worked around for one test is closed for all of them by
+	routing through the real host instead.
 ]=]
 local T = require("@testkit")
 local Aether = require("../../src/api")
 local Layout = require("../../src/core/Layout")
 local Svg = require("../../src/host/Svg")
 
-local host = Aether.Host.LuauDataModel.new()
-local V = host.Vocabulary
+local host = Aether.Host.detect()
+local V = {
+	Color3 = Color3,
+	ColorSequence = ColorSequence,
+	NumberSequence = NumberSequence,
+	NumberSequenceKeypoint = NumberSequenceKeypoint,
+	UDim = UDim,
+	UDim2 = UDim2,
+	Vector2 = Vector2,
+}
 local Scene = host.Scene
 
 local VIEWPORT = { X = 0, Y = 0, Width = 400, Height = 200 }
@@ -177,7 +200,18 @@ local function testSvgOutput()
 	--- An element with NO colour still appears, as an outline. That is the audit
 	--- working rather than a rendering failure: structure crossed the boundary and
 	--- paint did not, and the difference has to be visible.
-	local bare = host.create("Frame")({ Name = "Bare", Size = V.UDim2.fromScale(1, 1) })
+	---
+	--- `BackgroundTransparency = 1`, EXPLICIT (milestone 56 sprint 4). No real
+	--- engine can represent "the author never touched this property" -- `Raw`
+	--- reads whatever is CURRENTLY there, `src/host/DataModel.luau`'s own real
+	--- branch included, and a freshly created `Frame` already has a real,
+	--- opaque `BackgroundColor3`/`BackgroundTransparency` default the instant
+	--- it exists, same as any real Roblox or Dew `Frame` does. The external
+	--- double could fake "unset" because it started as an empty table; nothing
+	--- conforming can. Full transparency is the one real, expressible way an
+	--- author signals "no visual intent", which is exactly what
+	--- `Svg.luau`'s own `transparency < 1` check already looks for.
+	local bare = host.create("Frame")({ Name = "Bare", Size = V.UDim2.fromScale(1, 1), BackgroundTransparency = 1 })
 	local bareDoc = Svg.Render(host, bare, { Width = 50, Height = 50 })
 	assert(string.find(bareDoc, "stroke-dasharray", 1, true) ~= nil, "an unpainted element is drawn as an outline")
 	assert(string.find(bareDoc, "fill=\"none\"", 1, true) ~= nil, "with no fill")
@@ -380,9 +414,9 @@ local function testAutomaticSize()
 	local root = host.create("Frame")({
 		Name = "Root",
 		Size = V.UDim2.fromScale(1, 1),
-		label("Short", "Hi", 14, "XY"),
-		label("Long", "A considerably longer label", 14, "XY"),
-		label("OnlyX", "Hi", 14, "X"),
+		label("Short", "Hi", 14, Enum.AutomaticSize.XY),
+		label("Long", "A considerably longer label", 14, Enum.AutomaticSize.XY),
+		label("OnlyX", "Hi", 14, Enum.AutomaticSize.X),
 		--- No AutomaticSize: must be untouched. A solver that auto-sized
 		--- everything would pass every assertion above and be badly wrong.
 		host.create("TextLabel")({
@@ -690,7 +724,7 @@ local function testNativeScrollingFrameScrolls()
 		Name = "NativeScroller",
 		Size = V.UDim2.new(0, 200, 0, 200),
 		BackgroundTransparency = 1,
-		AutomaticCanvasSize = "Y",
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		host.create("UIListLayout")({}),
 		table.unpack(rows),
 	})
@@ -1047,12 +1081,21 @@ end
 --- new table each frame -- an identity comparison reports everything changed
 --- every frame, and the diff passes its own tests while sending the whole screen.
 --- The idle assertion below is precisely what catches that.
+--- BUILT INSIDE A REACTIVE ROOT (milestone 56 sprint 4, the same reason
+--- `testDragReleaseDoesNotSnapBack` below already is): `b`'s and `c`'s own
+--- `BackgroundColor3`/`Position` are reactive functions, and `vide.property()`
+--- refuses to run outside one. This never needed one against the external
+--- `luau-datamodel` double -- its own separate internal `vide` did not
+--- enforce the same reactive-scope rule real vide does -- so the gap was
+--- invisible until this suite ran through `Aether.Host.detect()`, whose
+--- `host.root` is real vide's.
 local function testFrameDiffing()
 	local Live = require("../../src/host/Live")
 
 	local colour = host.source(V.Color3.fromRGB(10, 20, 30))
 	local moving = host.source(0)
 
+	local destroy = host.root(function()
 	local a = host.create("Frame")({
 		Name = "DiffStatic",
 		Size = V.UDim2.new(0, 50, 0, 50),
@@ -1128,6 +1171,8 @@ local function testFrameDiffing()
 	local stats = session.Stats()
 	assert(stats.Skipped > stats.Sent,
 		`most frames should carry nothing: sent {stats.Sent}, skipped {stats.Skipped}`)
+	end)
+	destroy()
 end
 
 
@@ -1339,6 +1384,11 @@ T.test("frame diffing: idle sends nothing, one change sends one node", testFrame
 --- So this drives each field in turn and asserts the delta notices. It is the
 --- gate for that class of silence, and adding a field to `buildNode` without
 --- adding it here leaves the same hole open.
+--- BUILT INSIDE A REACTIVE ROOT, and `alignX` READS `Enum.TextXAlignment`,
+--- NOT A PLAIN STRING (milestone 56 sprint 4, same reasons as
+--- `testFrameDiffing` above): the double tolerated both gaps, a real host
+--- refuses `property()` outside a root and rejects a string where its
+--- `TextXAlignment` expects the real enum.
 local function testDeltaTracksEveryField()
 	local Live = require("../../src/host/Live")
 
@@ -1347,11 +1397,12 @@ local function testDeltaTracksEveryField()
 	local alpha, name = host.source(0), host.source("Tracked")
 	local fill = host.source(V.Color3.fromRGB(10, 10, 10))
 	local textColour = host.source(V.Color3.fromRGB(200, 200, 200))
-	local radius, alignX = host.source(4), host.source("Left")
+	local radius, alignX = host.source(4), host.source(Enum.TextXAlignment.Left)
 	local strokeThickness = host.source(2)
 	local gradientRotation = host.source(0)
 	local clipping = host.source(false)
 
+	local destroy = host.root(function()
 	local target = host.create("TextLabel")({
 		Name = function() return name() end,
 		Position = function() return V.UDim2.new(0, px(), 0, 0) end,
@@ -1417,9 +1468,11 @@ local function testDeltaTracksEveryField()
 	mutate("fill", function() fill(V.Color3.fromRGB(200, 30, 30)) end)
 	mutate("textColour", function() textColour(V.Color3.fromRGB(0, 255, 0)) end)
 	mutate("radius", function() radius(12) end)
-	mutate("textAlignX", function() alignX("Right") end)
+	mutate("textAlignX", function() alignX(Enum.TextXAlignment.Right) end)
 	mutate("stroke", function() strokeThickness(6) end)
 	mutate("gradient", function() gradientRotation(90) end)
+	end)
+	destroy()
 end
 
 T.test("the delta notices a change to every field a display consumes", testDeltaTracksEveryField, "math")
