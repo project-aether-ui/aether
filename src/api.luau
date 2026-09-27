@@ -125,7 +125,15 @@ local Runtime = {
 local Engine = {
 	PointerRouter = PointerRouter,
 	SelectionRouter = SelectionRouter,
-	Pressable = if PointerRouter then PointerRouter.Pressable else nil,
+	--- NO `Pressable` HERE ANY MORE (milestone 54 sprint 4). This used to be
+	--- `PointerRouter.Pressable`, the router's raw registration function,
+	--- sharing a name with `Aether.Pressable` (the Primitive) and disambiguated
+	--- only by which of the five internal layers a consumer happened to pull
+	--- from -- exactly the confusion this sprint's own collapse exists to
+	--- remove. A grep across this repository and every known consumer found
+	--- no call site actually reaching it through `Engine.Pressable`; the raw
+	--- function is still reachable, unambiguously, as `PointerRouter.Pressable`
+	--- directly.
 	ScopeProvider = if ScopeContext then ScopeContext.ScopeProvider else nil,
 	ScopeContext = if ScopeContext then ScopeContext.ScopeContext else nil,
 	useScope = if ScopeContext then ScopeContext.useScope else nil,
@@ -205,14 +213,19 @@ return {
 	Assemblies = Assemblies,
 
 	-- Top-Level Ergonomic Shortcuts
+	--- NO `createX` SHORTCUTS HERE ANY MORE (milestone 54 sprint 4). Every one
+	--- of the five machines this milestone covers had three names a consumer
+	--- could reach it by: `Aether.createCheckbox` (this shortcut), `Aether.Core
+	--- .createCheckbox` (the same function, namespaced), and `Aether.Checkbox`
+	--- (the Primitive) -- organized by which internal layer implemented it
+	--- rather than by what a consumer was building. One name survives at the
+	--- top level per widget, the Primitive, since that is the one built for a
+	--- consumer to reach for directly; `Aether.Core.createCheckbox` and its
+	--- neighbours are still there for whoever is building a bespoke widget
+	--- straight on top of Layer 1, just not duplicated up here beside it.
 	SelectionModel = SelectionModel,
 	TreeController = TreeController,
 	ScrollController = ScrollController,
-	createPressable = createPressable,
-	createCheckbox = createCheckbox,
-	createRadioGroup = createRadioGroup,
-	createTabs = createTabs,
-	createContextMenu = createContextMenu,
 	For = For,
 	KeyedList = For,
 	ScopedSurface = ScopedSurface,
@@ -238,11 +251,14 @@ return {
 	Styled = if PrimitiveScrollbar then PrimitiveScrollbar.Styled else nil,
 	PointerRouter = PointerRouter,
 	SelectionRouter = SelectionRouter,
-	--- NOTE (ms-51 M14): top-level `Pressable` is the PRIMITIVE, above. The
-	--- router's low-level registration function of the same name used to be
-	--- exported here too and, being declared later, silently won the key. It is
-	--- reachable as `Aether.PointerRouter.Pressable` and `Aether.Engine.Pressable`,
-	--- which is how every call site in the monorepo already spells it.
+	--- NOTE (ms-51 M14, resolved milestone 54 sprint 4): top-level `Pressable`
+	--- is the PRIMITIVE, above. The router's low-level registration function of
+	--- the same name used to be exported here too and, being declared later,
+	--- silently won the key -- fixed at the time by moving it to `Engine
+	--- .Pressable` instead, which only renamed the collision rather than
+	--- removing it (`Aether.Pressable` the Primitive and `Aether.Engine
+	--- .Pressable` the raw function still shared a word, one layer over). It is
+	--- reachable as `Aether.PointerRouter.Pressable` now, unambiguously.
 	ScopeProvider = if ScopeContext then ScopeContext.ScopeProvider else nil,
 	ScopeContext = if ScopeContext then ScopeContext.ScopeContext else nil,
 	useScope = if ScopeContext then ScopeContext.useScope else nil,
