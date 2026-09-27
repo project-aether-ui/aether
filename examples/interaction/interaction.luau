@@ -36,7 +36,7 @@ local source = vide.source
 local action = vide.action
 local cleanup = vide.cleanup
 
-local WIDTH, HEIGHT = 360, 1160
+local WIDTH, HEIGHT = 360, 1380
 
 local root = desktop.Widget({ width = WIDTH, height = HEIGHT, anchor = "center" })
 
@@ -736,5 +736,62 @@ vide.root(function()
 		statusLabel(function()
 			return `value: {text()}`
 		end, advance(24), 16, 300)
+	end
+
+	----------------------------------------------------------------------
+	-- SCROLL AREA -- not a parity demo, and the section itself says so.
+	-- Neither `ark-ui` nor `zag.js` ships a scroll-area MACHINE to compare
+	-- against: continuous drag offset and thumb position are a different
+	-- shape than a discrete state machine, which is
+	-- `.artifacts/project/decisions/primitive_layer_boundary.md`'s own
+	-- reason `ScrollArea`/`Scrollbar` stay in `Primitives` at all. This
+	-- section exists to show the primitive working, on its own terms, not
+	-- to claim it against a peer that does not exist.
+	--
+	-- NO EXPLICIT `ContentHeight`/`CanvasSize` HERE, ON PURPOSE.
+	-- `ScrollArea.luau`'s own auto-measurement (`AbsoluteContentSize` off a
+	-- `UIListLayout`) is gated on `isRoblox` and skipped entirely under
+	-- Dew -- what runs instead is its off-engine branch, polling
+	-- `Deps.Host.Scene.Bounds` off the router's own frame pump. Leaving
+	-- both props out is what lets that branch measure this section live,
+	-- rather than this file declaring a number that drifts the next time a
+	-- row's height changes.
+	--
+	-- `.Parent` SET ON THE RETURN, NOT PASSED IN -- a fourth instance of the
+	-- same defect shape this milestone's demo keeps finding (Context Menu,
+	-- Tree View, now this): `ScrollArea.luau`'s own final `create("Frame")`
+	-- hardcodes `BackgroundTransparency = 1` and never reads `props.Parent`,
+	-- `props.BackgroundColor3` or `props.BackgroundTransparency` at all, so
+	-- all three were silently dropped when handed in here -- found by this
+	-- demo, not fixed in `ScrollArea.luau` itself.
+	----------------------------------------------------------------------
+
+	sectionTitle("SCROLL AREA")
+
+	do
+		local at = advance(4)
+		local scrollArea = Aether.ScrollArea({
+			Name = "ScrollAreaDemo",
+			Position = UDim2.new(0, 16, 0, at),
+			Size = UDim2.new(1, -32, 0, 160),
+			Content = function()
+				local rows = {}
+				for i = 1, 12 do
+					table.insert(rows, create("TextLabel")({
+						Name = `Row{i}`,
+						Size = UDim2.new(1, 0, 0, 28),
+						BackgroundTransparency = 1,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextColor3 = INK,
+						TextSize = 12,
+						Text = `Row {i} of 12`,
+					}))
+				end
+				return rows
+			end,
+		})
+		scrollArea.Parent = body
+
+		advance(164)
 	end
 end)
