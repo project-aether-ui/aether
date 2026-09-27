@@ -12,6 +12,11 @@ local PressableFrame = require("./primitives/Pressable")
 local TextInputManager = require("./TextInputManager")
 local InputScope = require("./InputScope")
 
+--- GENUINE VENDOR CHECK, kept (milestone 57): `ref:IsA("GuiObject")` alone
+--- would not be enough to gate the `InputBegan`/`InputChanged`/`InputEnded`
+--- connections below -- Dew implements none of those events at all, so a
+--- capability check on the ref itself has nothing to ask. `isRoblox` is the
+--- only thing that actually answers "does this engine fire these events".
 local isRoblox = Deps.Host.Environment == "Roblox"
 local TextService = Deps.Host.Services.TextService
 local UserInputService = Deps.Host.Services.UserInputService
@@ -35,7 +40,7 @@ local RunService = Deps.Host.Services.RunService
 --- provider the host registered (the web host registers browser metrics).
 local function measureTextWidth(text: string, font: any, textSize: number): number
 	if text == "" then return 0 end
-	if isRoblox and TextService then
+	if TextService then
 		local ok, sz = pcall(function()
 			return TextService:GetTextSize(text, textSize, font or Enum.Font.SourceSans, Vector2.new(10000, 10000))
 		end)
@@ -212,7 +217,7 @@ local function TextInput(props: TextInputProps)
 	end
 
 	-- Caret blinking timer: 530ms toggle while focused
-	if isRoblox and RunService then
+	if RunService then
 		local timeAcc = 0
 		local conn = RunService.RenderStepped:Connect(function(dt)
 			if isFocused() then
