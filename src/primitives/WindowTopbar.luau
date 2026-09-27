@@ -3,8 +3,16 @@
 	WindowTopbar — Headless Window Title Bar Primitive
 	Part of Aether.Primitives (Layer 2).
 
-	Provides title label, window drag handle, and close button mechanics
-	directly composing Aether.Primitives.PressableFrame.
+	Provides a title label and close button, directly composing
+	Aether.Primitives.PressableFrame.
+
+	DRAGGING THE WINDOW BY THIS BAR IS NOT IMPLEMENTED. No code in this file
+	tracks a grab point, a pointer delta, or a release -- only the close
+	button has real interaction behind it. `tests/gates/
+	verify_primitives_bind_machines.luau`'s own `PENDING` table has carried
+	this exact gap by name since before this comment was corrected to say so
+	("a drag: grab point, delta, release"); the header used to claim the
+	drag handle already worked, which this file has never done.
 ]=]
 
 local Deps = require("../Deps")
