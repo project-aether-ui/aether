@@ -23,14 +23,29 @@
 	`Pressable` has no persisted value at all -- press/hover/activate are
 	events, not state -- so it gets one demo too.
 
-	THE FRAMEWORK COMES FROM THIS REPOSITORY'S OWN `src/` AND `roblox_packages/`,
-	by relative require, the same way `examples/counter`'s own desktop entry
-	reaches `roblox_packages/vide` -- this example lives inside the framework
-	it demonstrates rather than installing it as a dependency.
+	THIS PACKAGE INSTALLS ITS OWN FRAMEWORK, the same rule every installable
+	Dew applet that consumes Aether follows (Dew's own ADR-008, and every
+	`examples/aether/*` applet there carries its own `pesde.toml`). This
+	example used to reach across the repo instead, with a bare relative
+	`require("../../src/api")` -- which resolved correctly only because
+	`dew run examples/interaction` runs the file IN PLACE, inside a real
+	aether checkout where `../../src` genuinely exists. `dew install
+	examples/interaction` copies THIS DIRECTORY ALONE into
+	`%LOCALAPPDATA%\Dew\Applets\interaction`, where that same `../../src`
+	resolves to a path that was never copied -- confirmed live, `dew start`
+	against the installed copy failed with "could not resolve child
+	component 'src'" while `dew run` against the repo could never reproduce
+	it, because the two were never running the same file against the same
+	directory shape. `pesde.toml` now declares `aether` as a workspace
+	member (this package already lives inside aether's own repository, so a
+	path dependency reaches it directly rather than pinning a git commit the
+	way an external consumer would), and `pesde install` vendors a real,
+	non-symlinked copy under `roblox_packages/` -- self-contained, and
+	correct wherever this directory is copied to.
 ]]
 
-local Aether = require("../../src/api")
-local vide = require("../../roblox_packages/vide")
+local Aether = require("./roblox_packages/aether")
+local vide = require("./roblox_packages/vide")
 local create = vide.create
 local source = vide.source
 local action = vide.action

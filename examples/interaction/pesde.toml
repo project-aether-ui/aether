@@ -1,0 +1,55 @@
+name = "spektr/examples_interaction"
+version = "0.0.1"
+description = "Aether's primitives demonstrated against ark-ui/zag.js's own conventions"
+
+# A DEMO INSTALLS ITS OWN FRAMEWORK, same rule Dew's own examples/aether/*
+# applets follow (ADR-008 in that repo). This manifest used not to exist at
+# all: `interaction.luau` reached the framework with `require("../../src/api")`,
+# which resolves correctly ONLY while this directory sits inside a real aether
+# checkout. `dew run examples/interaction` from within this repo is exactly
+# that, so it worked every time it was built and tested this way -- but
+# `dew install examples/interaction` copies this directory ALONE into
+# `%LOCALAPPDATA%\Dew\Applets\interaction`, where `../../src` resolves to
+# `%LOCALAPPDATA%\Dew\src`, which does not exist. Confirmed live: `dew start`
+# against the installed copy failed with exactly that "could not resolve
+# child component 'src'" error, while `dew run` against the repo copy never
+# could reproduce it, because the two were never running the same file
+# against the same directory shape.
+#
+# A GIT PIN, NOT A WORKSPACE/PATH DEPENDENCY -- tried first, and it does not
+# work, for a reason worth recording so it is not tried again. `aether = {
+# path = "../.." }` DOES install and DOES run correctly via `dew run` and
+# `dew check`, because pesde vendors a local path/workspace dependency as
+# SYMLINKS to the live source tree (`src`, `docs`, `examples`, `.artifacts`
+# and more, confirmed directly: `ls -la` on the generated
+# `roblox_packages/.pesde/spektr+aether/<ver>/aether/` shows every one of
+# them as `lrwxrwxrwx`, not a real directory) -- sensible for local
+# development, where editing `src/` should not require a re-vendor, but
+# `dew install`'s own `copy_dir` (`host/src/installed.rs`) explicitly does
+# NOT follow symlinks ("skipped rather than followed, since following one
+# could copy something well outside the applet's own directory" -- its own
+# comment). The installed copy therefore had a `roblox_packages/aether.luau`
+# redirect pointing at a `src/` that `copy_dir` had silently dropped,
+# reproducing the exact same "could not resolve child component 'src'"
+# error one layer deeper. A `repo` dependency, by contrast, is what
+# `dashboard` and every `examples/aether/*` applet in Dew's own repo already
+# use to depend on aether, and it vendors a REAL, non-symlinked, extracted
+# copy (pesde fetches the commit as a tarball) -- confirmed this is what
+# actually survives `copy_dir` by reproducing `dew install` +
+# `dew start` end to end against it.
+[target]
+environment = "roblox"
+lib = "interaction.luau"
+
+[dependencies]
+aether = { repo = "project-aether-ui/aether", rev = "f9ae9ba9c549fdcacf8c5214651ba1d6337baa53" }
+# PEER, NOT BUNDLED, per aether's own `pesde.toml`: aether drives vide but
+# does not choose which copy a consumer gets, so this package installs its
+# own, the same pin `dashboard`/`examples/aether/pressable` already use.
+vide = { repo = "es9-dev/vide", rev = "caa0d6dd42ea882f5e27af379b504eb428014aab" }
+
+[indices]
+default = "https://github.com/pesde-pkg/index"
+
+[wally_indices]
+default = "https://github.com/UpliftGames/wally-index"
