@@ -27,6 +27,7 @@
 local corePressable = require("./createPressable")
 local coreSelection = require("./Selection")
 local createPressable = corePressable.createPressable
+local safeWarn = require("./Warn")
 
 export type Source<T> = corePressable.Source<T>
 export type SourceFactory = corePressable.SourceFactory
@@ -225,7 +226,7 @@ local function createCheckbox(options: Options): Checkbox
 				elseif type(key) == "string" and string.match(key, "^On%u") then
 					--- LOUD NOW, NOT SILENT (milestone 54 sprint 5) -- see
 					--- createPressable's own identical comment.
-					warn(`createCheckbox: "{key}" is not a handler this machine recognises and was dropped`)
+					safeWarn(`createCheckbox: "{key}" is not a handler this machine recognises and was dropped`)
 					continue
 				else
 					props[key] = value

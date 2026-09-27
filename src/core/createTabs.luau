@@ -47,6 +47,7 @@ local corePressable = require("./createPressable")
 local coreSelection = require("./Selection")
 local SelectionModel = require("../controllers/SelectionModel")
 local createPressable = corePressable.createPressable
+local safeWarn = require("./Warn")
 
 export type Source<T> = corePressable.Source<T>
 export type SourceFactory = corePressable.SourceFactory
@@ -318,7 +319,7 @@ local function createTabs(options: Options): Tabs
 					elseif type(k) == "string" and string.match(k, "^On%u") then
 						--- LOUD NOW, NOT SILENT (milestone 54 sprint 5) --
 						--- see createPressable's own identical comment.
-						warn(`createTabs: "{k}" is not a handler this machine recognises and was dropped`)
+						safeWarn(`createTabs: "{k}" is not a handler this machine recognises and was dropped`)
 						continue
 					else
 						props[k] = v

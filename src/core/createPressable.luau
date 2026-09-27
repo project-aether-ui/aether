@@ -36,6 +36,8 @@
 	"pressed" means.
 ]]
 
+local safeWarn = require("./Warn")
+
 --- Read with no arguments, write with one. `vide.source` is exactly this, which
 --- is why the binding passes it straight in.
 export type Source<T> = ((T) -> T) & (() -> T)
@@ -227,7 +229,7 @@ local function createPressable(options: Options): Pressable
 					--- and do nothing, forever, with nothing pointing back
 					--- here. `warn` names the exact key and this machine, at
 					--- the moment the drop happens rather than never.
-					warn(`createPressable: "{key}" is not a handler this machine recognises and was dropped`)
+					safeWarn(`createPressable: "{key}" is not a handler this machine recognises and was dropped`)
 					continue
 				else
 					props[key] = value
