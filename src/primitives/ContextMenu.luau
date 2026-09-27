@@ -51,6 +51,7 @@ export type ContextMenuProps = {
 	Items: () -> { ContextMenuItem },
 	Width: number?,
 	RenderItem: ((item: ContextMenuItem, isFocused: () -> boolean) -> any)?,
+	Parent: Instance?,
 	[any]: any,
 }
 
@@ -130,6 +131,7 @@ local function ContextMenu(props: ContextMenuProps): any
 
 	return ScopedSurface(menu.GetSurfaceProps({
 		Name = "AetherContextMenu",
+		Parent = props.Parent,
 		Layer = "Popups",
 		Policy = "Modal",
 		Position = props.Position or UDim2.fromOffset(0, 264),

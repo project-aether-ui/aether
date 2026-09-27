@@ -63,6 +63,9 @@ export type ScrollAreaProps = {
 	Visible: ((() -> boolean) | boolean)?,
 	LayoutOrder: ((() -> number) | number)?,
 	ZIndex: number?,
+	BackgroundColor3: (Color3 | () -> Color3)?,
+	BackgroundTransparency: (number | () -> number)?,
+	Parent: Instance?,
 	Debug: boolean?,
 	[any]: any,
 }
@@ -723,13 +726,15 @@ local function ScrollArea(props: ScrollAreaProps): any
 
 	return create("Frame")({
 		Name = "ScrollArea",
+		Parent = props.Parent,
 		Size = props.Size or udim2New(1, 0, 1, 0),
 		Position = props.Position or udim2New(0, 0, 0, 0),
 		AnchorPoint = props.AnchorPoint,
 		ZIndex = props.ZIndex or 1,
 		Visible = props.Visible,
 		LayoutOrder = props.LayoutOrder,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = props.BackgroundColor3,
+		BackgroundTransparency = if props.BackgroundTransparency ~= nil then props.BackgroundTransparency else 1,
 		BorderSizePixel = 0,
 		action(function(rbx: GuiObject)
 			rootSurface = rbx

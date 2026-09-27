@@ -50,6 +50,7 @@ export type VirtualListProps<T> = {
 	Visible: any?,
 	ZIndex: number?,
 	LayoutOrder: any?,
+	Parent: Instance?,
 
 	-- Virtualization Data
 	Items: (() -> { T }) | { T },
@@ -391,6 +392,7 @@ local function VirtualList<T>(props: VirtualListProps<T>): any
 
 	return create("Frame")({
 		Name = props.Name or "VirtualList",
+		Parent = props.Parent,
 		Size = props.Size or udim2New(1, 0, 1, 0),
 		Position = props.Position or udim2New(0, 0, 0, 0),
 		AnchorPoint = props.AnchorPoint,
