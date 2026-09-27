@@ -109,6 +109,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # SAME SIBLING THE `luau` JOB CLONES, ABOVE -- and needed here too.
+      # `LayoutAutomaticSize.test.luau` (among others) constructs
+      # `Aether.Host.LuauDataModel.new()` directly rather than through
+      # `Aether.Host.detect()`; a clean checkout with no sibling present
+      # failed it with "attempt to index nil with 'new'", found live on
+      # this job's own first CI run, where a local machine that already had
+      # the sibling checked out from earlier work could not reproduce it.
+      - name: Fetch sibling luau-datamodel test double
+        run: git clone --depth 1 https://github.com/project-aether-ui/luau-datamodel.git ../luau-datamodel
+
       # CLONED, NOT PESDE-PINNED. There is no released `dew` binary to
       # install yet (no tag has been cut) -- see milestone 56's own vision
       # doc for why this job builds Dew from source rather than downloading
