@@ -140,6 +140,33 @@ local function testAKeyActivationTogglesIt()
 	assert(m.Checked() == false, "a second one should uncheck it again")
 end
 
+--- CONTROLLED: `Checked` AS A GETTER, the same shape `createContextMenu`'s
+--- own `IsOpen` already uses. A click must still fire `OnCheckedChanged`,
+--- but `Checked()` must keep answering the CALLER'S state, not flip on its
+--- own -- the same way a controlled `<input>` never checks itself.
+local function testControlledCheckedReadsThroughAndNeverWritesItself()
+	local external = false
+	local seen: { boolean } = {}
+	local m, pointer = machine({
+		Checked = function()
+			return external
+		end,
+		OnCheckedChanged = function(v: boolean)
+			table.insert(seen, v)
+		end,
+	})
+
+	assert(m.Checked() == false, "controlled Checked should start by reading the external getter")
+
+	pointer.click()
+	assert(m.Checked() == false, "a click must not flip Checked on its own while controlled")
+	assert(seen[1] == true, "OnCheckedChanged must still fire with the value this click would have set")
+
+	--- ONLY WHEN THE CALLER MOVES ITS OWN STATE does `Checked` agree.
+	external = true
+	assert(m.Checked() == true, "Checked must track the external getter once the caller updates it")
+end
+
 local function testClickAndKeyDriveTheSameState()
 	-- THE DONE-WHEN THIS SUITE EXISTS TO PROVE: both input families reach one
 	-- state rather than two that could disagree.
@@ -260,6 +287,11 @@ T.test("it starts unchecked", testItStartsUnchecked, "math")
 T.test("an initial checked state is honoured", testAnInitialCheckedStateIsHonoured, "math")
 T.test("a click toggles it", testAClickTogglesIt, "math")
 T.test("a key activation toggles it", testAKeyActivationTogglesIt, "math")
+T.test(
+	"controlled Checked reads through and never writes itself",
+	testControlledCheckedReadsThroughAndNeverWritesItself,
+	"math"
+)
 T.test("click and key drive the same state", testClickAndKeyDriveTheSameState, "math")
 T.test("OnCheckedChanged fires with the new value", testOnCheckedChangedFiresWithTheNewValue, "math")
 T.test("disabled refuses both input families", testDisabledRefusesBothInputFamilies, "math")

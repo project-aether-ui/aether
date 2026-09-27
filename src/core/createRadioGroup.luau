@@ -65,8 +65,18 @@ export type Options = {
 	--- a machine this file can make sense of.
 	Options: { any },
 	--- Which key starts selected. Omit for none selected at all -- a valid
-	--- starting state the real engine itself allows.
+	--- starting state the real engine itself allows. Ignored when `Value` is
+	--- given.
 	InitialValue: any?,
+
+	--- CONTROLLED, the same shape `createContextMenu`'s own `IsOpen` already
+	--- is: a getter, read through rather than copied. When given, a click or
+	--- an activation key calls `OnValueChanged` with the key it would have
+	--- selected WITHOUT changing what any option's `IsSelected` reports --
+	--- the caller's own state is what actually has to move for that to
+	--- change, the same way a controlled `<input type=radio>` never checks
+	--- itself either.
+	Value: (() -> any)?,
 
 	--- Handed to each option's own `createPressable`, the same as
 	--- createCheckbox's own pass-through.
@@ -79,7 +89,7 @@ export type Options = {
 }
 
 export type RadioOption = {
-	IsSelected: Source<boolean>,
+	IsSelected: () -> boolean,
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
@@ -90,7 +100,7 @@ export type RadioOption = {
 }
 
 export type RadioGroup = {
-	Value: Source<any?>,
+	Value: () -> any?,
 	GetOption: (key: any) -> RadioOption,
 	Destroy: () -> (),
 }
@@ -143,7 +153,12 @@ local function createRadioGroup(options: Options): RadioGroup
 	local action: ActionFactory = options.Action or identityAction
 
 	local orderedKeys = options.Options
-	local value = newSource(options.InitialValue)
+
+	--- CONTROLLED WHEN `Value` IS GIVEN, the same test `createCheckbox`'s own
+	--- `Checked` and `createContextMenu`'s own `IsOpen` already use.
+	local controlled: (() -> any)? = options.Value
+
+	local value = newSource(if controlled then controlled() else options.InitialValue)
 
 	--- Resolved once, the same as createCheckbox's own identical block: a
 	--- value or a getter arrives, a getter always leaves, because
@@ -157,9 +172,10 @@ local function createRadioGroup(options: Options): RadioGroup
 		end
 	end
 
+	local initialValue = if controlled then controlled() else options.InitialValue
 	local model = SelectionModel.new({
 		Mode = "single",
-		InitialSelection = if options.InitialValue ~= nil then { options.InitialValue } else nil,
+		InitialSelection = if initialValue ~= nil then { initialValue } else nil,
 	})
 
 	--- Every option's own bound element and per-option `IsSelected` source,
@@ -203,11 +219,31 @@ local function createRadioGroup(options: Options): RadioGroup
 	--- own `toggle` checks `disabled()` itself: a click and a key activation
 	--- are two different callers of this one function, and checking in both
 	--- places is how the two could disagree about it later.
+	--- CONTROLLED: THE MODEL NEVER WRITES. `OnValueChanged` still fires with
+	--- the key this group believes should be selected next -- the caller's
+	--- own state is what has to move for any option's `IsSelected` to agree,
+	--- the same way `createCheckbox`'s own controlled `toggle` never writes
+	--- either.
 	local function selectKey(key: any)
 		if disabled and disabled() then
 			return
 		end
+		if controlled then
+			if options.OnValueChanged then
+				options.OnValueChanged(key)
+			end
+			return
+		end
 		model.Select(key)
+	end
+
+	--- READ THROUGH, NOT COPIED, when controlled -- see `createCheckbox`'s
+	--- own `isChecked`'s identical comment.
+	local function currentValue(): any
+		if controlled then
+			return controlled()
+		end
+		return value()
 	end
 
 	--- Roves `Selection.Select` onto the option `delta` steps from `fromKey`,
@@ -342,8 +378,21 @@ local function createRadioGroup(options: Options): RadioGroup
 			selectionHandle.Destroy()
 		end
 
+		--- READ THROUGH `controlled` WHEN CONTROLLED, falling back to the
+		--- per-option reactive source otherwise -- that source is still what
+		--- makes this reactive in UNCONTROLLED mode (`state.isSelected` is a
+		--- real vide source, updated by `model.Subscribe` above; `controlled`
+		--- is the caller's own, and reading it here is what subscribes to
+		--- IT instead when given).
+		local function isSelected(): boolean
+			if controlled then
+				return controlled() == key
+			end
+			return state.isSelected()
+		end
+
 		local radioOption: RadioOption = {
-			IsSelected = state.isSelected,
+			IsSelected = isSelected,
 			IsHovered = pressable.IsHovered,
 			IsPressed = pressable.IsPressed,
 			GetRootProps = getRootProps,
@@ -355,7 +404,7 @@ local function createRadioGroup(options: Options): RadioGroup
 	end
 
 	return {
-		Value = value,
+		Value = currentValue,
 		GetOption = getOption,
 		Destroy = function()
 			for _, radioOption in pairs(optionMachines) do

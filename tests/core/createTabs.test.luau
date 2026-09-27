@@ -151,6 +151,39 @@ local function testAClickActivatesThatTab()
 	assert(tabs.GetPanel("b").IsVisible() == true)
 end
 
+--- CONTROLLED: `Active` AS A GETTER -- see `createCheckbox`'s own identical
+--- case. A click must still fire `OnActiveChanged`, but neither `Active()`
+--- nor any tab's `IsActive()`/panel's `IsVisible()` may move on their own.
+local function testControlledActiveReadsThroughAndNeverWritesItself()
+	local external: any = "a"
+	local seen: { any } = {}
+	local tabs, pointer = mountedTabs({ "a", "b", "c" }, {
+		Active = function()
+			return external
+		end,
+		OnActiveChanged = function(v: any)
+			table.insert(seen, v)
+		end,
+	})
+
+	assert(tabs.Active() == "a", "controlled Active should start by reading the external getter")
+	assert(tabs.GetTab("a").IsActive() == true)
+	assert(tabs.GetPanel("a").IsVisible() == true)
+
+	pointer.click(2) -- "b"
+	assert(tabs.Active() == "a", "a click must not move Active on its own while controlled")
+	assert(tabs.GetTab("a").IsActive() == true, "nor any tab's IsActive")
+	assert(tabs.GetPanel("b").IsVisible() == false, "nor any panel's IsVisible")
+	assert(seen[1] == "b", "OnActiveChanged must still fire with the key this click would have activated")
+
+	--- ONLY WHEN THE CALLER MOVES ITS OWN STATE do the tab and panel agree.
+	external = "b"
+	assert(tabs.Active() == "b")
+	assert(tabs.GetTab("b").IsActive() == true)
+	assert(tabs.GetPanel("b").IsVisible() == true)
+	assert(tabs.GetPanel("a").IsVisible() == false)
+end
+
 --- EXACTLY ONE PANEL VISIBLE AT A TIME, this sprint's own named completion
 --- test, and SelectionModel's own "single" mode is the entire reason it
 --- holds: activating one clears the previous one's selection, and every
@@ -278,6 +311,11 @@ T.test("it refuses to run without tabs", testItRefusesToRunWithoutTabs, "math")
 T.test("no initial active means nothing is active", testNoInitialActiveMeansNothingIsActive, "math")
 T.test("an initial active is honoured", testAnInitialActiveIsHonoured, "math")
 T.test("a click activates that tab", testAClickActivatesThatTab, "math")
+T.test(
+	"controlled Active reads through and never writes itself",
+	testControlledActiveReadsThroughAndNeverWritesItself,
+	"math"
+)
 T.test("activating one hides every other panel", testActivatingOneHidesEveryOtherPanel, "math")
 T.test("an arrow press activates the next tab immediately", testAnArrowPressActivatesTheNextTabImmediately, "math")
 T.test("arrow navigation wraps at both ends", testArrowNavigationWrapsAtBothEnds, "math")

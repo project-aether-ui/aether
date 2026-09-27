@@ -49,8 +49,11 @@ export type CheckboxProps = {
 	FollowContentMovement: boolean?,
 	Priority: number?,
 
-	--- createCheckbox semantics
-	Checked: boolean?,
+	--- createCheckbox semantics. A plain boolean (or nothing) is
+	--- UNCONTROLLED -- this checkbox owns `Checked` from there. A getter is
+	--- CONTROLLED -- the caller's own state owns it; see `createCheckbox`'s
+	--- own `Checked` doc comment for the full shape.
+	Checked: (boolean | (() -> boolean))?,
 	OnCheckedChanged: ((checked: boolean) -> ())?,
 
 	--- GuiObject Frame properties
