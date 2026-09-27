@@ -30,6 +30,19 @@ local cleanup = Deps.cleanup
 local UserInputService = Deps.Host.Services.UserInputService
 local RunService = Deps.Host.Services.RunService
 
+--- `Deps.Host.Clock.Now()`, NOT THE RAW `os.clock()` THIS REPLACED --
+--- confirmed live under Dew: its sandboxed Luau has no `os` global at all,
+--- so `os.clock()` failed with "attempt to index nil with 'clock'" the
+--- instant a `Scrollbar` (via `ScrollArea`) was built, in a fresh runtime
+--- error no suite had caught because none of them run under a real Dew
+--- process. `Now()` is on every `Clock` by contract (`src/host/Host.luau`'s
+--- own `Clock` type) precisely so nothing here has to ask which host it is
+--- on, the same reason `Tooltip.luau`'s own dwell timer reaches for
+--- `Deps.Host.Clock` rather than `task.delay`.
+local function now(): number
+	return Deps.Host.Clock.Now()
+end
+
 export type ScrollbarMotionConfig = {
 	Period: number?,
 	DampingRatio: number?,
@@ -123,7 +136,7 @@ local function Scrollbar(props: ScrollbarProps): any
 	local isHovered = source(false)
 	local isDragging = source(false)
 	local revealHovered = source(false)
-	local activityStamp = source(os.clock())
+	local activityStamp = source(now())
 	local dragStartPos = 0
 	local dragStartOffset = 0
 	local trackSurface: GuiObject? = nil
@@ -136,7 +149,7 @@ local function Scrollbar(props: ScrollbarProps): any
 			if props.Controller.GetMaxScroll then
 				controllerMaxScroll(props.Controller.GetMaxScroll())
 			end
-			activityStamp(os.clock())
+			activityStamp(now())
 		end)
 		if cleanup then
 			cleanup(unsub)
@@ -256,7 +269,7 @@ local function Scrollbar(props: ScrollbarProps): any
 	end
 
 	local function markActivity()
-		activityStamp(os.clock())
+		activityStamp(now())
 	end
 
 	-- Auto-hide / Auto-fade
@@ -271,7 +284,7 @@ local function Scrollbar(props: ScrollbarProps): any
 	local isIdle = function(): boolean
 		if not autoHide() then return false end
 		if isDragging() or isHovered() or revealHovered() then return false end
-		return (os.clock() - activityStamp()) > 1.2
+		return (now() - activityStamp()) > 1.2
 	end
 
 	local barOpacity = Motion.Smooth(function()
