@@ -167,6 +167,37 @@ local function testAClickSelectsThatOption()
 	assert(group.GetOption("b").IsSelected() == true)
 end
 
+--- CONTROLLED: `Value` AS A GETTER -- see `createCheckbox`'s own identical
+--- case. A click must still fire `OnValueChanged`, but neither `Value()` nor
+--- any option's `IsSelected()` may move on their own.
+local function testControlledValueReadsThroughAndNeverWritesItself()
+	local external: any = "a"
+	local seen: { any } = {}
+	local group, pointer = mountedGroup({ "a", "b", "c" }, {
+		Value = function()
+			return external
+		end,
+		OnValueChanged = function(v: any)
+			table.insert(seen, v)
+		end,
+	})
+
+	assert(group.Value() == "a", "controlled Value should start by reading the external getter")
+	assert(group.GetOption("a").IsSelected() == true)
+
+	pointer.click(2) -- "b"
+	assert(group.Value() == "a", "a click must not move Value on its own while controlled")
+	assert(group.GetOption("a").IsSelected() == true, "nor any option's IsSelected")
+	assert(group.GetOption("b").IsSelected() == false)
+	assert(seen[1] == "b", "OnValueChanged must still fire with the key this click would have selected")
+
+	--- ONLY WHEN THE CALLER MOVES ITS OWN STATE do the options agree.
+	external = "b"
+	assert(group.Value() == "b")
+	assert(group.GetOption("a").IsSelected() == false)
+	assert(group.GetOption("b").IsSelected() == true)
+end
+
 --- THE ONE-OF-N INVARIANT, WHICH IS SelectionModel'S OWN "single" MODE, NOT
 --- SOMETHING THIS FILE RE-DERIVES.
 local function testSelectingOneClearsEveryOther()
@@ -291,6 +322,11 @@ T.test("it refuses to run without options", testItRefusesToRunWithoutOptions, "m
 T.test("no initial value means nothing is selected", testNoInitialValueMeansNothingIsSelected, "math")
 T.test("an initial value is honoured", testAnInitialValueIsHonoured, "math")
 T.test("a click selects that option", testAClickSelectsThatOption, "math")
+T.test(
+	"controlled Value reads through and never writes itself",
+	testControlledValueReadsThroughAndNeverWritesItself,
+	"math"
+)
 T.test("selecting one clears every other", testSelectingOneClearsEveryOther, "math")
 T.test("arrow keys move focus without changing selection", testArrowKeysMoveFocusWithoutChangingSelection, "math")
 T.test("activation key selects wherever focus moved to", testActivationKeySelectsWhereverFocusMovedTo, "math")

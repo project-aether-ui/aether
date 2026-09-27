@@ -55,16 +55,23 @@ export type Options = {
 	FollowContentMovement: boolean?,
 	Priority: number?,
 
-	--- Initial state. Defaults to unchecked.
-	Checked: boolean?,
+	--- A PORT, THE SAME SHAPE `createContextMenu`'s OWN `IsOpen` ALREADY IS:
+	--- hand over a plain boolean (or nothing) for UNCONTROLLED -- this machine
+	--- owns `Checked` from here on, starting from that value, defaulting to
+	--- unchecked. Hand over a getter for CONTROLLED -- the caller's own state
+	--- owns it, this machine reads it and never writes it, and a click or a
+	--- Space press calls `OnCheckedChanged` without changing what `Checked`
+	--- reports; the caller's own next render is what actually flips it.
+	Checked: (boolean | (() -> boolean))?,
 
 	--- Called after this machine has updated its own state, the same
-	--- ordering guarantee createPressable's own handlers make.
+	--- ordering guarantee createPressable's own handlers make. In controlled
+	--- mode this is the ONLY thing that fires -- see `Checked`'s own comment.
 	OnCheckedChanged: ((checked: boolean) -> ())?,
 }
 
 export type Checkbox = {
-	Checked: Source<boolean>,
+	Checked: () -> boolean,
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
@@ -133,7 +140,22 @@ local function createCheckbox(options: Options): Checkbox
 	local newSource: SourceFactory = options.Source or plainSource
 	local action: ActionFactory = options.Action or identityAction
 
-	local checked = newSource(options.Checked == true)
+	--- CONTROLLED WHEN `Checked` IS A FUNCTION, exactly the test
+	--- `createContextMenu`'s own `IsOpen` already uses.
+	local controlled: (() -> boolean)? = if type(options.Checked) == "function" then options.Checked :: () -> boolean else nil
+
+	local checked = newSource(if controlled then controlled() else options.Checked == true)
+
+	--- READ THROUGH, NOT COPIED, when controlled -- see `createContextMenu`'s
+	--- own `isOpen`'s identical comment: a controlled caller's flag can change
+	--- without anything here being told, and a mirrored copy would be one
+	--- render behind on every check.
+	local function isChecked(): boolean
+		if controlled then
+			return controlled() == true
+		end
+		return checked()
+	end
 
 	local disabled: (() -> boolean)? = nil
 	if type(options.Disabled) == "function" then
@@ -148,12 +170,20 @@ local function createCheckbox(options: Options): Checkbox
 	--- are two ways of asking the same question, and answering it in one
 	--- place is what keeps them from drifting -- a disabled checkbox that
 	--- only guarded the pointer path would still toggle from the keyboard.
+	---
+	--- CONTROLLED: `checked` NEVER WRITES. `resolved` is still the value this
+	--- checkbox believes SHOULD be true next, and `OnCheckedChanged` still
+	--- fires with it -- the caller's own state is what actually has to move
+	--- for `isChecked` to agree, on its own next read, the same way a
+	--- controlled `<input>` never flips itself either.
 	local function toggle()
 		if disabled and disabled() then
 			return
 		end
-		local resolved = not checked()
-		checked(resolved)
+		local resolved = not isChecked()
+		if not controlled then
+			checked(resolved)
+		end
 		if options.OnCheckedChanged then
 			options.OnCheckedChanged(resolved)
 		end
@@ -241,7 +271,7 @@ local function createCheckbox(options: Options): Checkbox
 	end
 
 	return {
-		Checked = checked,
+		Checked = isChecked,
 		IsHovered = pressable.IsHovered,
 		IsPressed = pressable.IsPressed,
 		GetRootProps = getRootProps,

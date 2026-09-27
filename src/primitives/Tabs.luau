@@ -58,6 +58,10 @@ export type Options = {
 
 	Tabs: { any },
 	InitialActive: any?,
+	--- CONTROLLED. See `createTabs`'s own `Active` doc comment for the full
+	--- shape -- a getter here means the caller's own state, not this Primitive,
+	--- decides which tab is active.
+	Active: (() -> any)?,
 
 	Disabled: (boolean | () -> boolean)?,
 	Cursor: (string | () -> string)?,
@@ -74,6 +78,7 @@ local function Tabs(options: Options): coreTabs.Tabs
 
 		Tabs = options.Tabs,
 		InitialActive = options.InitialActive,
+		Active = options.Active,
 		Disabled = options.Disabled,
 		Cursor = options.Cursor,
 		OnActiveChanged = options.OnActiveChanged,

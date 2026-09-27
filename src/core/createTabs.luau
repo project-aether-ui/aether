@@ -65,8 +65,17 @@ export type Options = {
 	--- Every tab key, in navigation order. Required and non-empty, the same
 	--- as createRadioGroup's own `Options` field.
 	Tabs: { any },
-	--- Which tab starts active. Omit for none active at all.
+	--- Which tab starts active. Omit for none active at all. Ignored when
+	--- `Active` is given.
 	InitialActive: any?,
+
+	--- CONTROLLED, the same shape `createContextMenu`'s own `IsOpen` already
+	--- is: a getter, read through rather than copied. When given, a click or
+	--- an arrow press calls `OnActiveChanged` with the key it would have
+	--- activated WITHOUT changing what any tab's `IsActive` or panel's
+	--- `IsVisible` reports -- the caller's own state is what actually has to
+	--- move for either to change.
+	Active: (() -> any)?,
 
 	--- Handed to each tab's own `createPressable`.
 	Disabled: (boolean | () -> boolean)?,
@@ -78,7 +87,7 @@ export type Options = {
 }
 
 export type Tab = {
-	IsActive: Source<boolean>,
+	IsActive: () -> boolean,
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
@@ -89,7 +98,7 @@ export type Tab = {
 }
 
 export type Panel = {
-	IsVisible: Source<boolean>,
+	IsVisible: () -> boolean,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
 	--- A panel has no bound ACTION at all, unlike a tab -- it is a plain
 	--- visibility source with no interaction of its own (see this file's own
@@ -102,7 +111,7 @@ export type Panel = {
 }
 
 export type Tabs = {
-	Active: Source<any?>,
+	Active: () -> any?,
 	GetTab: (key: any) -> Tab,
 	GetPanel: (key: any) -> Panel,
 	Destroy: () -> (),
@@ -159,7 +168,12 @@ local function createTabs(options: Options): Tabs
 	local action: ActionFactory = options.Action or identityAction
 
 	local orderedKeys = options.Tabs
-	local active = newSource(options.InitialActive)
+
+	--- CONTROLLED WHEN `Active` IS GIVEN, the same test `createCheckbox`'s
+	--- own `Checked` and `createRadioGroup`'s own `Value` already use.
+	local controlled: (() -> any)? = options.Active
+
+	local active = newSource(if controlled then controlled() else options.InitialActive)
 
 	local disabled: (() -> boolean)? = nil
 	if type(options.Disabled) == "function" then
@@ -170,9 +184,10 @@ local function createTabs(options: Options): Tabs
 		end
 	end
 
+	local initialActive = if controlled then controlled() else options.InitialActive
 	local model = SelectionModel.new({
 		Mode = "single",
-		InitialSelection = if options.InitialActive ~= nil then { options.InitialActive } else nil,
+		InitialSelection = if initialActive ~= nil then { initialActive } else nil,
 	})
 
 	local tabState: {
@@ -214,11 +229,30 @@ local function createTabs(options: Options): Tabs
 	--- GATED HERE, THE SAME REASON createRadioGroup'S OWN `selectKey` IS: a
 	--- click and an arrow press are two different callers of this one
 	--- function.
+	---
+	--- CONTROLLED: THE MODEL NEVER WRITES -- see `createRadioGroup`'s own
+	--- `selectKey`'s identical comment. `OnActiveChanged` still fires with
+	--- the key this tab list believes should be active next.
 	local function activateKey(key: any)
 		if disabled and disabled() then
 			return
 		end
+		if controlled then
+			if options.OnActiveChanged then
+				options.OnActiveChanged(key)
+			end
+			return
+		end
 		model.Select(key)
+	end
+
+	--- READ THROUGH, NOT COPIED, when controlled -- see `createCheckbox`'s
+	--- own `isChecked`'s identical comment.
+	local function currentActive(): any
+		if controlled then
+			return controlled()
+		end
+		return active()
 	end
 
 	--- Switches the active tab AND moves keyboard focus to it, in that
@@ -334,8 +368,17 @@ local function createTabs(options: Options): Tabs
 			selectionHandle.Destroy()
 		end
 
+		--- READ THROUGH `controlled` WHEN CONTROLLED -- see `createRadioGroup`'s
+		--- own per-option `isSelected`'s identical comment.
+		local function isActive(): boolean
+			if controlled then
+				return controlled() == key
+			end
+			return state.isActive()
+		end
+
 		local tab: Tab = {
-			IsActive = state.isActive,
+			IsActive = isActive,
 			IsHovered = pressable.IsHovered,
 			IsPressed = pressable.IsPressed,
 			GetRootProps = getRootProps,
@@ -354,9 +397,18 @@ local function createTabs(options: Options): Tabs
 		panelState[key] = { isVisible = newSource(model.IsSelected(key)) }
 		local state = panelState[key]
 
+		--- READ THROUGH `controlled` WHEN CONTROLLED -- see the sibling tab's
+		--- own `isActive`'s identical comment.
+		local function isVisible(): boolean
+			if controlled then
+				return controlled() == key
+			end
+			return state.isVisible()
+		end
+
 		local function getRootProps(overrides: { [any]: any }?): { [any]: any }
 			local props = panelDefaults()
-			props.Visible = state.isVisible
+			props.Visible = isVisible
 
 			if overrides then
 				for k, v in pairs(overrides) do
@@ -376,11 +428,11 @@ local function createTabs(options: Options): Tabs
 		end
 
 		local function getActionProps(): { [any]: any }
-			return { Visible = state.isVisible }
+			return { Visible = isVisible }
 		end
 
 		local panel: Panel = {
-			IsVisible = state.isVisible,
+			IsVisible = isVisible,
 			GetRootProps = getRootProps,
 			GetActionProps = getActionProps,
 			Destroy = function() end,
@@ -390,7 +442,7 @@ local function createTabs(options: Options): Tabs
 	end
 
 	return {
-		Active = active,
+		Active = currentActive,
 		GetTab = getTab,
 		GetPanel = getPanel,
 		Destroy = function()

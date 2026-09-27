@@ -38,6 +38,10 @@ export type Options = {
 
 	Options: { any },
 	InitialValue: any?,
+	--- CONTROLLED. See `createRadioGroup`'s own `Value` doc comment for the
+	--- full shape -- a getter here means the caller's own state, not this
+	--- Primitive, decides which option is selected.
+	Value: (() -> any)?,
 
 	Disabled: (boolean | () -> boolean)?,
 	Cursor: (string | () -> string)?,
@@ -54,6 +58,7 @@ local function RadioGroup(options: Options): coreRadioGroup.RadioGroup
 
 		Options = options.Options,
 		InitialValue = options.InitialValue,
+		Value = options.Value,
 		Disabled = options.Disabled,
 		Cursor = options.Cursor,
 		OnValueChanged = options.OnValueChanged,
