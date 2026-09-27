@@ -221,6 +221,13 @@ local function createPressable(options: Options): Pressable
 					--- host to set something it has never heard of, which fails
 					--- at the furthest possible point from the caller who wrote
 					--- the typo.
+					---
+					--- LOUD NOW, NOT SILENT (milestone 54 sprint 5). A typo
+					--- (`OnActivate` for `OnActivated`) used to compile, run,
+					--- and do nothing, forever, with nothing pointing back
+					--- here. `warn` names the exact key and this machine, at
+					--- the moment the drop happens rather than never.
+					warn(`createPressable: "{key}" is not a handler this machine recognises and was dropped`)
 					continue
 				else
 					props[key] = value

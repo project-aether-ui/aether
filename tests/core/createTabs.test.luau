@@ -240,6 +240,14 @@ local function testWithNoOverridesTheDefaultsStand()
 	assert(type(panelProps.Visible) == "function", "a panel's Visible should be its own IsVisible source")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local tabs = mountedTabs({ "a" })
+	local props = tabs.GetTab("a").GetRootProps({ OnActive = function() end })
+	assert(props.OnActive == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
 --- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION -- see `createCheckbox`'s
 --- own identical case. A tab's `GetActionProps` carries the same two binds
 --- `GetRootProps`' own array part does; a panel's carries no cosmetic `Name`
@@ -278,6 +286,11 @@ T.test("OnActiveChanged fires with the new value", testOnActiveChangedFiresWithT
 T.test("GetTab and GetPanel are memoised", testGetTabAndGetPanelAreMemoised, "math")
 T.test("destroy releases every tab's registrations", testDestroyReleasesEveryTabsRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
 T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 
 return T.run("createTabs")

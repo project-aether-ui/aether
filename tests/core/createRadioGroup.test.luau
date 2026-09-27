@@ -259,6 +259,14 @@ local function testWithNoOverridesTheDefaultsStand()
 	assert(props.Selectable == true, "an option must be a legal keyboard/gamepad selection target")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local group = mountedGroup({ "a" })
+	local props = group.GetOption("a").GetRootProps({ OnSelect = function() end })
+	assert(props.OnSelect == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
 --- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION -- see `createCheckbox`'s
 --- own identical case.
 local function testGetActionPropsCarriesNoCosmeticDefaults()
@@ -293,6 +301,11 @@ T.test("OnValueChanged fires with the new value", testOnValueChangedFiresWithThe
 T.test("GetOption is memoised", testGetOptionIsMemoised, "math")
 T.test("destroy releases every option's registrations", testDestroyReleasesEveryOptionsRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
 T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 
 return T.run("createRadioGroup")
