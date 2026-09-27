@@ -23,10 +23,14 @@
 	have — the router, vide's `source`, vide's `action` — and creates one element
 	out of what comes back. There is no press state on this side to disagree with
 	the machine's.
+
+	THE ROUTER IS AMBIENT (milestone 54 sprint 2), read through `RouterContext`
+	the same way `Scope` is read through `ScopeContext` — an explicit `Router`
+	prop still wins when a caller passes one.
 ]=]
 
 local Deps = require("../Deps")
-local PointerRouter = require("../PointerRouter")
+local RouterContext = require("../RouterContext")
 local ScopeContext = require("../ScopeContext")
 
 local createPressable = require("../core/createPressable").createPressable
@@ -35,8 +39,12 @@ local vide = Deps.vide
 local create = vide.create
 local cleanup = vide.cleanup
 local useScope = ScopeContext.useScope
+local useRouter = RouterContext.useRouter
 
 export type PressableProps = {
+	--- Overridable the same way `Scope` is; omit to use whatever is ambient.
+	Router: any?,
+
 	--- PointerRouter semantics
 	Scope: any?,
 	Layer: string?,
@@ -70,7 +78,7 @@ export type PressableProps = {
 
 local function Pressable(props: PressableProps)
 	local machine = createPressable({
-		Router = PointerRouter,
+		Router = if props.Router ~= nil then props.Router else useRouter(),
 		Source = vide.source,
 		Action = vide.action,
 

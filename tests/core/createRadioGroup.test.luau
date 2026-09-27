@@ -259,6 +259,34 @@ local function testWithNoOverridesTheDefaultsStand()
 	assert(props.Selectable == true, "an option must be a legal keyboard/gamepad selection target")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local group = mountedGroup({ "a" })
+	local props = group.GetOption("a").GetRootProps({ OnSelect = function() end })
+	assert(props.OnSelect == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
+--- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION -- see `createCheckbox`'s
+--- own identical case.
+local function testGetActionPropsCarriesNoCosmeticDefaults()
+	local pointer = pointerRouter()
+	local selection = selectionRouter()
+	local group = createRadioGroup({ Router = pointer, Selection = selection, Options = { "a" } } :: any)
+
+	local props = group.GetOption("a").GetActionProps()
+
+	assert(props.Name == nil, "GetActionProps must carry no cosmetic Name default")
+	assert(props.Selectable == nil, "nor the Selectable default")
+	assert(#props == 2, "exactly the pointer bind and the selection bind, nothing else")
+
+	for _, entry in ipairs(props) do
+		entry("an element")
+	end
+	assert(pointer.boundAt(1) == "an element", "the pointer router should still be bound through GetActionProps")
+	assert(selection.boundAt(1) == "an element", "the selection router too")
+end
+
 T.test("it refuses to run without options", testItRefusesToRunWithoutOptions, "math")
 T.test("no initial value means nothing is selected", testNoInitialValueMeansNothingIsSelected, "math")
 T.test("an initial value is honoured", testAnInitialValueIsHonoured, "math")
@@ -273,5 +301,11 @@ T.test("OnValueChanged fires with the new value", testOnValueChangedFiresWithThe
 T.test("GetOption is memoised", testGetOptionIsMemoised, "math")
 T.test("destroy releases every option's registrations", testDestroyReleasesEveryOptionsRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
+T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 
 return T.run("createRadioGroup")

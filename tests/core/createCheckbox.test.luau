@@ -197,6 +197,24 @@ local function testBothRoutersAreBound()
 	assert(selection.bound() == "an element", "the selection router should have been bound")
 end
 
+--- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case.
+local function testGetActionPropsCarriesNoCosmeticDefaults()
+	local m, pointer, selection = machine()
+	local props = m.GetActionProps()
+
+	assert(props.Name == nil, "GetActionProps must carry no cosmetic Name default")
+	assert(props.BackgroundTransparency == nil, "nor BackgroundTransparency")
+	assert(props.Selectable == nil, "nor the Selectable default")
+	assert(#props == 2, "exactly the pointer bind and the selection bind, nothing else")
+
+	for _, entry in ipairs(props) do
+		entry("an element")
+	end
+	assert(pointer.bound() == "an element", "the pointer router should still be bound through GetActionProps")
+	assert(selection.bound() == "an element", "the selection router too")
+end
+
 local function testDestroyReleasesBothRegistrations()
 	local m, pointer, selection = machine()
 	m.Destroy()
@@ -228,6 +246,14 @@ local function testNothingTheMachineOwnsReachesTheElement()
 	assert(props.Visible == true, "anything the machine does not claim should pass through")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local m = machine()
+	local props = m.GetRootProps({ OnChecked = function() end })
+	assert(props.OnChecked == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
 T.test("it refuses to run without a pointer router", testItRefusesToRunWithoutARouter, "math")
 T.test("it refuses to run without a selection router", testItRefusesToRunWithoutASelectionRouter, "math")
 T.test("it starts unchecked", testItStartsUnchecked, "math")
@@ -238,8 +264,14 @@ T.test("click and key drive the same state", testClickAndKeyDriveTheSameState, "
 T.test("OnCheckedChanged fires with the new value", testOnCheckedChangedFiresWithTheNewValue, "math")
 T.test("disabled refuses both input families", testDisabledRefusesBothInputFamilies, "math")
 T.test("both routers are bound", testBothRoutersAreBound, "math")
+T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 T.test("destroy releases both registrations", testDestroyReleasesBothRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
 T.test("nothing the machine owns reaches the element", testNothingTheMachineOwnsReachesTheElement, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
 
 return T.run("createCheckbox")

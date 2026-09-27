@@ -82,12 +82,22 @@ export type Tab = {
 	IsHovered: Source<boolean>,
 	IsPressed: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
+	--- The bound actions and nothing else -- see `createPressable`'s own
+	--- identical field. Milestone 54 sprint 3.
+	GetActionProps: () -> { [any]: any },
 	Destroy: () -> (),
 }
 
 export type Panel = {
 	IsVisible: Source<boolean>,
 	GetRootProps: (overrides: { [any]: any }?) -> { [any]: any },
+	--- A panel has no bound ACTION at all, unlike a tab -- it is a plain
+	--- visibility source with no interaction of its own (see this file's own
+	--- module comment). What this returns instead is the one piece of state
+	--- that is not a cosmetic default either: `Visible` itself, so a caller
+	--- with an already-styled frame gets the binding without `Name` or any
+	--- other default `GetRootProps` would have supplied. Milestone 54 sprint 3.
+	GetActionProps: () -> { [any]: any },
 	Destroy: () -> (),
 }
 
@@ -272,6 +282,9 @@ local function createTabs(options: Options): Tabs
 					elseif TAB_MACHINE_OPTIONS[k :: any] or v == nil then
 						continue
 					elseif type(k) == "string" and string.match(k, "^On%u") then
+						--- LOUD NOW, NOT SILENT (milestone 54 sprint 5) --
+						--- see createPressable's own identical comment.
+						warn(`createTabs: "{k}" is not a handler this machine recognises and was dropped`)
 						continue
 					else
 						props[k] = v
@@ -284,6 +297,23 @@ local function createTabs(options: Options): Tabs
 				table.insert(props, entry)
 			end
 
+			table.insert(
+				props,
+				action(function(element: any)
+					state.boundElement = element
+					selectionHandle.Bind(element)
+				end)
+			)
+			return props
+		end
+
+		--- THE ARRAY PART, BUILT DIRECTLY -- see `createCheckbox`'s own
+		--- identical getter.
+		local function getActionProps(): { [any]: any }
+			local props = {}
+			for _, entry in ipairs(pressable.GetActionProps()) do
+				table.insert(props, entry)
+			end
 			table.insert(
 				props,
 				action(function(element: any)
@@ -309,6 +339,7 @@ local function createTabs(options: Options): Tabs
 			IsHovered = pressable.IsHovered,
 			IsPressed = pressable.IsPressed,
 			GetRootProps = getRootProps,
+			GetActionProps = getActionProps,
 			Destroy = destroy,
 		}
 		tabMachines[key] = tab
@@ -344,9 +375,14 @@ local function createTabs(options: Options): Tabs
 			return props
 		end
 
+		local function getActionProps(): { [any]: any }
+			return { Visible = state.isVisible }
+		end
+
 		local panel: Panel = {
 			IsVisible = state.isVisible,
 			GetRootProps = getRootProps,
+			GetActionProps = getActionProps,
 			Destroy = function() end,
 		}
 		panelMachines[key] = panel

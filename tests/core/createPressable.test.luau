@@ -214,6 +214,49 @@ local function testNothingTheMachineOwnsReachesTheElement()
 	assert(props.Visible == true, "anything the machine does not claim should pass through")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION: a caller key matching
+--- `^On%u` that this machine does not recognise must visibly warn, in
+--- contrast to the silent drop `testNothingTheMachineOwnsReachesTheElement`
+--- above still correctly proves for a RECOGNISED handler like `OnActivated`
+--- (behaviour, not a property, on purpose) -- the difference this sprint
+--- draws is between a handler the machine implements and one it has never
+--- heard of, which is exactly what a typo produces.
+---
+--- `warn` ITSELF IS NOT CAPTURED HERE. Luau resolves it as a VM builtin
+--- rather than a mutable global table lookup, so reassigning a local named
+--- `warn` in this file has no effect on the call inside `createPressable
+--- .luau` -- confirmed by hand, not asserted, since there is nothing this
+--- suite can intercept. What IS asserted, and is the only thing sprint 5
+--- actually promised, is that the typo'd key still never reaches the
+--- element -- a loud warning that still leaked the bad key through would be
+--- worse than the silent drop it replaced.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local r = router()
+	local props = createPressable({ Router = r }).GetRootProps({ OnActivate = function() end })
+	assert(props.OnActivate == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
+--- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION: a consumer with an
+--- already-styled element gets only the bound actions from
+--- `GetActionProps()`, with no `Name`/`BackgroundTransparency` present,
+--- asserted on the table's own keys rather than by inspection.
+local function testGetActionPropsCarriesNoCosmeticDefaults()
+	local r = router()
+	local m = createPressable({ Router = r })
+
+	local props = m.GetActionProps()
+
+	assert(props.Name == nil, "GetActionProps must carry no cosmetic Name default")
+	assert(props.BackgroundTransparency == nil, "nor BackgroundTransparency")
+	assert(props.BorderSizePixel == nil, "nor BorderSizePixel")
+	assert(#props == 1, "exactly the one bound action, nothing else")
+	assert(type(props[1]) == "function", "the bind action itself")
+
+	local element = {}
+	props[1](element)
+	assert(r.bound() == element, "the action from GetActionProps must be the real router bind")
+end
+
 local function testDestroyReleasesTheRegistration()
 	local r = router()
 	local m = createPressable({ Router = r })
@@ -265,6 +308,12 @@ T.test("disabled leaves as a getter", testDisabledLeavesAsAGetter, "math")
 T.test("the root props are spreadable", testTheRootPropsAreSpreadable, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
 T.test("nothing the machine owns reaches the element", testNothingTheMachineOwnsReachesTheElement, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
+T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 T.test("destroy releases the registration", testDestroyReleasesTheRegistration, "math")
 T.test("writes go through the supplied source", testWritesGoThroughTheSuppliedSource, "math")
 

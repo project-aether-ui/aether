@@ -240,6 +240,40 @@ local function testWithNoOverridesTheDefaultsStand()
 	assert(type(panelProps.Visible) == "function", "a panel's Visible should be its own IsVisible source")
 end
 
+--- MILESTONE 54 SPRINT 5'S OWN SUCCESS CRITERION -- see `createPressable`'s
+--- own identical case and its comment on why `warn` itself is not captured.
+local function testAnUnrecognisedOnKeyStillNeverReachesTheElement()
+	local tabs = mountedTabs({ "a" })
+	local props = tabs.GetTab("a").GetRootProps({ OnActive = function() end })
+	assert(props.OnActive == nil, "a typo'd handler must still never reach the element, warning or not")
+end
+
+--- MILESTONE 54 SPRINT 3'S OWN SUCCESS CRITERION -- see `createCheckbox`'s
+--- own identical case. A tab's `GetActionProps` carries the same two binds
+--- `GetRootProps`' own array part does; a panel's carries no cosmetic `Name`
+--- either, only the `Visible` state it exists to hand over -- see this
+--- file's own `Panel` type comment on why that is not itself a cosmetic
+--- default.
+local function testGetActionPropsCarriesNoCosmeticDefaults()
+	local pointer = pointerRouter()
+	local selection = selectionRouter()
+	local tabs = createTabs({ Router = pointer, Selection = selection, Tabs = { "a" } } :: any)
+
+	local tabProps = tabs.GetTab("a").GetActionProps()
+	assert(tabProps.Name == nil, "a tab's GetActionProps must carry no cosmetic Name default")
+	assert(tabProps.Selectable == nil, "nor the Selectable default")
+	assert(#tabProps == 2, "exactly the pointer bind and the selection bind, nothing else")
+	for _, entry in ipairs(tabProps) do
+		entry("an element")
+	end
+	pointer.click(1)
+	assert(tabs.Active() == "a", "the bind from GetActionProps must be the real one the router activates through")
+
+	local panelProps = tabs.GetPanel("a").GetActionProps()
+	assert(panelProps.Name == nil, "a panel's GetActionProps must carry no cosmetic Name default")
+	assert(type(panelProps.Visible) == "function", "but it must still carry Visible, its own state")
+end
+
 T.test("it refuses to run without tabs", testItRefusesToRunWithoutTabs, "math")
 T.test("no initial active means nothing is active", testNoInitialActiveMeansNothingIsActive, "math")
 T.test("an initial active is honoured", testAnInitialActiveIsHonoured, "math")
@@ -252,5 +286,11 @@ T.test("OnActiveChanged fires with the new value", testOnActiveChangedFiresWithT
 T.test("GetTab and GetPanel are memoised", testGetTabAndGetPanelAreMemoised, "math")
 T.test("destroy releases every tab's registrations", testDestroyReleasesEveryTabsRegistrations, "math")
 T.test("with no overrides the defaults stand", testWithNoOverridesTheDefaultsStand, "math")
+T.test(
+	"an unrecognised On key still never reaches the element",
+	testAnUnrecognisedOnKeyStillNeverReachesTheElement,
+	"math"
+)
+T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
 
 return T.run("createTabs")
