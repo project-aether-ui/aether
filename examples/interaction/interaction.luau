@@ -33,8 +33,10 @@ local Aether = require("../../src/api")
 local vide = require("../../roblox_packages/vide")
 local create = vide.create
 local source = vide.source
+local action = vide.action
+local cleanup = vide.cleanup
 
-local WIDTH, HEIGHT = 360, 760
+local WIDTH, HEIGHT = 360, 1160
 
 local root = desktop.Widget({ width = WIDTH, height = HEIGHT, anchor = "center" })
 
@@ -495,5 +497,244 @@ vide.root(function()
 			end,
 		})
 		menu.Parent = body
+	end
+
+	----------------------------------------------------------------------
+	-- TOOLTIP -- one demo, matching Pressable/ContextMenu's own shape.
+	-- A tooltip has no persisted VALUE a caller could own or hand back --
+	-- it is a dwell-timed presentation over hover, the same reason
+	-- `TooltipMachine`'s own header describes it as "arms the delay" /
+	-- "cancels it" rather than a value getter/setter pair. `Content` is
+	-- the `Child` form's own binding, which carries no `typeof(x) ==
+	-- "Instance"` guard (milestone 55 sprint 3's own regression suite
+	-- exercises exactly this form for that reason, off-engine); the
+	-- `Anchor` form used here works the same way live in Dew, verified
+	-- with the same real hover this suite automated.
+	----------------------------------------------------------------------
+
+	sectionTitle("TOOLTIP")
+
+	do
+		local anchor: Frame? = nil
+		local at = advance(40)
+		Aether.Pressable({
+			Parent = body,
+			Name = "TooltipAnchor",
+			Position = UDim2.new(0, 16, 0, at),
+			Size = UDim2.fromOffset(140, 32),
+			BackgroundTransparency = 0,
+			BackgroundColor3 = ACCENT,
+
+			action(function(ref)
+				anchor = ref :: Frame
+			end),
+
+			create("TextLabel")({
+				Name = "Label",
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.fromRGB(10, 12, 16),
+				TextSize = 13,
+				Text = "Hover me",
+			}),
+		})
+
+		--- THE `Anchor` FORM RETURNS A BARE FUNCTION (a vide dynamic child,
+		--- re-run on `isOpen`'s own transitions) RATHER THAN BUILDING
+		--- ANYTHING ITSELF -- it has to be placed as an array child of a
+		--- real `create()` call for vide to ever invoke it. A bare top-level
+		--- call, tried first here, type-checked and ran without error and
+		--- mounted nothing at all: the return value was simply discarded,
+		--- which is exactly the "nothing appeared" shape the original Dew
+		--- finding described, for a third, independent reason from the two
+		--- milestone 55 sprint 3 already found.
+		create("Frame")({
+			Name = "TooltipHost",
+			Parent = body,
+			Size = UDim2.new(0, 0, 0, 0),
+			BackgroundTransparency = 1,
+
+			Aether.Tooltip({
+				Anchor = function()
+					return anchor
+				end,
+				Content = "Rendered after a hover dwell, not on movement alone.",
+				Delay = 0.4,
+			}),
+		})
+
+		advance(4)
+	end
+
+	----------------------------------------------------------------------
+	-- TREE VIEW -- one demo, uncontrolled only, and for a different
+	-- reason than Pressable/ContextMenu/Tooltip above: `TreeController`
+	-- has no controlled mode to demonstrate a second time. It exposes
+	-- `InitialExpanded` and an `OnExpandedChanged` notification, but
+	-- nothing shaped like `Checked`/`Value` -- a getter the controller
+	-- reads instead of owning. Adding one is real ergonomics work in its
+	-- own right (`createCheckbox`/`createRadioGroup`/`createTabs`-shaped),
+	-- not a taxonomy correction, so it is not this milestone's to add.
+	--
+	-- `Virtualize = false` IS NOT USED HERE, and that is itself a finding:
+	-- its own fallback branch calls `Deps.For`, and `Deps.luau`'s own
+	-- export table has no `For` field at all (`For` lives on `Aether.For`,
+	-- from `api.luau`, which `TreeView.luau` never requires) -- so that
+	-- branch renders an empty `Frame` and nothing else, unconditionally.
+	-- A real caller never hits it (`shouldVirtualize` defaults to `true`),
+	-- which is exactly why nothing had found it before this demo did. Not
+	-- this sprint's to fix; a `ScrollController` is what every real caller
+	-- already needs to supply.
+	----------------------------------------------------------------------
+
+	sectionTitle("TREE VIEW")
+
+	do
+		rowLabel("Uncontrolled", advance(20))
+		local treeY = advance(4)
+
+		local roots = {
+			{ Id = "src", Label = "src", Children = {
+				{ Id = "api.luau", Label = "api.luau" },
+				{ Id = "primitives", Label = "primitives", Children = {
+					{ Id = "Tooltip.luau", Label = "Tooltip.luau" },
+					{ Id = "TreeView.luau", Label = "TreeView.luau" },
+				} },
+			} },
+			{ Id = "tests", Label = "tests" },
+		}
+
+		local ROW_HEIGHT = 22
+		local VIEWPORT_HEIGHT = ROW_HEIGHT * 5
+		local scroll = Aether.ScrollController.new({
+			Orientation = "Vertical",
+			ViewportSize = VIEWPORT_HEIGHT,
+		})
+
+		--- `.Parent` SET ON THE RETURN, NOT PASSED IN -- the same shape the
+		--- CONTEXT MENU section above already needed, for the same class of
+		--- reason. `TreeView.luau`'s own virtualized branch builds its
+		--- `VirtualList` call by hand, forwarding `Size`/`Position`/
+		--- `AnchorPoint`/`Visible`/`ZIndex`/`LayoutOrder` -- but not `Parent`,
+		--- which `TreeViewProps` never even declares. A `Parent` handed in
+		--- here would silently build the whole tree and attach it nowhere --
+		--- found by this demo, not fixed in `TreeView.luau` itself.
+		local tree = Aether.TreeView({
+			Name = "TreeViewDemo",
+			Position = UDim2.new(0, 16, 0, treeY),
+			Size = UDim2.new(1, -32, 0, VIEWPORT_HEIGHT),
+			Estimate = ROW_HEIGHT,
+			ScrollController = scroll,
+			Roots = roots,
+			GetId = function(item: any)
+				return item.Id
+			end,
+			GetChildren = function(item: any)
+				return item.Children
+			end,
+			--- `expanded` IS ITS OWN `source`, SUBSCRIBED TO THE CONTROLLER,
+			--- NOT A `Text` FUNCTION READING `controller.IsExpanded(node.Id)`
+			--- DIRECTLY -- `TreeController.luau`'s own header is explicit
+			--- that it holds no reactive library at all ("a binding decides
+			--- what that means to a reactive graph"), so a plain read inside
+			--- `Text`'s function has no `source` for vide to have subscribed
+			--- to and never re-runs. `RenderNode` itself also runs once per
+			--- key (`VirtualList`'s own reconciler keeps the built instance
+			--- across a re-flatten), so `node.IsExpanded`, a snapshot from
+			--- the moment this row first mounted, would be equally frozen.
+			--- Confirmed live: clicking "src" swapped in its children but
+			--- left its own ">" stuck until the label's own source, kept
+			--- current by `controller.Subscribe`, replaced both reads.
+			RenderNode = function(node, controller)
+				local item = node.Node :: any
+				local expanded = source(controller.IsExpanded(node.Id))
+				cleanup(controller.Subscribe(function()
+					expanded(controller.IsExpanded(node.Id))
+				end))
+
+				return Aether.Pressable({
+					Name = `Row_{node.Id}`,
+					Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+					BackgroundTransparency = 1,
+					OnActivated = function()
+						if node.HasChildren then
+							controller.Toggle(node.Id)
+						end
+					end,
+
+					create("TextLabel")({
+						Name = "Label",
+						Position = UDim2.new(0, node.Depth * 16, 0, 0),
+						Size = UDim2.new(1, -node.Depth * 16, 1, 0),
+						BackgroundTransparency = 1,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextColor3 = INK,
+						TextSize = 12,
+						Text = function()
+							if not node.HasChildren then
+								return `  {item.Label}`
+							end
+							return `{if expanded() then "v" else ">"} {item.Label}`
+						end,
+					}),
+				})
+			end,
+		})
+		tree.Parent = body
+
+		advance(ROW_HEIGHT * 5 + 8)
+	end
+
+	----------------------------------------------------------------------
+	-- TEXT INPUT -- one demo. `Value`/`OnChanged` is the whole surface:
+	-- the field shows `localBuffer()` while focused and `Value()`
+	-- whenever it is not, so an owner that writes `OnChanged` straight
+	-- back into the same source (as here) gets the everyday "just types"
+	-- behaviour, and an owner that filtered or rejected the change would
+	-- see the field visibly hold its prior value the moment focus is
+	-- lost -- the same controlled shape `Checkbox`'s own demo shows, just
+	-- without a second, separate uncontrolled render to place beside it,
+	-- since a text field with no external `Value` at all has nothing to
+	-- redisplay once focus leaves it.
+	--
+	-- REAL KEYSTROKES DID NOT REACH THIS FIELD AT ALL UNDER DEW BEFORE THIS
+	-- SPRINT, discovered building this exact section: `TextInputManager.luau`
+	-- had a real (Roblox) editing path and a headless one (`HandleKey`), and
+	-- Dew's own keyboard delivery -- new this milestone, mutating a native
+	-- `TextBox` instance's `Text` directly -- matched neither. Fixed with a
+	-- third `ensureProxy()` branch mirroring Roblox's hidden proxy `TextBox`
+	-- without `PlayerGui` (`TextInputManager.luau`'s own header comment on
+	-- `isDew` has the full account). Live-tested here: typing and Backspace
+	-- both work. Dew's native `TextBox` has no cursor or selection concept
+	-- of its own, though, so this field's click-to-place-caret and arrow-key
+	-- navigation stay purely visual under Dew -- a real character always
+	-- lands at the end regardless of where the caret is drawn, which is a
+	-- limit of what Dew's own native `TextBox` can do today, not something
+	-- fixed here.
+	----------------------------------------------------------------------
+
+	sectionTitle("TEXT INPUT")
+
+	do
+		local text = source("")
+		local at = advance(32)
+		Aether.TextInput({
+			Parent = body,
+			Name = "TextInputDemo",
+			Position = UDim2.new(0, 16, 0, at),
+			Size = UDim2.new(1, -32, 0, 28),
+			BackgroundTransparency = 0,
+			BackgroundColor3 = UNCHECKED,
+			TextColor3 = INK,
+			PlaceholderText = "Type here",
+			PlaceholderColor3 = MUTED_TEXT,
+			Value = text,
+			OnChanged = function(value: string)
+				text(value)
+			end,
+		})
+		statusLabel(function()
+			return `value: {text()}`
+		end, advance(24), 16, 300)
 	end
 end)
