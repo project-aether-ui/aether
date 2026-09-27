@@ -16,7 +16,6 @@
 ]=]
 
 local Deps = require("../Deps")
-local isRoblox = Deps.Host.Environment == "Roblox"
 
 local ScrollController = require("../controllers/ScrollController")
 
