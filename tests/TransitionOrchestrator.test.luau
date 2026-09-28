@@ -77,16 +77,27 @@ local function run()
 	--- flips when it is close enough. Demanding equality would be asserting that
 	--- the value snapped, which is the behaviour this test now exists to rule out.
 	assert(handle.Progress() > 0.99, `progress should have arrived, got {handle.Progress()}`)
+	assert(TransitionOrchestrator.IsSettled("TestScreen") == true, "settled once Mounted")
 
 	local isComplete = TransitionOrchestrator.Exit("TestScreen")
 	assert(type(isComplete) == "function", "Exit returns a polling function")
 	assert(TransitionOrchestrator.GetPhase("TestScreen") == "Exiting",
 		`and passes through Exiting, got {TransitionOrchestrator.GetPhase("TestScreen")}`)
+	assert(TransitionOrchestrator.IsSettled("TestScreen") == false, "not settled mid-exit")
 
 	assert(stepUntil(function()
 		return TransitionOrchestrator.GetPhase("TestScreen") == "Unmounted"
 	end, 600), `the exit should complete, stalled at {TransitionOrchestrator.GetPhase("TestScreen")}`)
 	assert(isComplete(), "the exit reports complete once progress reaches zero")
+	--- THE REGRESSION CASE (found live, milestone 60 sprint B2's own Dialog.luau):
+	--- a fully exited screen settles into "Unmounted", not back into "Mounted", and
+	--- `IsSettled` used to only recognise the latter -- which meant a screen that
+	--- ever closed reported "still animating" forever, and anything gating its own
+	--- visibility on `not IsSettled(...)` (`Presence`'s own `StillAnimating`, in
+	--- Dialog.luau's case) never unmounted. This assertion is the one that failed
+	--- before that fix.
+	assert(TransitionOrchestrator.IsSettled("TestScreen") == true,
+		"a fully exited screen is settled too, not stuck reporting still-animating")
 
 	-- The removed API stays removed. Restoring it would put the manual half of
 	-- the lifecycle back alongside the derived half, which is the state M15 found.

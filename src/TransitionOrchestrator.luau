@@ -226,13 +226,27 @@ end
 --- what stops its own entrance animation from firing hover feedback as it flies
 --- past a stationary cursor.
 ---
+--- BOTH REST PHASES COUNT, not just "Mounted" — found live (milestone 60
+--- sprint B2's own Dialog.luau, the first real consumer to drive a screen
+--- through a FULL close and check this): the documented lifecycle above is
+--- `Unmounted → Entering → Mounted → Exiting → Unmounted`, and a screen that
+--- has fully exited settles into "Unmounted", not back into "Mounted". The
+--- old `Phase() == "Mounted"` check made `IsSettled` permanently false once a
+--- screen closed, so `Presence`'s own `StillAnimating` (`not IsSettled(...)`)
+--- never became false either — a closed dialog's own `Presence.ShouldRender`
+--- latched true forever, keeping its Frame mounted and Visible with no way
+--- to tell. Nothing caught this before because nothing drove a screen all
+--- the way to "Unmounted" and asked whether it had settled; every existing
+--- consumer only ever cared about the entrance case.
+---
 --- An unbound screen is always settled: nothing is animating it.
 function TransitionOrchestrator.IsSettled(screenId: string): boolean
 	local binding = bindings[screenId]
 	if not binding then
 		return true
 	end
-	return binding.Phase() == "Mounted"
+	local phase = binding.Phase()
+	return phase == "Mounted" or phase == "Unmounted"
 end
 
 --- Reactive "should this screen be in the tree?" — open, OR still animating out.
