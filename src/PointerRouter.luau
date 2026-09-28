@@ -439,6 +439,37 @@ function PointerRouter.IsPointerOver(surface: GuiObject?, x: number, y: number):
 	return not (ok and above)
 end
 
+--- `GuiState`, WHERE THE HOST OFFERS IT.
+---
+--- Real Roblox computes `GuiState` itself and offers no way to set it, and
+--- Dew's own native hit-testing cannot compute it for anything this router
+--- arbitrates -- native hit-testing gates on `Active`, which this router
+--- never sets, by design (see this file's own header). A host that wants
+--- `StyleRule`-driven `:Hover`/`:Press` styling to reach a real Aether
+--- primitive has to offer a way to set it instead, which is what Dew's own
+--- `Instance:SetGuiState` is for.
+---
+--- CAPABILITY-CHECKED, NOT ENVIRONMENT-CHECKED. `typeof(surface
+--- .SetGuiState) == "function"` is the same "ask for the capability, not
+--- the vendor name" convention every other optional host affordance in
+--- this codebase already follows -- silently a no-op on real Roblox
+--- (where the method is simply absent) rather than an `isRoblox`/`isDew`
+--- branch naming either engine.
+local function setGuiState(rec: PressRecord)
+	local surface = rec.Surface :: any
+	if not surface or typeof(surface.SetGuiState) ~= "function" then
+		return
+	end
+	local disabled = rec.Props.Disabled and rec.Props.Disabled()
+	local state = if disabled then Enum.GuiState.NonInteractable
+		elseif rec.IsPressed() then Enum.GuiState.Press
+		elseif rec.IsHovered() then Enum.GuiState.Hover
+		else Enum.GuiState.Idle
+	pcall(function()
+		surface:SetGuiState(state)
+	end)
+end
+
 local hoveredRecord: PressRecord? = nil
 local hoveredSet: { [PressRecord]: boolean } = {}
 
@@ -465,6 +496,7 @@ local function setHovered(rec: PressRecord?)
 	for prevRec in pairs(hoveredSet) do
 		if not newSet[prevRec] then
 			prevRec.IsHovered(false)
+			setGuiState(prevRec)
 			if prevRec.Props.OnHoverChanged then
 				prevRec.Props.OnHoverChanged(false)
 			end
@@ -475,6 +507,7 @@ local function setHovered(rec: PressRecord?)
 	for nextRec in pairs(newSet) do
 		if not hoveredSet[nextRec] then
 			nextRec.IsHovered(true)
+			setGuiState(nextRec)
 			if nextRec.Props.OnHoverChanged then
 				nextRec.Props.OnHoverChanged(true)
 			end
@@ -581,6 +614,7 @@ local function onInputBegan(input: any, gameProcessed: boolean)
 
 	pressedRecord = target
 	target.IsPressed(true)
+	setGuiState(target)
 	if target.Props.OnPressed then
 		target.Props.OnPressed(x, y)
 	end
@@ -643,6 +677,7 @@ local function onInputEnded(input: any)
 	if not target then return end
 
 	target.IsPressed(false)
+	setGuiState(target)
 	if target.Props.OnReleased then
 		target.Props.OnReleased()
 	end
@@ -1004,6 +1039,7 @@ function PointerRouter._SimulatePress(x: number, y: number)
 	if not target then return end
 	pressedRecord = target
 	target.IsPressed(true)
+	setGuiState(target)
 	if target.Props.OnPressed then target.Props.OnPressed(x, y) end
 	dispatchAncestorPress(target, x, y)
 end
@@ -1015,6 +1051,7 @@ function PointerRouter._SimulateRelease(x: number, y: number)
 	pressedRecord = nil
 	if not target then return end
 	target.IsPressed(false)
+	setGuiState(target)
 	if target.Props.OnReleased then target.Props.OnReleased() end
 	if PointerRouter.Resolve(x, y) == target and target.Props.OnActivated then
 		target.Props.OnActivated()
