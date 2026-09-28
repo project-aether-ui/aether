@@ -4,33 +4,15 @@
 	aether · core/createSlider.
 
 	NO VIDE, NO ROUTER, NO TREE, matching createDraggable.test.luau's own
-	shape: a router here is a closure recording what it was given and firing
-	pointer moves on demand. `GetThumbProps().OnPressed`/`OnReleased` are
-	called directly, the way a caller's own press handle would call them --
-	this machine never creates a press itself, and this suite never binds an
-	element.
+	shape: the shared `tests/support/fakeRouter` fixture's `OnPointerMove`
+	records what it was given and fires pointer moves on demand.
+	`GetThumbProps().OnPressed`/`OnReleased` are called directly, the way a
+	caller's own press handle would call them -- this machine never creates
+	a press itself, and this suite never binds an element.
 ]=]
 local T = require("@testkit")
 local createSlider = require("../../src/core/createSlider").createSlider
-
---- Verbatim from createDraggable's own suite: a pointer move source that
---- never touches a pointer. `move(x, y)` drives "the router reported
---- movement".
-local function router()
-	local callback: ((number, number) -> ())? = nil
-
-	return {
-		OnPointerMove = function(fn: (number, number) -> ())
-			callback = fn
-			return function() end
-		end,
-		move = function(x: number, y: number)
-			if callback then
-				callback(x, y)
-			end
-		end,
-	}
-end
+local router = require("../support/fakeRouter").router
 
 local function testDraggingPastMaxClamps()
 	local r = router()

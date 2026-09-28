@@ -4,38 +4,15 @@
 	aether · core/createDraggable.
 
 	NO VIDE, NO ROUTER, NO TREE, matching createPressable.test.luau's own
-	shape: a router here is a closure recording what it was given and
-	firing pointer moves on demand, nothing else. `Start`/`Stop` are called
-	directly, the way a caller's own press handler would call them -- this
-	machine never creates a press itself.
+	shape: the shared `tests/support/fakeRouter` fixture's `OnPointerMove`
+	records what it was given and fires pointer moves on demand, and
+	`unsubscribed()` is how a destroy is asserted rather than inferred.
+	`Start`/`Stop` are called directly, the way a caller's own press
+	handler would call them -- this machine never creates a press itself.
 ]=]
 local T = require("@testkit")
 local createDraggable = require("../../src/core/createDraggable").createDraggable
-
---- A pointer move source that never touches a pointer. `move(x, y)` is how
---- "the router reported movement" is driven, and `unsubscribed()` is how a
---- destroy is asserted rather than inferred.
-local function router()
-	local callback: ((number, number) -> ())? = nil
-	local unsub = false
-
-	return {
-		OnPointerMove = function(fn: (number, number) -> ())
-			callback = fn
-			return function()
-				unsub = true
-			end
-		end,
-		move = function(x: number, y: number)
-			if callback then
-				callback(x, y)
-			end
-		end,
-		unsubscribed = function(): boolean
-			return unsub
-		end,
-	}
-end
+local router = require("../support/fakeRouter").router
 
 local function testItRefusesToRunWithoutARouter()
 	local ok = pcall(function()

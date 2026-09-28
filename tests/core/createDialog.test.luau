@@ -3,14 +3,15 @@
 --[=[
 	aether · core/createDialog.
 
-	NO VIDE, NO ENGINE, NO REAL KEYBOARD. This file requires the machine and
-	testkit and nothing else. A fake `Router` (the same shape
-	`createPressable.test.luau`'s own `router()` fixture proves out for a
-	single Pressable, extended here with a `backdrop()` reader since this
-	machine registers exactly one) and a fake `Keys` capability (a plain
-	callback list, standing in for `desktop.Input.InputBegan`) are what let
-	"opening traps focus and Escape closes it" be asked without a mounted
-	surface or a real key press.
+	NO VIDE, NO ENGINE, NO REAL KEYBOARD. This file requires the machine,
+	testkit, and the shared `tests/support/fakeRouter` fixture -- the same
+	router `createPressable.test.luau` uses, read here through its own
+	`activateBackdrop()` since this machine registers exactly one Pressable,
+	its backdrop. A fake `Keys` capability (a plain callback list, standing
+	in for `desktop.Input.InputBegan`) is declared locally below, since no
+	other suite needs one yet. Together they are what let "opening traps
+	focus and Escape closes it" be asked without a mounted surface or a
+	real key press.
 
 	WHAT THESE ASSERT is the seam this sprint's own success criterion names:
 	opening sets `IsOpen`; Escape closes; focus moves into the dialog's own
@@ -20,38 +21,7 @@
 ]=]
 local T = require("@testkit")
 local createDialog = require("../../src/core/createDialog").createDialog
-
---- A pointer router that records exactly the one Pressable this machine
---- registers -- the backdrop -- the same shape `createPressable.test.luau`'s
---- own `router()` proves out for a single registration.
-local function router()
-	local registered: { [string]: any } = {}
-	local destroyed = false
-	local bound: any = nil
-
-	return {
-		Pressable = function(props: { [string]: any })
-			registered = props
-			return {
-				Bind = function(element: any)
-					bound = element
-				end,
-				Destroy = function()
-					destroyed = true
-				end,
-			}
-		end,
-		activateBackdrop = function()
-			registered.OnActivated()
-		end,
-		destroyed = function(): boolean
-			return destroyed
-		end,
-		bound = function(): any
-			return bound
-		end,
-	}
-end
+local router = require("../support/fakeRouter").router
 
 --- Stands in for `desktop.Input.InputBegan`/`UserInputService.InputBegan`: a
 --- plain list of subscribers, and a `press` helper that calls every one of
