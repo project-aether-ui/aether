@@ -34,6 +34,13 @@ local createCheckbox = require("./core/createCheckbox").createCheckbox
 local createRadioGroup = require("./core/createRadioGroup").createRadioGroup
 local createTabs = require("./core/createTabs").createTabs
 local createContextMenu = require("./core/createContextMenu").createContextMenu
+--- `createRecipe` (milestone 60 A2) had no export anywhere outside its own
+--- file and `createTabs`'s internal use of it through `createSlotRecipe` --
+--- the exact "shipped, listed nowhere" gap this file's own header already
+--- names for `TooltipMachine`/`VirtualWindow` (milestone 7), found the same
+--- way: a real consumer (A5) tried to require it from the public surface
+--- and could not.
+local createRecipe = require("./core/createRecipe").createRecipe
 
 local LayerManager = require("./LayerManager")
 local Text = require("./Text")
@@ -109,6 +116,7 @@ local Core = {
 	createRadioGroup = createRadioGroup,
 	createTabs = createTabs,
 	createContextMenu = createContextMenu,
+	createRecipe = createRecipe,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
 	VirtualWindow = VirtualWindow,
