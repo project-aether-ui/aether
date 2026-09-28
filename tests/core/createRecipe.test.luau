@@ -22,11 +22,18 @@ local function fakeDom()
 	local created: { any } = {}
 	local counts: { [string]: number } = {}
 	local tagsByInstance: { [any]: { [string]: boolean } } = {}
+	--- Every `SetProperty` call the recipe layer makes on an ALREADY-CREATED
+	--- rule, by that rule's own reference -- this is what the theming test
+	--- below asserts stays at zero across a `SetThemeSource` call, the
+	--- negative assertion the milestone's own "no per-instance mutation"
+	--- constraint needs to be checked structurally rather than by reading
+	--- the source and trusting it.
+	local propertyWritesByRule: { [any]: number } = {}
 
 	return {
 		New = function(className: string)
 			counts[className] = (counts[className] or 0) + 1
-			local instance = { ClassName = className, Properties = {}, Selector = nil, Parent = nil }
+			local instance = { ClassName = className, Properties = {}, Selector = nil, Parent = nil, StyleSheet = nil }
 			table.insert(created, instance)
 			return instance
 		end,
@@ -38,6 +45,7 @@ local function fakeDom()
 		end,
 		SetProperty = function(rule: any, name: string, value: any)
 			rule.Properties[name] = value
+			propertyWritesByRule[rule] = (propertyWritesByRule[rule] or 0) + 1
 		end,
 		AddTag = function(instance: any, tag: string)
 			local tags = tagsByInstance[instance]
@@ -53,6 +61,13 @@ local function fakeDom()
 				tags[tag] = nil
 			end
 		end,
+		--- The A4 port addition: an ORDINARY instance property write on a
+		--- `StyleDerive`, distinct from `SetProperty` above (which is a
+		--- `StyleRule`-only cascaded-property call in the real host). Never
+		--- touches `propertyWritesByRule` -- a re-point is not a rule write.
+		SetDeriveSource = function(derive: any, source: any)
+			derive.StyleSheet = source
+		end,
 		countOf = function(className: string): number
 			return counts[className] or 0
 		end,
@@ -61,6 +76,22 @@ local function fakeDom()
 		end,
 		tagsOf = function(instance: any): { [string]: boolean }
 			return tagsByInstance[instance] or {}
+		end,
+		propertyWriteCountOf = function(rule: any): number
+			return propertyWritesByRule[rule] or 0
+		end,
+		--- The most recent instance of `className` this Dom has created --
+		--- how the theming test below recovers the derive it did not create
+		--- itself, the same "read it back through reflection" discipline
+		--- the module header asks for, without reaching into module
+		--- internals.
+		lastCreated = function(className: string): any
+			for i = #created, 1, -1 do
+				if created[i].ClassName == className then
+					return created[i]
+				end
+			end
+			return nil
 		end,
 	}
 end
@@ -226,6 +257,73 @@ local function testItRefusesToRunWithoutADom()
 	assert(not ok, "a recipe with no Dom must say so rather than doing nothing quietly")
 end
 
+--- A4'S OWN COMPLETION TEST. Binds a real instance so a real `StyleRule`
+--- referencing a `$Name` token exists, then re-points the theme source and
+--- confirms, against the mock `Dom`, both halves of the milestone's own
+--- "done when": the derive's own `.StyleSheet` property changed, AND no
+--- `SetProperty` call landed on the already-existing rule during the
+--- re-point (the negative assertion -- re-pointing is the only mechanism,
+--- never a per-instance/per-rule property write).
+local function testSetThemeSourceRepointsTheSharedDeriveWithoutTouchingExistingRules()
+	local dom = fakeDom()
+	local recipe = createRecipe({
+		base = { BackgroundColor3 = "$AccentColor" },
+	}, { Dom = dom, Component = "Pressable" })
+
+	local instance = { Name = "Button" }
+	local resolved = recipe.Bind(instance, {})
+	assert(resolved.Rule.Properties.BackgroundColor3 == "$AccentColor", "the rule should carry the token string unresolved")
+
+	local propertyWritesBeforeRepoint = dom.propertyWriteCountOf(resolved.Rule)
+	assert(propertyWritesBeforeRepoint > 0, "the rule should have received its properties once, at creation")
+
+	local sunrise = { Name = "Sunrise" }
+	recipe.SetThemeSource(sunrise)
+
+	assert(dom.countOf("StyleDerive") == 1, "SetThemeSource should create exactly one StyleDerive")
+	local derive = dom.lastCreated("StyleDerive")
+	assert(derive ~= nil, "a StyleDerive should have been created")
+	assert(derive.Parent == dom.lastCreated("StyleSheet"), "the derive should be parented on the shared Aether recipe StyleSheet")
+	assert(derive.StyleSheet == sunrise, "the derive's own StyleSheet property should point at the requested source")
+	assert(
+		propertyWritesBeforeRepoint == dom.propertyWriteCountOf(resolved.Rule),
+		"re-pointing the theme source must not write any property onto an already-existing rule"
+	)
+
+	local dusk = { Name = "Dusk" }
+	recipe.SetThemeSource(dusk)
+	assert(dom.countOf("StyleDerive") == 1, "a second SetThemeSource call must re-point the same derive, not create a second one")
+	assert(derive.StyleSheet == dusk, "a second call should re-point the SAME derive at the new source")
+	assert(
+		propertyWritesBeforeRepoint == dom.propertyWriteCountOf(resolved.Rule),
+		"a second re-point must still write no property onto the already-existing rule"
+	)
+end
+
+local function testSetThemeSourceRequiresADomThatSupportsIt()
+	local dom = fakeDom()
+	dom.SetDeriveSource = nil :: any
+	local recipe = createRecipe({ base = {} }, { Dom = dom, Component = "Pressable" })
+
+	local ok = pcall(function()
+		recipe.SetThemeSource({ Name = "Sunrise" })
+	end)
+	assert(not ok, "SetThemeSource on a Dom that never implemented SetDeriveSource must say so, not do nothing quietly")
+end
+
+local function testTwoRecipesSharingADomShareTheOneDerive()
+	local dom = fakeDom()
+	local buttonRecipe = createRecipe({ base = { BackgroundColor3 = "$AccentColor" } }, { Dom = dom, Component = "Pressable" })
+	local labelRecipe = createRecipe({ base = { TextColor3 = "$TextColor" } }, { Dom = dom, Component = "Label" })
+
+	buttonRecipe.SetThemeSource({ Name = "Sunrise" })
+	local dusk = { Name = "Dusk" }
+	labelRecipe.SetThemeSource(dusk)
+
+	assert(dom.countOf("StyleDerive") == 1, "two recipes sharing one Dom must share the one derive, not one each")
+	assert(dom.lastCreated("StyleDerive").StyleSheet == dusk, "the second recipe's call should re-point the shared derive")
+end
+
 T.test("a resolved combination produces the exact expected rule", testAResolvedCombinationProducesTheExactExpectedRule, "math")
 T.test(
 	"requesting the same combination twice does not duplicate the rule",
@@ -238,5 +336,12 @@ T.test("compound variants override the plain variant tables", testCompoundVarian
 T.test("Bind applies and swaps the tag on an instance", testBindAppliesAndSwapsTheTagOnAnInstance, "math")
 T.test("different Doms get independent sheets and rule counts", testDifferentDomsGetIndependentSheetsAndRuleCounts, "math")
 T.test("it refuses to run without a Dom", testItRefusesToRunWithoutADom, "math")
+T.test(
+	"SetThemeSource re-points the shared derive without touching existing rules",
+	testSetThemeSourceRepointsTheSharedDeriveWithoutTouchingExistingRules,
+	"math"
+)
+T.test("SetThemeSource requires a Dom that supports it", testSetThemeSourceRequiresADomThatSupportsIt, "math")
+T.test("two recipes sharing a Dom share the one derive", testTwoRecipesSharingADomShareTheOneDerive, "math")
 
 return T.run("createRecipe")
