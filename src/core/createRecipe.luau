@@ -67,6 +67,24 @@
 	than being a single unconditional global keeps two independent tests (two
 	different fake `Dom` tables in the same process) from bleeding rule counts
 	into each other, which a single unconditional module-level sheet would.
+
+	THEMING (A4) IS RE-POINTING A DERIVE, NEVER MUTATING A RULE IN PLACE.
+	`Recipe.SetThemeSource` (below) creates, lazily and once per shared `Dom`,
+	a `StyleDerive` child of that same shared "Aether recipe" `StyleSheet` and
+	re-points its own `.StyleSheet` property at whichever token-carrying
+	`StyleSheet` the caller hands it -- exactly the mechanism
+	`styled-pressable.luau` already proved by hand (`derive.StyleSheet =
+	if onSunrise then sunrise else dusk`). This is the ONLY supported theming
+	path this module offers. The superseded decision doc's own Part 3 named
+	"mutate an existing rule's properties in place" as a fallback; this
+	module implements no such fallback, on purpose -- every `StyleRule`
+	`resolve` has ever produced keeps its own `$Name` token strings forever,
+	and the ONLY thing that ever changes after a rule is created is which
+	sheet the shared derive points at. Nothing in this file calls
+	`dom.SetProperty` on a rule that already exists; if a future change is
+	ever tempted to add one as a "fix" for a themed value, that would be
+	silently reintroducing the fallback this sprint deliberately left out --
+	don't.
 ]]
 
 local safeWarn = require("./Warn")
@@ -85,6 +103,20 @@ export type Dom = {
 	SetProperty: (rule: any, name: string, value: any) -> (),
 	AddTag: (instance: any, tag: string) -> (),
 	RemoveTag: (instance: any, tag: string) -> (),
+	--- A4's own port addition. Re-points a `StyleDerive`'s own `.StyleSheet`
+	--- PROPERTY at `source` -- an ORDINARY instance property write, the same
+	--- one `styled-pressable.luau` performs by hand as
+	--- `derive.StyleSheet = sunrise` (line 120), and NOT `SetProperty`
+	--- (`rule:SetProperty(name, value)`), which is a distinct real method
+	--- that sets a cascaded `StyleRule` property and bypasses reflection
+	--- refusal to allow `$Token` strings through. A `StyleDerive` has no
+	--- `StyleRule` properties of its own to cascade -- its `.StyleSheet`
+	--- field is plain reflection, so it needs this separate, honestly-named
+	--- method rather than reusing `SetProperty` out of habit. Optional: a
+	--- `Dom` that never calls `SetThemeSource` need not implement it, which
+	--- keeps every existing fake `Dom` in A2's and A3's own test suites
+	--- satisfying this type unchanged.
+	SetDeriveSource: ((derive: any, source: any) -> ())?,
 }
 
 export type PropertyTable = { [string]: any }
@@ -127,6 +159,19 @@ export type Recipe = {
 	Bind: (instance: any, selection: Selection) -> Resolved,
 	--- Removes whatever tag this recipe last bound to `instance`, if any.
 	Unbind: (instance: any) -> (),
+	--- THE ONLY SUPPORTED THEMING PATH (A4). Re-points the shared "Aether
+	--- recipe" `StyleSheet`'s own `StyleDerive` at `source` -- a `StyleSheet`
+	--- carrying token `Attribute`s and no `StyleRule`s of its own, the exact
+	--- shape `sunrise`/`dusk` already are in `styled-pressable.luau`. The
+	--- derive is created lazily, once, on the first call (matching
+	--- `stateFor`'s own lazy-sheet precedent above) and re-pointed, never
+	--- recreated, on every call after. Every `StyleRule` this recipe (or any
+	--- other recipe sharing this same `Dom`) has already produced keeps
+	--- resolving its own `$Name` tokens against whichever sheet `source`
+	--- names, with zero per-rule or per-instance writes -- see this file's
+	--- own header for why mutating an existing rule's properties in place is
+	--- NOT an alternative this module supports, even as a fallback.
+	SetThemeSource: (source: any) -> (),
 }
 
 --- Every `Dom` this module has ever been driven with gets exactly one shared
@@ -134,15 +179,36 @@ export type Recipe = {
 --- Weak-keyed so a `Dom` (a whole test's own fake, or a real host adapter)
 --- that goes out of scope takes its cache with it rather than pinning it
 --- forever.
-local sheetsByDom: { [Dom]: { Sheet: any, Rules: { [string]: any } } } = setmetatable({}, { __mode = "k" }) :: any
+--- `Derive` is `nil` until the first `SetThemeSource` call for this `Dom` --
+--- created lazily then, exactly like `Sheet` itself, and re-pointed (never
+--- rebuilt) on every call after.
+type DomState = { Sheet: any, Rules: { [string]: any }, Derive: any? }
 
-local function stateFor(dom: Dom): { Sheet: any, Rules: { [string]: any } }
+local sheetsByDom: { [Dom]: DomState } = setmetatable({}, { __mode = "k" }) :: any
+
+local function stateFor(dom: Dom): DomState
 	local state = sheetsByDom[dom]
 	if not state then
-		state = { Sheet = dom.New("StyleSheet"), Rules = {} }
+		state = { Sheet = dom.New("StyleSheet"), Rules = {}, Derive = nil }
 		sheetsByDom[dom] = state
 	end
 	return state
+end
+
+--- The one function both `Recipe.SetThemeSource` implementations below (each
+--- recipe sharing a `Dom` gets its own closure, but they all resolve through
+--- the same `stateFor(dom)`) delegate to -- so two different recipes sharing
+--- one `Dom` share the one derive, never one each.
+local function setThemeSource(dom: Dom, source: any)
+	if not dom.SetDeriveSource then
+		error("createRecipe needs a Dom with SetDeriveSource to use SetThemeSource", 2)
+	end
+	local state = stateFor(dom)
+	if not state.Derive then
+		state.Derive = dom.New("StyleDerive")
+		dom.SetParent(state.Derive, state.Sheet)
+	end
+	dom.SetDeriveSource(state.Derive, source)
 end
 
 --- FNV-1a, 32-bit, over the canonical selection string below. Not
@@ -301,10 +367,15 @@ local function createRecipe(definition: RecipeDefinition, options: Options): Rec
 		return resolved
 	end
 
+	local function setThemeSourceForThisRecipe(source: any)
+		setThemeSource(dom, source)
+	end
+
 	return {
 		Resolve = resolve,
 		Bind = bind,
 		Unbind = unbind,
+		SetThemeSource = setThemeSourceForThisRecipe,
 	}
 end
 
