@@ -46,6 +46,10 @@ local createRecipe = require("./core/createRecipe").createRecipe
 --- the exact "shipped, listed nowhere" gap A5 found and fixed for
 --- `createRecipe` above.
 local createDialog = require("./core/createDialog").createDialog
+--- `Dialog.luau` (milestone 60 B2). Exported on the same pass that writes it,
+--- the same "listed the day it is added" discipline `createDialog` above
+--- already states for itself.
+local Dialog = require("./primitives/Dialog")
 --- `createSlider` (milestone 60 B3) had the identical gap A5 found and
 --- fixed for `createRecipe`, and B1 fixed for `createDialog` on its own
 --- first pass -- exported here, on B4's own first pass, rather than
@@ -59,6 +63,7 @@ local InputSink = require("./InputSink")
 local InputScope = require("./InputScope")
 local PointerRouter = require("./PointerRouter")
 local SelectionRouter = require("./SelectionRouter")
+local KeysRouter = require("./KeysRouter")
 local Pressable = require("./primitives/Pressable")
 local Checkbox = require("./primitives/Checkbox")
 local Tabs = require("./primitives/Tabs")
@@ -155,6 +160,10 @@ local Runtime = {
 local Engine = {
 	PointerRouter = PointerRouter,
 	SelectionRouter = SelectionRouter,
+	--- The real `Options.Keys` capability `core/createDialog` asks for
+	--- (milestone 60 B2), wired to `UserInputService.InputBegan` the same
+	--- way `SelectionRouter` above wires its own two callbacks to it.
+	KeysRouter = KeysRouter,
 	--- NO `Pressable` HERE ANY MORE (milestone 54 sprint 4). This used to be
 	--- `PointerRouter.Pressable`, the router's raw registration function,
 	--- sharing a name with `Aether.Pressable` (the Primitive) and disambiguated
@@ -209,6 +218,10 @@ local Primitives = {
 	Scrollbar = PrimitiveScrollbar,
 	ScrollingFrame = ScrollingFrame,
 	TreeView = TreeView,
+	--- `Dialog.luau` (milestone 60 B2): `createDialog`'s focus trap plus
+	--- `Presence`'s enter/exit transition plus `ScreenStack`'s stacking,
+	--- composed into one real, instance-creating Primitive.
+	Dialog = Dialog,
 	Text = Text,
 }
 
@@ -277,9 +290,11 @@ return {
 	ScrollingFrame = ScrollingFrame,
 	VirtualList = VirtualList,
 	TreeView = TreeView,
+	Dialog = Dialog,
 	Styled = if PrimitiveScrollbar then PrimitiveScrollbar.Styled else nil,
 	PointerRouter = PointerRouter,
 	SelectionRouter = SelectionRouter,
+	KeysRouter = KeysRouter,
 	--- NOTE (ms-51 M14, resolved milestone 54 sprint 4): top-level `Pressable`
 	--- is the PRIMITIVE, above. The router's low-level registration function of
 	--- the same name used to be exported here too and, being declared later,
