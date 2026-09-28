@@ -19,6 +19,7 @@
 ]=]
 local T = require("@testkit")
 local createTabs = require("../../src/core/createTabs").createTabs
+local createSlotRecipe = require("../../src/core/createSlotRecipe").createSlotRecipe
 
 --- Verbatim shape from createRadioGroup's own suite: one `Pressable`
 --- registration per tab, in the order `GetTab` first asked for each one.
@@ -119,6 +120,116 @@ local function mountedTabs(tabKeys: { any }, overrides: { [string]: any }?)
 	end
 
 	return tabs, pointer, selection
+end
+
+--- SAME FAKE `Dom` SHAPE AS `createRecipe.test.luau`'S OWN -- see that
+--- suite's header for why a plain recording table stands in for the
+--- engine here.
+local function fakeDom()
+	local counts: { [string]: number } = {}
+	local tagsByInstance: { [any]: { [string]: boolean } } = {}
+
+	return {
+		New = function(className: string)
+			counts[className] = (counts[className] or 0) + 1
+			return { ClassName = className, Properties = {}, Selector = nil, Parent = nil }
+		end,
+		SetParent = function(instance: any, parent: any)
+			instance.Parent = parent
+		end,
+		SetSelector = function(rule: any, selector: string)
+			rule.Selector = selector
+		end,
+		SetProperty = function(rule: any, name: string, value: any)
+			rule.Properties[name] = value
+		end,
+		AddTag = function(instance: any, tag: string)
+			local tags = tagsByInstance[instance]
+			if not tags then
+				tags = {}
+				tagsByInstance[instance] = tags
+			end
+			tags[tag] = true
+		end,
+		RemoveTag = function(instance: any, tag: string)
+			local tags = tagsByInstance[instance]
+			if tags then
+				tags[tag] = nil
+			end
+		end,
+		countOf = function(className: string): number
+			return counts[className] or 0
+		end,
+		tagsOf = function(instance: any): { [string]: boolean }
+			return tagsByInstance[instance] or {}
+		end,
+	}
+end
+
+--- Mounts every panel too, running each panel's own bind actions -- unlike
+--- `mountedTabs`'s own loop, which only mounts tabs, since a panel had no
+--- array-part action of its own before `StyleRecipe` gave it one.
+local function mountPanels(tabs: any, tabKeys: { any })
+	for _, key in ipairs(tabKeys) do
+		local panel = tabs.GetPanel(key)
+		local props = panel.GetRootProps()
+		for _, entry in ipairs(props) do
+			if type(entry) == "function" then
+				entry(`panel-element:{tostring(key)}`)
+			end
+		end
+	end
+end
+
+--- THIS MILESTONE'S OWN NAMED SUCCESS CRITERION: `Tab` and `TabPanel` each
+--- resolve an independent rule set from one top-level multi-slot recipe
+--- definition, exercised through the REAL `createTabs` path -- not a
+--- synthetic multi-slot recipe unrelated to Tabs.
+local function testStyleRecipeBindsTabAndPanelSlotsThroughTheRealTabsPath()
+	local dom = fakeDom()
+	local slots = createSlotRecipe({
+		Tab = { base = { BackgroundTransparency = "$TabBackground" } },
+		TabPanel = { base = { BackgroundColor3 = "$PanelBackground" } },
+	}, { Dom = dom, Component = "Tabs" })
+
+	local tabs, _pointer, _selection = mountedTabs({ "a", "b" }, {
+		StyleRecipe = { Recipe = slots },
+	})
+	mountPanels(tabs, { "a", "b" })
+
+	assert(dom.countOf("StyleRule") == 2, "the Tab slot and the TabPanel slot should back exactly two distinct rules")
+
+	local tabTag = slots.Slot("Tab").Resolve({}).Tag
+	local panelTag = slots.Slot("TabPanel").Resolve({}).Tag
+	assert(dom.tagsOf("element:a")[tabTag] == true, "mounting a tab through the real createTabs path should bind its own slot's tag")
+	assert(
+		dom.tagsOf("panel-element:a")[panelTag] == true,
+		"mounting a panel through the real createTabs path should bind its own slot's tag"
+	)
+	assert(dom.tagsOf("element:a")[panelTag] == nil, "a tab instance must never carry the TabPanel slot's own tag")
+end
+
+--- THE REGRESSION NAMED IN THIS MILESTONE'S OWN TRAPS SECTION: a `Tab` and
+--- a `TabPanel` recipe with IDENTICAL (here, empty) properties must not
+--- collide on tag identity just because their resolved hash is the same,
+--- exercised through the real `createTabs`/`GetTab`/`GetPanel` path.
+local function testIdenticalTabAndPanelPropertiesDoNotCollideThroughTheRealTabsPath()
+	local dom = fakeDom()
+	local slots = createSlotRecipe({
+		Tab = {},
+		TabPanel = {},
+	}, { Dom = dom, Component = "Tabs" })
+
+	local tabs = mountedTabs({ "a" }, {
+		StyleRecipe = { Recipe = slots },
+	})
+	mountPanels(tabs, { "a" })
+
+	local tabTag = slots.Slot("Tab").Resolve({}).Tag
+	local panelTag = slots.Slot("TabPanel").Resolve({}).Tag
+	assert(tabTag ~= panelTag, `identical-property Tab/TabPanel slots must not collide on tag identity, got {tabTag} == {panelTag}`)
+	assert(dom.tagsOf("element:a")[tabTag] == true, "the tab instance should still carry its own distinct tag")
+	assert(dom.tagsOf("panel-element:a")[panelTag] == true, "the panel instance should still carry its own distinct tag")
 end
 
 local function testItRefusesToRunWithoutTabs()
@@ -330,5 +441,15 @@ T.test(
 	"math"
 )
 T.test("GetActionProps carries no cosmetic defaults", testGetActionPropsCarriesNoCosmeticDefaults, "math")
+T.test(
+	"StyleRecipe binds Tab and TabPanel slots through the real Tabs path",
+	testStyleRecipeBindsTabAndPanelSlotsThroughTheRealTabsPath,
+	"math"
+)
+T.test(
+	"identical Tab and TabPanel properties do not collide through the real Tabs path",
+	testIdenticalTabAndPanelPropertiesDoNotCollideThroughTheRealTabsPath,
+	"math"
+)
 
 return T.run("createTabs")

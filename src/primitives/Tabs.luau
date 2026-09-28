@@ -67,6 +67,13 @@ export type Options = {
 	Cursor: (string | () -> string)?,
 
 	OnActiveChanged: ((active: any?) -> ())?,
+
+	--- PASSED THROUGH UNCHANGED, the same as every other port above --
+	--- this Primitive decides nothing about slot styling, it only hands
+	--- `createTabs`'s own `StyleRecipe` port over. See `createTabs.luau`'s
+	--- own module comment for what binds it to a real instance and why
+	--- that call is legal from Layer 1.
+	StyleRecipe: coreTabs.StyleRecipe?,
 }
 
 local function Tabs(options: Options): coreTabs.Tabs
@@ -82,6 +89,7 @@ local function Tabs(options: Options): coreTabs.Tabs
 		Disabled = options.Disabled,
 		Cursor = options.Cursor,
 		OnActiveChanged = options.OnActiveChanged,
+		StyleRecipe = options.StyleRecipe,
 	})
 end
 
