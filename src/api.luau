@@ -41,6 +41,11 @@ local createContextMenu = require("./core/createContextMenu").createContextMenu
 --- way: a real consumer (A5) tried to require it from the public surface
 --- and could not.
 local createRecipe = require("./core/createRecipe").createRecipe
+--- `createDialog` (milestone 60 B1). Exported here on the same first pass
+--- that writes it, rather than after a future consumer has to go looking --
+--- the exact "shipped, listed nowhere" gap A5 found and fixed for
+--- `createRecipe` above.
+local createDialog = require("./core/createDialog").createDialog
 
 local LayerManager = require("./LayerManager")
 local Text = require("./Text")
@@ -117,6 +122,7 @@ local Core = {
 	createTabs = createTabs,
 	createContextMenu = createContextMenu,
 	createRecipe = createRecipe,
+	createDialog = createDialog,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
 	VirtualWindow = VirtualWindow,
