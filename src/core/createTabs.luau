@@ -41,10 +41,37 @@
 	no interaction of its own. Keeping them separate is what lets a caller
 	lay the two out however it likes -- side by side, panel below, tabs in a
 	sidebar -- rather than this file assuming one arrangement.
+
+	OPTIONAL `StyleRecipe`, WIRED THE SAME WAY `Router`/`Selection` ARE: a
+	PORT this file is handed, never one it resolves for itself. `Tab` and
+	`TabPanel` are Aether's own real two-slot recipe consumer (milestone
+	60's own sprint A3, corrected from an earlier four-part guess -- see
+	this file's own module comment above on why there is no `root`/`list`
+	wrapper part), each bound through `options.StyleRecipe.Recipe.Slot(name)
+	.Bind(element, selection)` from inside the same `action(...)` callback
+	that already hands `selectionHandle.Bind(element)` a real element.
+
+	CALLING `.Bind` HERE DOES NOT PUT `Instance`/`Dom` IN THIS FILE'S OWN
+	HANDS. `Recipe.Bind` (see `createRecipe.luau`) is itself Layer 1 code
+	closing over a `Dom` PORT it was handed elsewhere; calling a method on
+	an object this file received as an option is the exact shape
+	`options.Selection.Select(element)` two lines below already is, not a
+	new hole in the boundary `verify_core_has_no_framework` enforces --
+	that gate greps for `Instance`/`CollectionService` named DIRECTLY, and
+	this file still names neither.
+
+	THE SELECTION HANDED TO `Bind` IS STATIC PER SLOT, NOT DERIVED FROM
+	`IsActive`/`IsVisible`. Re-pointing a bound tag's OWN variant selection
+	as active/inactive state changes would need a reactive re-bind this
+	Layer 1 file has no `effect` to drive -- that is `StyleDerive` re-
+	theming territory (milestone 60 sprint A4), deliberately deferred, not
+	silently assumed here. What this sprint wires is the one-time bind at
+	mount, the same moment `selectionHandle.Bind(element)` already runs.
 ]]
 
 local corePressable = require("./createPressable")
 local coreSelection = require("./Selection")
+local coreRecipe = require("./createRecipe")
 local SelectionModel = require("../controllers/SelectionModel")
 local createPressable = corePressable.createPressable
 local safeWarn = require("./Warn")
@@ -57,11 +84,33 @@ export type SelectionHandle = coreSelection.SelectionHandle
 export type SelectableProps = coreSelection.SelectableProps
 export type Selection = coreSelection.Selection
 
+--- `createRecipe`'s own variant selection -- a DIFFERENT shape from
+--- `coreSelection.Selection` (the keyboard-selection port) two lines
+--- above, and named distinctly here for exactly that reason.
+export type RecipeVariantSelection = coreRecipe.Selection
+
+--- The optional recipe-binding port. `Recipe` is anything shaped like
+--- `createSlotRecipe`'s own `SlotRecipe` (a `Slot(name): Recipe`), named
+--- structurally here rather than by requiring `createSlotRecipe` itself,
+--- since a plain `{ Tab = recipe, TabPanel = recipe }` table or a real
+--- `createSlotRecipe(...)` result both already satisfy this shape.
+export type StyleRecipe = {
+	Recipe: { Slot: (name: string) -> coreRecipe.Recipe },
+	--- The selection bound to the `Tab` slot's own recipe at mount, and to
+	--- the `TabPanel` slot's -- static per this file's own module comment
+	--- on why re-deriving either from `IsActive`/`IsVisible` is out of
+	--- scope here. Omit either (or both) for "resolve with no variants".
+	Tab: RecipeVariantSelection?,
+	TabPanel: RecipeVariantSelection?,
+}
+
 export type Options = {
 	Router: Router,
 	Selection: Selection,
 	Source: SourceFactory?,
 	Action: ActionFactory?,
+	--- See this file's own module comment on `StyleRecipe`.
+	StyleRecipe: StyleRecipe?,
 
 	--- Every tab key, in navigation order. Required and non-empty, the same
 	--- as createRadioGroup's own `Options` field.
@@ -200,6 +249,7 @@ local function createTabs(options: Options): Tabs
 	local panelState: {
 		[any]: {
 			isVisible: Source<boolean>,
+			boundElement: any,
 		},
 	} = {}
 	local tabMachines: { [any]: Tab } = {}
@@ -337,6 +387,9 @@ local function createTabs(options: Options): Tabs
 				action(function(element: any)
 					state.boundElement = element
 					selectionHandle.Bind(element)
+					if options.StyleRecipe then
+						options.StyleRecipe.Recipe.Slot("Tab").Bind(element, options.StyleRecipe.Tab or {})
+					end
 				end)
 			)
 			return props
@@ -354,6 +407,9 @@ local function createTabs(options: Options): Tabs
 				action(function(element: any)
 					state.boundElement = element
 					selectionHandle.Bind(element)
+					if options.StyleRecipe then
+						options.StyleRecipe.Recipe.Slot("Tab").Bind(element, options.StyleRecipe.Tab or {})
+					end
 				end)
 			)
 			return props
@@ -367,6 +423,9 @@ local function createTabs(options: Options): Tabs
 			destroyed = true
 			pressable.Destroy()
 			selectionHandle.Destroy()
+			if options.StyleRecipe and state.boundElement then
+				options.StyleRecipe.Recipe.Slot("Tab").Unbind(state.boundElement)
+			end
 		end
 
 		--- READ THROUGH `controlled` WHEN CONTROLLED -- see `createRadioGroup`'s
@@ -395,7 +454,7 @@ local function createTabs(options: Options): Tabs
 			return panelMachines[key]
 		end
 
-		panelState[key] = { isVisible = newSource(model.IsSelected(key)) }
+		panelState[key] = { isVisible = newSource(model.IsSelected(key)), boundElement = nil }
 		local state = panelState[key]
 
 		--- READ THROUGH `controlled` WHEN CONTROLLED -- see the sibling tab's
@@ -405,6 +464,20 @@ local function createTabs(options: Options): Tabs
 				return controlled() == key
 			end
 			return state.isVisible()
+		end
+
+		--- BOUND ONLY WHEN A `StyleRecipe` IS ACTUALLY GIVEN, unlike the tab's
+		--- own unconditional bind action -- a panel had no array-part action
+		--- of its own before this sprint (see this file's own `Panel` type
+		--- comment: "a plain visibility source with no interaction of its
+		--- own"), and adding one unconditionally would be a real element
+		--- registration this machine did not need until a caller asked for
+		--- slot styling.
+		local function bindStyleRecipe(element: any)
+			state.boundElement = element
+			if options.StyleRecipe then
+				options.StyleRecipe.Recipe.Slot("TabPanel").Bind(element, options.StyleRecipe.TabPanel or {})
+			end
 		end
 
 		local function getRootProps(overrides: { [any]: any }?): { [any]: any }
@@ -425,18 +498,30 @@ local function createTabs(options: Options): Tabs
 				end
 			end
 
+			if options.StyleRecipe then
+				table.insert(props, action(bindStyleRecipe))
+			end
+
 			return props
 		end
 
 		local function getActionProps(): { [any]: any }
-			return { Visible = isVisible }
+			local props = { Visible = isVisible }
+			if options.StyleRecipe then
+				table.insert(props, action(bindStyleRecipe))
+			end
+			return props
 		end
 
 		local panel: Panel = {
 			IsVisible = isVisible,
 			GetRootProps = getRootProps,
 			GetActionProps = getActionProps,
-			Destroy = function() end,
+			Destroy = function()
+				if options.StyleRecipe and state.boundElement then
+					options.StyleRecipe.Recipe.Slot("TabPanel").Unbind(state.boundElement)
+				end
+			end,
 		}
 		panelMachines[key] = panel
 		return panel
@@ -449,6 +534,9 @@ local function createTabs(options: Options): Tabs
 		Destroy = function()
 			for _, tab in pairs(tabMachines) do
 				tab.Destroy()
+			end
+			for _, panel in pairs(panelMachines) do
+				panel.Destroy()
 			end
 			model.Clear()
 		end,
