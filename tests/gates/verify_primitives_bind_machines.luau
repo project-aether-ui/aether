@@ -78,6 +78,13 @@ local PENDING: { [string]: string } = {
 	["ScrollArea.luau"] = "wheel, drag and clamp, shared with Scrollbar and ScrollingFrame",
 	["Scrollbar.luau"] = "thumb geometry and track arithmetic",
 	["Combobox.luau"] = "open, filter, highlight, commit",
+	--- `createSlider.luau`'s own doc comment states this deliberately, the
+	--- identical reason `Scrollbar.luau` is already here: "this machine
+	--- binds nothing -- the track and the thumb are real instances only
+	--- `Slider.luau` ... creates," so the thumb's own press/hover wiring and
+	--- the track's own frame-polled length measurement have nowhere else to
+	--- live yet. Same debt as `Scrollbar.luau`, not a new one.
+	["Slider.luau"] = "thumb press/hover binding and track length measurement, the same shape Scrollbar's own thumb wiring has",
 }
 
 type Finding = { signal: string, line: number, text: string }

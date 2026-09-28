@@ -46,6 +46,12 @@ local createRecipe = require("./core/createRecipe").createRecipe
 --- the exact "shipped, listed nowhere" gap A5 found and fixed for
 --- `createRecipe` above.
 local createDialog = require("./core/createDialog").createDialog
+--- `createSlider` (milestone 60 B3) had the identical gap A5 found and
+--- fixed for `createRecipe`, and B1 fixed for `createDialog` on its own
+--- first pass -- exported here, on B4's own first pass, rather than
+--- shipping a third machine nothing outside `src/primitives/Slider.luau`
+--- could require.
+local createSlider = require("./core/createSlider").createSlider
 
 local LayerManager = require("./LayerManager")
 local Text = require("./Text")
@@ -57,6 +63,7 @@ local Pressable = require("./primitives/Pressable")
 local Checkbox = require("./primitives/Checkbox")
 local Tabs = require("./primitives/Tabs")
 local RadioGroup = require("./primitives/RadioGroup")
+local Slider = require("./primitives/Slider")
 local ScreenStack = require("./ScreenStack")
 local TransitionOrchestrator = require("./TransitionOrchestrator")
 local useHover = require("./useHover")
@@ -123,6 +130,7 @@ local Core = {
 	createContextMenu = createContextMenu,
 	createRecipe = createRecipe,
 	createDialog = createDialog,
+	createSlider = createSlider,
 	ScrollController = ScrollController,
 	TooltipMachine = TooltipMachine,
 	VirtualWindow = VirtualWindow,
@@ -190,6 +198,7 @@ local Primitives = {
 	Checkbox = Checkbox,
 	Tabs = Tabs,
 	RadioGroup = RadioGroup,
+	Slider = Slider,
 	TextInput = TextInput,
 	TextInputFrame = TextInput,
 	Combobox = Combobox,
@@ -255,6 +264,7 @@ return {
 	Checkbox = Checkbox,
 	Tabs = Tabs,
 	RadioGroup = RadioGroup,
+	Slider = Slider,
 	TextInput = TextInput,
 	TextInputFrame = TextInput,
 	TextInputManager = TextInputManager,
