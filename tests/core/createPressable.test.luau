@@ -3,11 +3,13 @@
 --[=[
 	aether · core/createPressable.
 
-	NO VIDE, NO ROUTER, NO TREE. This file requires the machine and testkit and
-	nothing else. Every platform the machine talks to is supplied here, in about
-	thirty lines: a router that records what it was registered with and fires the
-	callbacks on demand, a source that is a closure, and an action that hands the
-	callback straight back so a case can read it out of the prop table.
+	NO VIDE, NO ROUTER, NO TREE. This file requires the machine, testkit, and
+	the shared `tests/support/fakeRouter` fixture -- a router that records
+	what it was registered with and fires the callbacks on demand, shared
+	with `createDraggable`/`createDialog`/`createSlider`'s own suites. A
+	source that is a closure and an action that hands the callback straight
+	back so a case can read it out of the prop table are still declared
+	locally, per case, below.
 
 	That is what makes these cases answerable at all. The question a press asks --
 	"is it held, and what does the element look like while it is" -- used to need
@@ -21,47 +23,7 @@
 ]=]
 local T = require("@testkit")
 local createPressable = require("../../src/core/createPressable").createPressable
-
---- A pointer router that never touches a pointer. `props()` is what the machine
---- registered with, which is how "the router was told" gets asserted rather than
---- inferred from the state that follows.
-local function router()
-	local registered: { [string]: any } = {}
-	local destroyed = false
-	local bound: any = nil
-
-	return {
-		Pressable = function(props: { [string]: any })
-			registered = props
-			return {
-				Bind = function(element: any)
-					bound = element
-				end,
-				Destroy = function()
-					destroyed = true
-				end,
-			}
-		end,
-		props = function(): { [string]: any }
-			return registered
-		end,
-		hover = function(hovered: boolean)
-			registered.OnHoverChanged(hovered)
-		end,
-		press = function(x: number, y: number)
-			registered.OnPressed(x, y)
-		end,
-		release = function()
-			registered.OnReleased()
-		end,
-		destroyed = function(): boolean
-			return destroyed
-		end,
-		bound = function(): any
-			return bound
-		end,
-	}
-end
+local router = require("../support/fakeRouter").router
 
 --- The one entry in the array part that is not a child: whatever `Action` made
 --- of the machine's bind callback.
