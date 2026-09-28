@@ -131,6 +131,71 @@ vide.root(function()
 		})
 	end
 
+	--- A RADIO OPTION LOOKS LIKE A RADIO BUTTON -- a ring that fills with a
+	--- dot when selected, not a coloured pill. That was this demo's own
+	--- bug, not `RadioGroup.luau`'s: the primitive creates no element at
+	--- all (`NO SINGLE ELEMENT IS CREATED HERE`, its own header), so
+	--- whatever this file built for it was the only appearance a reader
+	--- ever saw, and it built the exact same filled-rectangle shape as a
+	--- tab, because it was written by copying that section.
+	local RADIO_SIZE = 16
+	local RADIO_LABEL_GAP = 8
+	local function radioOption(option: any, text: string, x: number, y: number, width: number)
+		create("Frame")(option.GetRootProps({
+			Parent = body,
+			Name = `Radio{text}`,
+			Position = UDim2.new(0, x, 0, y),
+			Size = UDim2.fromOffset(width, 24),
+			BackgroundTransparency = 1,
+
+			create("Frame")({
+				Name = "Ring",
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 0, 0.5, 0),
+				Size = UDim2.fromOffset(RADIO_SIZE, RADIO_SIZE),
+				BackgroundColor3 = PANEL,
+				BorderSizePixel = 0,
+
+				--- OFFSET, NOT SCALE -- confirmed against Dew's own
+				--- `render.rs` (`corner_radius`): scale is a stated, ignored
+				--- gap there ("an offset radius is what every mod in the
+				--- tree uses"), so `UDim.new(1, 0)` resolves to zero on Dew
+				--- and drew a square. Half of `RADIO_SIZE` in offset pixels
+				--- is a full circle on both hosts for a fixed square size.
+				create("UICorner")({ CornerRadius = UDim.new(0, RADIO_SIZE / 2) }),
+				create("UIStroke")({
+					Thickness = 1.5,
+					Color = function()
+						return if option.IsSelected() then ACCENT else MUTED_TEXT
+					end,
+				}),
+
+				create("Frame")({
+					Name = "Dot",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.fromOffset(RADIO_SIZE - 8, RADIO_SIZE - 8),
+					BackgroundColor3 = ACCENT,
+					BorderSizePixel = 0,
+					Visible = option.IsSelected,
+
+					create("UICorner")({ CornerRadius = UDim.new(0, (RADIO_SIZE - 8) / 2) }),
+				}),
+			}),
+
+			create("TextLabel")({
+				Name = "Label",
+				Position = UDim2.new(0, RADIO_SIZE + RADIO_LABEL_GAP, 0, 0),
+				Size = UDim2.new(1, -(RADIO_SIZE + RADIO_LABEL_GAP), 1, 0),
+				BackgroundTransparency = 1,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = INK,
+				TextSize = 12,
+				Text = text,
+			}),
+		}))
+	end
+
 	----------------------------------------------------------------------
 	-- PRESSABLE -- press/hover/activate are events, not state, so there is
 	-- nothing controlled to demonstrate: one demo, matching the shape
@@ -277,19 +342,7 @@ vide.root(function()
 		})
 		for i, size in ipairs(sizes) do
 			local option = group.GetOption(size)
-			create("TextButton")(option.GetRootProps({
-				Parent = body,
-				Name = `SizeUncontrolled{size}`,
-				Position = UDim2.new(0, 120 + (i - 1) * 76, 0, at),
-				Size = UDim2.fromOffset(70, 24),
-				BackgroundTransparency = 0,
-				BackgroundColor3 = function()
-					return if option.IsSelected() then ACCENT else INACTIVE
-				end,
-				TextColor3 = INK,
-				TextSize = 12,
-				Text = size,
-			}))
+			radioOption(option, size, 120 + (i - 1) * 90, at, 84)
 		end
 	end
 
@@ -310,19 +363,7 @@ vide.root(function()
 		})
 		for i, size in ipairs(sizes) do
 			local option = group.GetOption(size)
-			create("TextButton")(option.GetRootProps({
-				Parent = body,
-				Name = `SizeControlled{size}`,
-				Position = UDim2.new(0, 120 + (i - 1) * 76, 0, at),
-				Size = UDim2.fromOffset(70, 24),
-				BackgroundTransparency = 0,
-				BackgroundColor3 = function()
-					return if option.IsSelected() then ACCENT else INACTIVE
-				end,
-				TextColor3 = INK,
-				TextSize = 12,
-				Text = size,
-			}))
+			radioOption(option, size, 120 + (i - 1) * 90, at, 84)
 		end
 		statusLabel(function()
 			return `external: {externalSize()}`
