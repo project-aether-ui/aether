@@ -286,6 +286,15 @@ local function Slider(props: SliderProps): any
 
 	return create("Frame")({
 		Name = props.Name or "Slider",
+		--- FOUND LIVE: never forwarded before, so every consumer's own
+		--- `Parent = ...` was silently accepted (the type's own `[any]: any`
+		--- catch-all lets it through) and then silently DROPPED -- the
+		--- returned track never got parented, which measured 0x0 and never
+		--- painted. `Pressable.luau`'s own `create("Frame")(machine
+		--- .GetRootProps(props))` forwards the WHOLE incoming table and so
+		--- never had this gap; this file rebuilds a curated table by hand
+		--- and had simply never named `Parent` on that list.
+		Parent = props.Parent,
 		Size = props.Size or function()
 			local w = getWidth()
 			return if isVertical then udim2New(0, w, 1, 0) else udim2New(1, 0, 0, w)
