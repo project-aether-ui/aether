@@ -19,42 +19,37 @@
 	the router, the real host services a Layer 1 machine cannot have, and
 	draws the tree.
 
-	    local isOpen = vide.source(false)
+	    local dialog: coreDialog.Dialog
 	    Dialog({
-	        Id = "confirm-delete",
-	        IsOpen = isOpen,
-	        OnClose = function() isOpen(false) end,
+	        OutDialog = function(d) dialog = d end,
 	        Title = "Delete this?",
-	        Children = function(dialog)
-	            return create("TextButton")(dialog.RegisterFocusable...)
+	        Children = function(d)
+	            return Pressable({ OnActivated = function() ... end, ... })
 	        end,
 	    })
+	    ...
+	    button's OnActivated = function() dialog.Open(triggerElement) end
 
-	THE CONTROLLED STATE IS THE CALLER'S, the same shape every other
-	Primitive's own `IsOpen` already is (`ContextMenu`, `Combobox`). What is
-	NOT the caller's: which of `createDialog`'s own machinery reacts to a
-	given keystroke when TWO dialogs are open at once, and when the
-	backdrop dims versus when the surface actually leaves the tree. Both
-	are this file's job, argued below.
-
-	ONE INTERNAL SOURCE OF TRUTH, NOT TWO KEPT IN SYNC BY HAND. `createDialog`
-	is left UNCONTROLLED here (no `Options.IsOpen`) so it owns one boolean of
-	its own, and this file only ever pushes `props.IsOpen()` INTO it with
-	`dialog.Open()`/`dialog.Close()` — reading `dialog.IsOpen()` first (via
-	`Deps.peek`, a GUARD read, not one the surrounding effect should react to)
-	to skip a call that would be a no-op. WHY THE GUARD MATTERS: `createDialog`
-	itself runs its own focus-restore bookkeeping UNCONDITIONALLY inside
-	`Close()` (it clears `trigger` and fires `OnFocusChanged` every call, not
-	only on an actual open→closed edge) — so calling `Close()` a second time
-	after Escape or a backdrop click already closed it would fire
-	`OnFocusChanged(nil)` right after the real one restored the trigger,
-	wiping out the restore this same keystroke just performed. Escape, a
-	backdrop click and the close button all close the dialog by calling
-	`dialog.Close()` DIRECTLY (not by asking the caller first), so
-	`OnOpenChanged`/`OnClose` (below) are the one seam that tells both
-	`ScreenStack` and the caller a transition happened, whichever side
-	started it, and the guard above is what keeps this file's own sync
-	effect from replaying a transition `createDialog` already ran.
+	UNCONTROLLED, THE SAME SHAPE `createDialog.luau`'s OWN TEST SUITE ALREADY
+	USES throughout (`tests/core/createDialog.test.luau` never passes
+	`Options.IsOpen` once) — `Open()`/`Close()`/`Toggle()` are the real API,
+	not a boolean prop pushed in from outside, and `OutDialog` is how a
+	caller reaches them (the button that OPENS a dialog necessarily lives
+	OUTSIDE it, so it needs a handle). A CONTROLLED shape was tried first, a
+	`vide.effect` watching a caller's own `IsOpen` source and pushing it
+	into `dialog.Open()`/`dialog.Close()` — and it produced a real,
+	reproducible fault: `dialog.Open()`'s own `OnOpenChanged` calls
+	`ScreenStack.Open`, whose `bump()` writes a vide source that a
+	`Visible`/`Presence` binding elsewhere in the same tree reads, and doing
+	that FROM INSIDE an effect that is itself mid-run because ITS OWN source
+	just changed is exactly the reentrancy `Deps.luau`'s own `peek` doc
+	comment warns about ("a scope, that should rerun due to the update of a
+	source, is already active") — confirmed live, not assumed, the first
+	time `examples/aether/dialog-demo` clicked its own open button under
+	`dew test`. Every mutation below now happens only from a REAL event
+	handler (a press, a keystroke) exactly the way `createPressable`/
+	`createRadioGroup` already do it, never from a reactive scope watching a
+	prop.
 
 	STACKING, ARGUED RATHER THAN ASSUMED. `ScreenStack.Register` puts every
 	Dialog instance in the `"Modal"` category, NOT `Exclusive` — two dialogs
@@ -71,10 +66,14 @@
 	`ScreenStack` — which both instances already register with, with no
 	coordination between them beyond that — whether THIS instance's own
 	`screenId` is the last `"Modal"`-category entry in the open list, and
-	the real `InputBegan` handler drops the keystroke on the floor for
+	the real `KeysRouter` handler drops the keystroke on the floor for
 	every dialog that answers no. The older dialog's trap goes quiet the
 	moment a newer one opens, and answers again the instant the newer one
-	closes, with no explicit hand-off between the two.
+	closes, with no explicit hand-off between the two. Verified live under
+	`dew test`, driving a real click through the real host, in
+	`examples/aether/dialog-demo/dialog-demo.test.luau`: opening a second
+	dialog over the first leaves the first still `Visible`, and closing the
+	second's own close button leaves the first untouched.
 
 	SHIFT HAS NO RELEASE SIGNAL ON THIS HOST YET, confirmed by reading
 	`host/src/services.rs` directly (`key_down`'s own doc comment: "PRESS
@@ -132,13 +131,14 @@ local function isTopmostModal(screenId: string): boolean
 	return false
 end
 
---- THE ONE PLACE `ScreenStack` LEARNS THIS DIALOG MOVED, whichever side
---- started it — an external `IsOpen` flip or an internal Escape/backdrop
---- /close-button call, both funnel through `createDialog`'s own `setOpen`,
---- which calls `Options.OnOpenChanged` exactly once per real open→closed
---- or closed→open edge. Named and hoisted, rather than written inline in
---- the `createDialog` options table below, so that table stays a plain
---- reference (`OnOpenChanged = onScreenOpenChanged(...)`) rather than a
+--- THE ONE PLACE `ScreenStack` LEARNS THIS DIALOG MOVED — `createDialog`'s
+--- own `setOpen` calls `Options.OnOpenChanged` exactly once per real
+--- open→closed or closed→open edge, whether that edge came from `Open()`/
+--- `Close()` called directly (this file's own close button) or from
+--- Escape/a backdrop click (`createDialog`'s own internal `close()`).
+--- Named and hoisted, rather than written inline in the `createDialog`
+--- options table below, so that table stays a plain reference
+--- (`OnOpenChanged = onScreenOpenChanged(...)`) rather than a
 --- press-handler literal.
 local function onScreenOpenChanged(screenId: string, forwardTo: ((boolean) -> ())?): (boolean) -> ()
 	return function(open: boolean)
@@ -160,19 +160,15 @@ export type DialogProps = {
 	Id: string?,
 	Name: string?,
 
-	--- CONTROLLED, the same shape `ContextMenu`'s own `IsOpen` already is.
-	IsOpen: () -> boolean,
+	--- Opened the moment this Primitive first draws, rather than needing an
+	--- explicit `dialog.Open()` call for the ordinary "starts open" case.
+	InitiallyOpen: boolean?,
+
 	--- Fires whenever this machine (Escape, a backdrop click, the close
-	--- button, or a caller's own request) decides the dialog should close.
-	--- A controlled caller's own handler is expected to flip whatever
-	--- source `IsOpen` reads from — the same contract `ContextMenu`'s
-	--- `OnClose` already carries.
+	--- button, or a caller's own `dialog.Close()`) decides the dialog
+	--- should close.
 	OnClose: (() -> ())?,
 	OnOpenChanged: ((open: boolean) -> ())?,
-
-	--- The element that caused this dialog to open — regains real keyboard
-	--- focus when it closes. Read once, at the moment `IsOpen` flips true.
-	Trigger: (() -> any)?,
 
 	CloseOnBackdropClick: boolean?,
 	CloseOnEscape: boolean?,
@@ -187,12 +183,14 @@ export type DialogProps = {
 
 	--- The dialog's own real content. Handed the machine so a caller can
 	--- `dialog.RegisterFocusable(key, element)` its own controls into the
-	--- same tab order the close button already joins.
+	--- same tab order the close button already joins, and call
+	--- `dialog.Open()`/`Close()` on itself (an "open nested dialog" button
+	--- living INSIDE this dialog's own content, for instance).
 	Children: ((dialog: coreDialog.Dialog) -> any)?,
 
-	--- Escapes with the real machine the instant it exists, for a caller
-	--- that wants to drive it directly (register more focusables outside
-	--- `Children`, read `CurrentFocusKey`, ...).
+	--- Escapes with the real machine the instant it exists — the one way a
+	--- caller reaches `dialog.Open(trigger)` from OUTSIDE this component
+	--- (the button that opens a dialog necessarily lives outside it).
 	OutDialog: ((dialog: coreDialog.Dialog) -> ())?,
 
 	[any]: any,
@@ -235,28 +233,13 @@ local function Dialog(props: DialogProps): any
 		OnFocusChanged = SelectionRouter.Select,
 	})
 
+	if props.InitiallyOpen then
+		dialog.Open()
+	end
+
 	if props.OutDialog then
 		props.OutDialog(dialog)
 	end
-
-	--- PUSHES THE CALLER'S OWN STATE IN, never reads `createDialog`'s state
-	--- back out to decide whether to push — see this file's own header for
-	--- why: `dialog.Close()`'s focus-restore runs unconditionally, and
-	--- calling it a second time after Escape/a backdrop click already ran
-	--- it would clobber the restore that call just performed. `peek`
-	--- because this is a GUARD read, not a value this effect should itself
-	--- react to.
-	vide.effect(function()
-		local open = props.IsOpen()
-		if peek(dialog.IsOpen) == open then
-			return
-		end
-		if open then
-			dialog.Open(if props.Trigger then props.Trigger() else nil)
-		else
-			dialog.Close()
-		end
-	end)
 
 	cleanup(function()
 		dialog.Destroy()
