@@ -12,6 +12,7 @@ verified against the engine or marked as not.
 | :--- | :--- |
 | **[verified]** | A conformance case observed this in Studio. The case name is given. |
 | **[reference]** | Recorded from the Luau implementation. It is what we do, not necessarily what Roblox does. |
+| **[asserted]** | A case states it from Roblox's documentation and nobody has run it in Studio yet. |
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
 | **[verified-relationally]** | A case proves a ratio, a minimum or an integer multiple rather than a value, because the value is a property of the host. |
 
@@ -129,12 +130,52 @@ not added to the slot.
 **[verified]** `UIListLayout stacks children and ignores their Position` -- a
 first child with `Position.Y = 50` lands at `y = 0`.
 
-Order is `LayoutOrder`, then declaration order. The cursor advances by what each
-child actually resolved to, so a stack of differently-sized rows lays out
-correctly.
+Under `SortOrder = LayoutOrder`, order is `LayoutOrder`, then declaration order.
+The cursor advances by what each child actually resolved to, so a stack of
+differently-sized rows lays out correctly.
 
-**[reference]** `SortOrder`, `HorizontalAlignment` and `VerticalAlignment` are
-not implemented. They are in the backlog, not excluded.
+**What the standard says is separate from who implements it.** `SortOrder`,
+`HorizontalAlignment` and `VerticalAlignment` are part of the standard, and the
+cases below state what they do. **[reference]** The Luau implementation reads
+none of the three. Dew reads the two alignments on the cross axis only, and sorts
+by `LayoutOrder` whatever `SortOrder` says. Neither sentence is a claim about the
+engine.
+
+Every case below is **[asserted]**: written from Roblox's documentation, not yet
+run in Studio. Where the documentation is silent, the case's `note` says the
+expectation is a guess.
+
+**Ordering.** `UIListLayout with SortOrder unset orders children by Name`,
+`UIListLayout with SortOrder Name ignores LayoutOrder`, `UIListLayout breaks an
+equal LayoutOrder by declaration order`, `UIListLayout with SortOrder unset and
+identical names keeps declaration order`, `UIListLayout gives an invisible child
+no slot and no Padding`.
+
+**Alignment and Padding.** Alignment applies on the main axis too:
+`UIListLayout VerticalAlignment Center centres a vertical run`, `... Bottom
+pushes a vertical run down`, `UIListLayout HorizontalAlignment Center centres a
+horizontal run`, `UIListLayout centres an overflowing run past the top edge`.
+`UIListLayout Padding scale resolves against the parent's height` and `... width`.
+`UIListLayout places a child with AnchorPoint as though it had none`.
+
+**Wraps.** `UIListLayout Wraps moves an overflowing child to a new row`, `... to
+a new column`, `... with VerticalAlignment Bottom aligns the block of rows`,
+`... with HorizontalAlignment Center centres each row on its own width`, `...
+gives a child wider than the panel its own row`.
+
+**HorizontalFlex.** One case per value (`None`, `Fill`, `SpaceAround`,
+`SpaceBetween`, `SpaceEvenly`), each of the four distributing values again with
+`Padding` and again with a single child, `Fill` and `SpaceBetween` on a vertical
+list, and `Fill` shrinking an overflow.
+
+**ItemLineAlignment.** One case per value on a single line, and `Automatic`
+deferring to `VerticalAlignment`.
+
+**UIFlexItem.** `Grow`, `Shrink`, `Fill` and `Custom` with `GrowRatio` and
+`ShrinkRatio`; a ratio ignored outside `Custom`; the basis of a scale-sized child;
+growth per wrapped line; `Grow` against the list's `SpaceBetween` and `Fill`; the
+per item `ItemLineAlignment` override; and no effect without a list or under a
+grid. The cases are named `UIFlexItem ...`.
 
 ## 5. Clipping
 
@@ -385,15 +426,38 @@ an off-engine host where a remote asset grant is withheld remains a correct
 application missing an image, rather than a broken application that fails at
 runtime.
 
+## 10. UIGridLayout
+
+Children take fixed cells in order, filling along `FillDirection` and starting at
+`StartCorner`. Its `FillDirection` defaults to `Horizontal`, unlike the list's
+`Vertical`.
+
+**[asserted]** The cases named `UIGridLayout ...`: the defaults, scale in
+`CellSize` and `CellPadding`, `FillDirection Vertical`, `FillDirectionMaxCells`,
+each `StartCorner`, alignment of the block, a size or aspect constraint on a
+child, and the default `SortOrder`.
+
+## 11. UISizeConstraint
+
+`MinSize` and `MaxSize` clamp the size a child would otherwise take, including a
+size a layout or a flex item assigns.
+
+**[asserted]** The cases named `UISizeConstraint ...`: each bound on a child with
+no layout, a clamped list child moving its sibling, and a clamped flex child
+handing the rest of the space to its sibling. `UIFlexItem Grow stops at a
+UISizeConstraint MaxSize` and `UIFlexItem Shrink stops at a UISizeConstraint
+MinSize` are the same rule seen from the flex side.
+
 ## What this document does not yet cover
 
 Each of these is a section someone will have to write, and none can be written
 honestly without opening Studio first.
 
-- `UIGridLayout`, `UIPageLayout`, `UITableLayout`.
-- The flex properties: `FlexMode`, `GrowRatio`, `ShrinkRatio`, `HorizontalFlex`,
-  `VerticalFlex`, `ItemLineAlignment`.
-- `UIAspectRatioConstraint`, `UISizeConstraint`, `UITextSizeConstraint`.
+- `UIPageLayout`, `UITableLayout`.
+- Sections 4, 10 and 11 beyond what their asserted cases state, until a Studio
+  run verifies them. `VerticalFlex` has no case of its own; it is assumed to
+  mirror `HorizontalFlex`.
+- `UIAspectRatioConstraint` outside a grid, `UITextSizeConstraint`.
 - Text wrapping and `TextScaled`; see section 7 for what is now covered and what
   is not.
 - `ScrollingFrame` canvas resolution and `AutomaticCanvasSize`.

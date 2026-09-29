@@ -14,6 +14,7 @@ local luau = require("@lune/luau")
 ]]
 local files = {
     "conformance/roblox/src/run.client.luau",
+    "conformance/roblox/layout_defaults.luau",
     "conformance/run.luau",
     "conformance/decode.luau",
     "conformance/tally.luau",

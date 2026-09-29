@@ -1,0 +1,33 @@
+--!strict
+return {
+	name = "UIListLayout HorizontalFlex SpaceBetween with a single child",
+	provenance = "asserted",
+	note = "Measurement S19, SpaceBetween. One 60 wide child in 240: CSS puts a lone child at the "
+		.. "start (0); centring would give 90. The documentation is silent here, so this expectation "
+		.. "is a guess for the Studio run to overwrite.",
+	surface = { width = 240, height = 40 },
+
+	tree = {
+		class = "Frame",
+		name = "Panel",
+		props = { Size = { "UDim2", 0, 240, 0, 40 } },
+		children = {
+			{
+				class = "UIListLayout",
+				name = "Layout",
+				props = {
+					FillDirection = { "Enum", "FillDirection", "Horizontal" },
+					SortOrder = { "Enum", "SortOrder", "LayoutOrder" },
+					HorizontalAlignment = { "Enum", "HorizontalAlignment", "Left" },
+					VerticalAlignment = { "Enum", "VerticalAlignment", "Top" },
+					HorizontalFlex = { "Enum", "UIFlexAlignment", "SpaceBetween" },
+				},
+			},
+			{ class = "Frame", name = "B", props = { Size = { "UDim2", 0, 60, 0, 20 } } },
+		},
+	},
+
+	expect = {
+		{ name = "B", x = 0, y = 0, w = 60, h = 20 },
+	},
+}
