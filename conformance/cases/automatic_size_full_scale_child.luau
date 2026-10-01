@@ -43,7 +43,7 @@
 return {
 	name = "AutomaticSize with a FULL scale-sized child",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "ANSWERED, AGAINST THE PREDICTION: the engine returns 90. Full scale does NOT resolve "
 		.. "against the available space -- measurement passes through the face to the content "
 		.. "behind it, and the face is then placed at the size the parent grew to. Our "

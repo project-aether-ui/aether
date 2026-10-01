@@ -16,12 +16,12 @@ verified against the engine or marked as not.
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
 | **[verified-relationally]** | A case proves a ratio, a minimum or an integer multiple rather than a value, because the value is a property of the host. |
 
-Each case records the build that verified it. The list, flex, grid and size
-constraint cases were verified against Roblox **0.741.19.7411056**; the older
-cases record **0.736.0.7361346**, and agreed again on 0.741. The property surface is generated from a reflection
-database currently at **0.728**, so the standard's two halves are measured
-against different builds. Neither is wrong; the skew is worth knowing before
-someone reconciles two numbers that were never taken at the same time.
+Each case records the build that verified it. Every verified case cites Roblox
+**0.741.19.7411056**, the same build the class and property surface is pinned
+to. Property defaults still come from a reflection database at **0.728**, so
+the standard's two halves are measured against different builds. Neither is
+wrong; the skew is worth knowing before someone reconciles two numbers that
+were never taken at the same time.
 
 Nothing here is normative because it is written down. It is normative because a
 case in `cases/` proves it, and the ones that carry no case are the ones to be

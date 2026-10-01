@@ -29,7 +29,7 @@
 return {
 	name = "AutomaticSize with a Scale child that has content, under a layout",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "ANSWERED, AGAINST THE PREDICTION: the engine returns 120, so a layout OVERRIDES the "
 		.. "content rule rather than deferring to it. grow() had the precedence backwards. Tests the two established rules against each other for the first time. Content wins "
 		.. "without a layout; a layout resolves against the offered space without content. "

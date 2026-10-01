@@ -17,7 +17,7 @@
 return {
 	name = "TextScaled chooses the text size from the box",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextScaled" },
 	note = "Engine: exactly 2.0000. The slack was allowed for a fit that might round to a whole "
 		.. "font size; it did not, so scaling is proportional rather than snapped. TextSize is set "

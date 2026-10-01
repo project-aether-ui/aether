@@ -16,7 +16,7 @@ local LONG = "The quick brown fox jumps over the lazy dog and keeps going well p
 return {
 	name = "TextWrapped off keeps a long string on one line",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextWrapped" },
 	note = "Engine: exactly 1.0000. The negative half of wrapping, and the case that catches an "
 		.. "implementation growing height with text length regardless of TextWrapped.",

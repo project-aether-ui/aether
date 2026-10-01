@@ -17,7 +17,7 @@
 return {
 	name = "AnchorPoint offsets by the size AutomaticSize produced",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "AGREES in the engine: the Centred frame comes back at (60, 30) 80x40, so the engine "
 		.. "sizes from the content and then anchors against that size. The ordering is size, then "
 		.. "anchor. An implementation applying the anchor first offsets by the authored size, "

@@ -15,7 +15,7 @@
 return {
 	name = "one line of text is a fixed multiple of TextSize",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "ENGINE: 1.5000 exactly. Aether used 1.2, so every auto-sized TextLabel was 20 percent "
 		.. "short. What is measured is the RESOLVED HEIGHT of a single-line auto-sized label as a "
 		.. "multiple of TextSize; whether that is purely line height or includes something else is "

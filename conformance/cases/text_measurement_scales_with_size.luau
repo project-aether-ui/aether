@@ -16,7 +16,7 @@
 return {
 	name = "text measurement is linear in TextSize",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "Engine: width 1.9896, height 2.0000, reproduced across runs. A run with the Studio "
 		.. "viewport resized gave 2.0244, so width moves with the display configuration and is "
 		.. "stable within one. An implementation may rely on linearity, not on it being exact.",

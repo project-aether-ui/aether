@@ -22,7 +22,7 @@
 return {
 	name = "text measurement is per glyph, not per character",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "Engine 4.4286, Aether about 3.39. Both conform: the rule is that measurement is per "
 		.. "glyph, and a per-character implementation would report exactly 1.0.",
 	surface = { width = 400, height = 200 },

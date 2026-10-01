@@ -19,7 +19,7 @@ local LONG = "The quick brown fox jumps over the lazy dog and keeps going well p
 return {
 	name = "TextWrapped grows the height past one line",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextWrapped" },
 	note = "Engine: exactly 5.0000, so that string wraps to five lines at 200px and 18pt. Aether "
 		.. "implements no wrapping, so this is a roadmap item carrying a verified expectation.",
