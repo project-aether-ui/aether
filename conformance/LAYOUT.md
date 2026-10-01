@@ -590,7 +590,10 @@ honestly without opening Studio first.
 - `UIPageLayout`, `UITableLayout`.
 - Sections 4, 10 and 11 beyond what their cases state. `VerticalFlex` has no
   case of its own; it is assumed to mirror `HorizontalFlex`.
-- `UIAspectRatioConstraint` outside a grid, `UITextSizeConstraint`.
+- `UIAspectRatioConstraint` outside a grid. The `uiaspectratioconstraint_*` cases
+  assert `AspectType`, `DominantAxis` and `AnchorPoint` behaviour, each with sizes
+  that tell the candidate rules apart, and await a Studio pass.
+- `UITextSizeConstraint`.
 - Text wrapping and `TextScaled`; see section 7 for what is now covered and what
   is not.
 - `ScrollingFrame` canvas resolution and `AutomaticCanvasSize`.
