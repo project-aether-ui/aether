@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceAround keeps Padding as a fixed gap",
-	provenance = "asserted",
-	note = "Measurement S18, SpaceAround. Padding 6 as a fixed gap leaves 108, 36 per child: A 18, B "
-		.. "80, C 162. Ignoring Padding gives 20, 100, 160; adding it after distributing gives 20, "
-		.. "106, 192. The documentation is silent here, so this expectation is a guess for the "
-		.. "Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240 with Padding 6. The engine gives A 20, B 80, C 160, "
+		.. "exactly as with no Padding: SpaceAround ignores Padding here.",
 	surface = { width = 240, height = 40 },
 
 	tree = {
@@ -32,8 +33,8 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 18, y = 0, w = 20, h = 20 },
+		{ name = "A", x = 20, y = 0, w = 20, h = 20 },
 		{ name = "B", x = 80, y = 0, w = 40, h = 20 },
-		{ name = "C", x = 162, y = 0, w = 60, h = 20 },
+		{ name = "C", x = 160, y = 0, w = 60, h = 20 },
 	},
 }

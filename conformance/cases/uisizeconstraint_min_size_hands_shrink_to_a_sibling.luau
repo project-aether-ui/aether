@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UISizeConstraint MinSize on a Shrink child hands the rest to its Shrink sibling",
-	provenance = "asserted",
-	note = "Measurement C4. A 160 and B 100 both Shrink in 200, A held at 140 wide: A stops at 140 "
-		.. "and B absorbs the rest of the 60 overflow (60 wide). An equal share without "
-		.. "redistribution gives B 70. The documentation is silent here, so this expectation is a "
-		.. "guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UISizeConstraint" },
+	note = "A 160 and B 100 both Shrink in 200, A held at 140 wide. The engine stops A at 140 and "
+		.. "B absorbs the rest of the 60 overflow (60 wide).",
 	surface = { width = 200, height = 40 },
 
 	tree = {

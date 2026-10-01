@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout Wraps moves an overflowing child to a new row",
-	provenance = "asserted",
-	note = "Measurement S12. Widths 60, 80 and 40 in a 150 wide panel, Padding 5: C does not fit and "
-		.. "wraps to x 0. The gap between rows is a guess of Padding (y 35); 0 would give 30. The "
-		.. "documentation is silent on line spacing.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Wraps" },
+	note = "Widths 60, 80 and 40 in a 150 wide panel, Padding 5. The engine wraps C to x 0 and "
+		.. "spaces the rows by Padding (y 35).",
 	surface = { width = 150, height = 60 },
 
 	tree = {

@@ -1,12 +1,13 @@
 --!strict
 return {
 	name = "UIGridLayout alignment moves the grid as a block, not each row",
-	provenance = "asserted",
-	note = "Measurement G7. Four 60 cells, three per row, in a 220 panel with HorizontalAlignment "
-		.. "Center and VerticalAlignment Bottom: centring the block puts the short row's D at x 15, "
-		.. "centring each row puts it at 80. The block sits on the bottom edge (D at y 160). The "
-		.. "documentation is silent here, so this expectation is a guess for the Studio run to "
-		.. "overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Four 60 cells, three per row, in a 220 panel with HorizontalAlignment Center and "
+		.. "VerticalAlignment Bottom. The engine centres the block, not each row (D at x 15), and "
+		.. "puts it on the bottom edge (D at y 160).",
 	surface = { width = 220, height = 220 },
 
 	tree = {

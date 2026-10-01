@@ -1,10 +1,14 @@
 --!strict
 return {
 	name = "UIFlexItem Custom ShrinkRatio 1 and 3 shares an overflow one to three",
-	provenance = "asserted",
-	note = "Measurement F7. A 100 and B 140 in 200 overflow by 40, ShrinkRatio 1 and 3: A loses 10 "
-		.. "and B 30, giving 90 and 110. An equal share gives 80 and 120. Expected from the "
-		.. "ShrinkRatio documentation, assuming no weighting by width.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A 100 and B 140 in 200 overflow by 40 with ShrinkRatio 1 and 3. The engine gives A "
+		.. "92.31 and B 107.69: the overflow splits in proportion to ratio times width (100 and "
+		.. "420), so A loses 40 x 100 / 520. Exactly 1200/13 and 1400/13; the runner rounds to two "
+		.. "places.",
 	surface = { width = 200, height = 40 },
 
 	tree = {
@@ -56,7 +60,7 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 0, w = 90, h = 20 },
-		{ name = "B", x = 90, y = 0, w = 110, h = 20 },
+		{ name = "A", x = 0, y = 0, w = 92.31, h = 20 },
+		{ name = "B", x = 92.31, y = 0, w = 107.69, h = 20 },
 	},
 }

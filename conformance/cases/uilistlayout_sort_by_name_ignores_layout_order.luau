@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout with SortOrder Name ignores LayoutOrder",
-	provenance = "asserted",
-	note = "Measurement S5. SortOrder Name with LayoutOrder C=1, B=2, A=3, declared C, B, A: Name "
-		.. "order puts A first, LayoutOrder puts C first. Expected from the SortOrder enum "
-		.. "documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.SortOrder" },
+	note = "SortOrder Name with LayoutOrder C=1, B=2, A=3, declared C, B, A. The engine puts A "
+		.. "first: LayoutOrder is ignored.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout defaults to 100 pixel cells, 5 pixel padding, filling across",
-	provenance = "asserted",
-	note = "Measurement G1. Only SortOrder is set: default CellSize 100, CellPadding 5 and "
-		.. "FillDirection Horizontal put three children at (0, 0), (105, 0) and (0, 105). Expected "
-		.. "from the UIGridLayout documentation's defaults.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Only SortOrder is set. The engine's default CellSize 100, CellPadding 5 and "
+		.. "FillDirection Horizontal put three children at (0, 0), (105, 0) and (0, 105).",
 	surface = { width = 220, height = 220 },
 
 	tree = {

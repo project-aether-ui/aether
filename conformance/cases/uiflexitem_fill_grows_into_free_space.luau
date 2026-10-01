@@ -1,9 +1,11 @@
 --!strict
 return {
 	name = "UIFlexItem Fill grows into free space",
-	provenance = "asserted",
-	note = "Measurement F8, under. A (Fill) and B (none), 40 wide each in 200: A grows to 160. "
-		.. "Expected from the documentation's Fill, which both grows and shrinks.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A (Fill) and B (none), 40 wide each in 200. The engine grows A to 160.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

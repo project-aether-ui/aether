@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout StartCorner BottomRight",
-	provenance = "asserted",
-	note = "Measurement G6, BottomRight. Three 100 cells in a 220 panel, alignment Left and Top: A "
-		.. "in the bottom right cell (120, 120), B to its left, C above A. Starting within a "
-		.. "top-left aligned block would put A at (105, 105) instead. Whether the corner is the "
-		.. "panel's or the block's is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Three 100 cells in a 220 panel, alignment Left and Top. The engine starts at the "
+		.. "bottom right of the block, not the panel: A (105, 105), B (0, 105), C (105, 0).",
 	surface = { width = 220, height = 220 },
 
 	tree = {
@@ -33,8 +34,8 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 120, y = 120, w = 100, h = 100 },
-		{ name = "B", x = 15, y = 120, w = 100, h = 100 },
-		{ name = "C", x = 120, y = 15, w = 100, h = 100 },
+		{ name = "A", x = 105, y = 105, w = 100, h = 100 },
+		{ name = "B", x = 0, y = 105, w = 100, h = 100 },
+		{ name = "C", x = 105, y = 0, w = 100, h = 100 },
 	},
 }

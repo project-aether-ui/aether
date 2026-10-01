@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow takes the free space beside a child with no flex",
-	provenance = "asserted",
-	note = "Measurement F1. A (Grow) and B (none), 40 wide each in 200: A grows to 160 and B moves "
-		.. "to 160. Expected from the UIFlexItem documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A (Grow) and B (none), 40 wide each in 200. The engine grows A to 160 and B moves to "
+		.. "160.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

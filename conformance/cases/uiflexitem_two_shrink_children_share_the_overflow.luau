@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem two Shrink children share an overflow equally",
-	provenance = "asserted",
-	note = "Measurement F6. A 100 and B 200, both Shrink, in 150: an equal share of the 150 overflow "
-		.. "gives 25 and 125; shrinking in proportion to width as CSS does gives 50 and 100. The "
-		.. "documentation is silent here, so this expectation is a guess for the Studio run to "
-		.. "overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A 100 and B 200, both Shrink, in 150. The engine gives 50 and 100: the 150 overflow is "
+		.. "shared in proportion to width, as CSS does, not equally.",
 	surface = { width = 150, height = 40 },
 
 	tree = {
@@ -55,7 +56,7 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 0, w = 25, h = 20 },
-		{ name = "B", x = 25, y = 0, w = 125, h = 20 },
+		{ name = "A", x = 0, y = 0, w = 50, h = 20 },
+		{ name = "B", x = 50, y = 0, w = 100, h = 20 },
 	},
 }

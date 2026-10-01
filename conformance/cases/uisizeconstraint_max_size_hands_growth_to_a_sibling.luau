@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UISizeConstraint MaxSize on a Grow child hands the rest to its Grow sibling",
-	provenance = "asserted",
-	note = "Measurement C3. A and B both Grow, 40 each in 200, A capped at 60 wide: A stops at 60 "
-		.. "and B takes the remaining 100 (140 wide). Without redistribution B would be 100. The "
-		.. "documentation is silent here, so this expectation is a guess for the Studio run to "
-		.. "overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UISizeConstraint" },
+	note = "A and B both Grow, 40 each in 200, A capped at 60 wide. The engine stops A at 60 and "
+		.. "gives B the rest (140 wide).",
 	surface = { width = 200, height = 40 },
 
 	tree = {

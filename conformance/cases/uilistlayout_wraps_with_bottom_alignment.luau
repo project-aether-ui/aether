@@ -1,12 +1,13 @@
 --!strict
 return {
 	name = "UIListLayout Wraps with VerticalAlignment Bottom aligns the block of rows",
-	provenance = "asserted",
-	note = "Measurement S14. Wrapped rows (30 and 20 tall, gap 5) in a 100 tall panel with "
-		.. "VerticalAlignment Bottom: the guess is that the block of rows sits at the bottom with "
-		.. "the first row on top (A 55, B 45, C 80); rows stacking upward from the bottom edge would "
-		.. "put C at 45. The documentation is silent here, so this expectation is a guess for the "
-		.. "Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Wraps" },
+	note = "Wrapped rows (30 and 20 tall, gap 5) in a 100 tall panel with VerticalAlignment "
+		.. "Bottom. The engine puts the block of rows on the bottom edge with the first row on top "
+		.. "(A 55, B 45, C 80).",
 	surface = { width = 150, height = 100 },
 
 	tree = {

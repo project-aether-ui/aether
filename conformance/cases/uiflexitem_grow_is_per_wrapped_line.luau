@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow with Wraps grows within its own line",
-	provenance = "asserted",
-	note = "Measurement F10. Three 60 wide children in 150 with Wraps, A Grow: A and B share the "
-		.. "first line and A grows by its 30 free (90); C wraps to y 20. Measured across all "
-		.. "children there is no free space and A stays 60. The documentation says 'free space in "
-		.. "the line'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UIListLayout.Wraps" },
+	note = "Three 60 wide children in 150 with Wraps, A Grow. The engine grows A by its own line's "
+		.. "30 free (90) and wraps C to y 20.",
 	surface = { width = 150, height = 60 },
 
 	tree = {

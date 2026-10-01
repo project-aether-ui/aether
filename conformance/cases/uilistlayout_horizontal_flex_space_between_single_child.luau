@@ -1,10 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceBetween with a single child",
-	provenance = "asserted",
-	note = "Measurement S19, SpaceBetween. One 60 wide child in 240: CSS puts a lone child at the "
-		.. "start (0); centring would give 90. The documentation is silent here, so this expectation "
-		.. "is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "One 60 wide child in 240. The engine puts a lone child at the start (0), as CSS does, "
+		.. "not in the centre.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

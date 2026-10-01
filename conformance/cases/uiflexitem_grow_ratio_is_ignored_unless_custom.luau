@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem GrowRatio is ignored when FlexMode is None",
-	provenance = "asserted",
-	note = "Measurement F5. A has FlexMode None with GrowRatio 2, B is Custom with GrowRatio 1: if "
-		.. "A's ratio is ignored B takes all 120 free (A 40, B 160); honoured it would give A 120, B "
-		.. "80. Expected from the documentation's 'applies only if FlexMode is Custom'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A has FlexMode None with GrowRatio 2, B is Custom with GrowRatio 1. The engine ignores "
+		.. "A's ratio and gives B all 120 free (A 40, B 160).",
 	surface = { width = 200, height = 40 },
 
 	tree = {

@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow under HorizontalFlex Fill grows alongside its siblings",
-	provenance = "asserted",
-	note = "Measurement F9, Fill. Three 40 wide children in 240, A Grow, list Fill: if the list's "
-		.. "Fill still grows the others, each gains 40 (80 wide); if one flex item switches Fill off "
-		.. "for the rest, A alone becomes 160. The documentation is silent here, so this expectation "
-		.. "is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UIListLayout.Flex" },
+	note = "Three 40 wide children in 240, A Grow, list Fill. The engine grows all three by 40 (80 "
+		.. "wide each): one flex item does not switch the list's Fill off for its siblings.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

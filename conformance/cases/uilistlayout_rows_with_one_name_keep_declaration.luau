@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout with SortOrder unset and identical names keeps declaration order",
-	provenance = "asserted",
-	note = "Measurement S4. Three children all named Row, heights 10, 20 and 30, SortOrder unset: "
-		.. "the tie-break of a Name sort. Each Row carries a full-size marker so the runner can tell "
-		.. "them apart. The documentation is silent here, so this expectation is a guess for the "
-		.. "Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "Three children all named Row, heights 10, 20 and 30, SortOrder unset. The engine keeps "
+		.. "declaration order for the tie. Each Row carries a full size marker so the runner can "
+		.. "tell them apart.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

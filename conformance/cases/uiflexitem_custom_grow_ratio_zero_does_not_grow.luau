@@ -1,9 +1,10 @@
 --!strict
 return {
 	name = "UIFlexItem Custom GrowRatio 0 and 0 grows nothing",
-	provenance = "asserted",
-	note = "Measurement F4, both zero. Two 40 wide children in 200 with GrowRatio 0: neither grows. "
-		.. "Expected from the GrowRatio documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "Two 40 wide children in 200 with GrowRatio 0. The engine grows neither.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

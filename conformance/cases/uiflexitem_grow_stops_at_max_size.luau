@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow stops at a UISizeConstraint MaxSize",
-	provenance = "asserted",
-	note = "Measurement F12. A Grow with MaxSize 60 wide, B none, 40 each in 200: A stops at 60 and "
-		.. "B follows it at 60, the rest left empty. Growing first and clamping after would leave B "
-		.. "at 160. Expected from the UISizeConstraint documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UISizeConstraint" },
+	note = "A Grow with MaxSize 60 wide, B none, 40 each in 200. The engine stops A at 60 and B "
+		.. "follows at 60, the rest left empty.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

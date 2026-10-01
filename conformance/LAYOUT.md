@@ -16,8 +16,9 @@ verified against the engine or marked as not.
 | **[unverified]** | Believed, and neither observed nor tested. Treat as a question. |
 | **[verified-relationally]** | A case proves a ratio, a minimum or an integer multiple rather than a value, because the value is a property of the host. |
 
-Cases were last run against Roblox **0.736.0.7361346**, and each records the
-build that verified it. The property surface is generated from a reflection
+Each case records the build that verified it. The list, flex, grid and size
+constraint cases were verified against Roblox **0.741.19.7411056**; the older
+cases record **0.736.0.7361346**, and agreed again on 0.741. The property surface is generated from a reflection
 database currently at **0.728**, so the standard's two halves are measured
 against different builds. Neither is wrong; the skew is worth knowing before
 someone reconciles two numbers that were never taken at the same time.
@@ -141,41 +142,127 @@ none of the three. Dew reads the two alignments on the cross axis only, and sort
 by `LayoutOrder` whatever `SortOrder` says. Neither sentence is a claim about the
 engine.
 
-Every case below is **[asserted]**: written from Roblox's documentation, not yet
-run in Studio. Where the documentation is silent, the case's `note` says the
-expectation is a guess.
+Every claim below is **[verified]** against Roblox **0.741.19.7411056** by the
+case named. A case whose behaviour Dew does not implement yet carries `requires`,
+and reports unsupported there rather than failing. Some case names state the
+guess they were written to test; where a name and its expectation disagree, the
+expectation is the engine's.
 
-**Ordering.** `UIListLayout with SortOrder unset orders children by Name`,
+**Ordering.** `SortOrder` defaults to `Name` on `UIListLayout`, `UIGridLayout`,
+`UITableLayout` and `UIPageLayout`, read from fresh instances in the command bar.
+Ties fall back to declaration order.
+**[verified]** `UIListLayout with SortOrder unset orders children by Name`,
 `UIListLayout with SortOrder Name ignores LayoutOrder`, `UIListLayout breaks an
 equal LayoutOrder by declaration order`, `UIListLayout with SortOrder unset and
-identical names keeps declaration order`, `UIListLayout gives an invisible child
-no slot and no Padding`.
+identical names keeps declaration order`.
 
-**Alignment and Padding.** Alignment applies on the main axis too:
-`UIListLayout VerticalAlignment Center centres a vertical run`, `... Bottom
-pushes a vertical run down`, `UIListLayout HorizontalAlignment Center centres a
-horizontal run`, `UIListLayout centres an overflowing run past the top edge`.
-`UIListLayout Padding scale resolves against the parent's height` and `... width`.
-`UIListLayout places a child with AnchorPoint as though it had none`.
+**[verified]** `UIListLayout gives an invisible child no slot and no Padding`.
+**[verified]** `UIListLayout places a child with AnchorPoint as though it had
+none`, on both axes.
 
-**Wraps.** `UIListLayout Wraps moves an overflowing child to a new row`, `... to
-a new column`, `... with VerticalAlignment Bottom aligns the block of rows`,
+**Alignment.** Alignment applies on the main axis too, and a run longer than the
+panel is centred past its edge rather than clamped to it.
+**[verified]** `UIListLayout VerticalAlignment Center centres a vertical run`,
+`... Bottom pushes a vertical run down`, `UIListLayout HorizontalAlignment Center
+centres a horizontal run`, `UIListLayout centres an overflowing run past the top
+edge`.
+
+**Padding.** The scale in `Padding` resolves against the content box inside any
+`UIPadding`, not the parent's full size: `UDim(0.1, 4)` in a 120 panel padded 10
+on each side gives a gap of 14.
+**[verified]** `UIListLayout Padding scale resolves against the parent's width`
+and `... height`.
+
+**Wraps.** A child that does not fit starts a new line, lines are separated by
+`Padding`, and a child wider than the panel takes a line of its own, unshrunk.
+Main axis alignment centres each line on its own width; cross axis alignment
+moves the block of lines, first line on top.
+**[verified]** `UIListLayout Wraps moves an overflowing child to a new row`,
+`... to a new column`, `... gives a child wider than the panel its own row`,
 `... with HorizontalAlignment Center centres each row on its own width`, `...
-gives a child wider than the panel its own row`.
+with VerticalAlignment Bottom aligns the block of rows`.
+**[verified]** `AbsoluteContentSize` is the extent of the lines, `Padding`
+included: 145 by 55 for `UIListLayout Wraps moves an overflowing child to a new
+row`, read in the command bar.
 
-**HorizontalFlex.** One case per value (`None`, `Fill`, `SpaceAround`,
-`SpaceBetween`, `SpaceEvenly`), each of the four distributing values again with
-`Padding` and again with a single child, `Fill` and `SpaceBetween` on a vertical
-list, and `Fill` shrinking an overflow.
+**HorizontalFlex.** `None` packs at the start. `Fill` grows every child by an
+equal share of the free space left after `Padding`, and on a vertical list makes
+every child the panel's width. `SpaceBetween`, `SpaceAround` and `SpaceEvenly`
+take their CSS meanings; a lone child sits at the start under `SpaceBetween` and
+in the centre under the other two.
+**[verified]** `UIListLayout HorizontalFlex None does not distribute`, `... Fill
+grows every child by an equal share`, `... Fill keeps Padding as a fixed gap`,
+`... Fill stretches a vertical list's children across`, `... SpaceBetween puts
+the free space between children`, `... SpaceAround puts equal space around each
+child`, `... SpaceEvenly makes every gap equal, edges included`, `... SpaceBetween
+on a vertical list moves nothing`, and the four `... with a single child`.
 
-**ItemLineAlignment.** One case per value on a single line, and `Automatic`
-deferring to `VerticalAlignment`.
+`SpaceAround` and `SpaceEvenly` ignore `Padding`: with `Padding` 6, widths 20, 40
+and 60 in 240 land exactly where they land without it.
+**[verified]** `UIListLayout HorizontalFlex SpaceAround keeps Padding as a fixed
+gap`, `... SpaceEvenly keeps Padding as a fixed gap`. `... SpaceBetween keeps
+Padding as a fixed gap` also matches the positions without `Padding`, which
+cannot tell ignoring it from treating it as a minimum gap.
 
-**UIFlexItem.** `Grow`, `Shrink`, `Fill` and `Custom` with `GrowRatio` and
-`ShrinkRatio`; a ratio ignored outside `Custom`; the basis of a scale-sized child;
-growth per wrapped line; `Grow` against the list's `SpaceBetween` and `Fill`; the
-per item `ItemLineAlignment` override; and no effect without a list or under a
-grid. The cases are named `UIFlexItem ...`.
+When the children overflow, `Fill` shrinks each in proportion to its width, not
+by an equal share: 60, 90 and 150 in 240 become 48, 72 and 120.
+**[verified]** `UIListLayout HorizontalFlex Fill shrinks overflowing children by
+an equal share`.
+
+**[verified]** `AbsoluteContentSize` counts the children, not the distributed
+space: for widths 20, 40 and 60 it reads 120 by 20 under `None`, `SpaceAround`,
+`SpaceBetween` and `SpaceEvenly`, and 240 by 20 under `Fill`, where the children
+themselves grew. Read in the command bar from `UIListLayout HorizontalFlex None
+does not distribute` and the four plain `Fill`, `SpaceAround`, `SpaceBetween` and
+`SpaceEvenly` cases.
+
+**ItemLineAlignment.** Aligns each child within its line, and a line without
+`Wraps` is as tall as its tallest child, not the panel. Heights 20, 30 and 40 in
+a 60 tall panel: `Start` puts all three at y 0, `Center` at 10, 5 and 0, `End` at
+20, 10 and 0, and `Stretch` makes all three 40 tall.
+**[verified]** `UIListLayout ItemLineAlignment Start on a single line`, `...
+Center ...`, `... End ...`, `... Stretch ...`.
+`Automatic` defers to `VerticalAlignment`, which aligns against the panel: under
+`Bottom` the same children sit on the panel's bottom edge, at 40, 30 and 20.
+**[verified]** `UIListLayout ItemLineAlignment Automatic defers to
+VerticalAlignment`.
+
+**UIFlexItem.** Defaults, from the command bar: `FlexMode` `None`, `GrowRatio` 0,
+`ShrinkRatio` 0, `ItemLineAlignment` `Automatic`.
+
+`Grow` children split the free space equally whatever their widths: 40 and 120
+in 200 become 60 and 140. `Custom` splits it by `GrowRatio`, and a ratio of 0
+takes nothing. `GrowRatio` is ignored unless `FlexMode` is `Custom`. `Fill` grows
+into free space. The basis is a child's resolved size, scale included. Growth is
+per wrapped line, comes before the list's `SpaceBetween` and leaves it nothing,
+and under the list's `Fill` adds to every child's share rather than replacing it.
+**[verified]** `UIFlexItem Grow takes the free space beside a child with no
+flex`, `UIFlexItem two Grow children split the free space equally`, `UIFlexItem
+Custom GrowRatio 1 and 2 splits free space one to two`, `... 0 and 1 gives all
+free space to the second`, `... 0 and 0 grows nothing`, `UIFlexItem GrowRatio is
+ignored when FlexMode is None`, `UIFlexItem Fill grows into free space`,
+`UIFlexItem Grow uses a scale-sized child's resolved size as its basis`,
+`UIFlexItem Grow with Wraps grows within its own line`, `UIFlexItem Grow
+consumes the free space before HorizontalFlex SpaceBetween`, `UIFlexItem Grow
+under HorizontalFlex Fill grows alongside its siblings`.
+
+Shrinking is not an equal share. In the two cases with more than one shrinking
+child, each child's loss is proportional to its width times its shrink ratio
+(1 for `Shrink`). Two cases do not establish that rule beyond them.
+**[verified]** `UIFlexItem two Shrink children share an overflow equally`: 100
+and 200 in 150 become 50 and 100.
+**[verified]** `UIFlexItem Custom ShrinkRatio 1 and 3 shares an overflow one to
+three`: 100 and 140 in 200 become 92.31 and 107.69, the 40 overflow split 100 to
+420. The exact values are 1200/13 and 1400/13; the engine runner rounds to two
+places.
+**[verified]** `UIFlexItem Fill shrinks out of an overflow`: a lone `Fill` child
+absorbs the whole overflow.
+
+**[verified]** `UIFlexItem under a parent with no UIListLayout has no effect`,
+`UIFlexItem under a UIGridLayout has no effect on the cell`.
+**[verified]** `UIFlexItem ItemLineAlignment Stretch overrides the list's
+Center`, but every child in it is 20 tall, so the line is 20 tall and neither
+value moves anything. The per item override is still unobserved.
 
 ## 5. Clipping
 
@@ -429,24 +516,68 @@ runtime.
 ## 10. UIGridLayout
 
 Children take fixed cells in order, filling along `FillDirection` and starting at
-`StartCorner`. Its `FillDirection` defaults to `Horizontal`, unlike the list's
-`Vertical`.
+`StartCorner`. Every claim below is **[verified]** against Roblox
+**0.741.19.7411056**.
 
-**[asserted]** The cases named `UIGridLayout ...`: the defaults, scale in
-`CellSize` and `CellPadding`, `FillDirection Vertical`, `FillDirectionMaxCells`,
-each `StartCorner`, alignment of the block, a size or aspect constraint on a
-child, and the default `SortOrder`.
+Defaults, read from a fresh instance in the command bar: `CellSize`
+`{0, 100}, {0, 100}`, `CellPadding` `{0, 5}, {0, 5}`, `FillDirection`
+`Horizontal` (the list's is `Vertical`), `FillDirectionMaxCells` 0, `StartCorner`
+`TopLeft`, `SortOrder` `Name`.
+**[verified]** `UIGridLayout defaults to 100 pixel cells, 5 pixel padding,
+filling across`, which reads back `AbsoluteCellSize` 100 by 100,
+`AbsoluteCellCount` 2 by 2 and `AbsoluteContentSize` 205 by 205.
+**[verified]** `UIGridLayout with SortOrder unset orders cells by Name`.
+**[verified]** `UIGridLayout FillDirection Vertical fills down before across`.
+**[verified]** `UIGridLayout FillDirectionMaxCells caps a row before the width
+does`, which reads back `AbsoluteCellSize` 50 by 50, `AbsoluteCellCount` 2 by 3
+and `AbsoluteContentSize` 105 by 160.
+
+Scale in `CellSize` and in `CellPadding` both resolve against the content box
+inside any `UIPadding`: a 0.1 `CellPadding` in a 200 content box is a gap of 20.
+**[verified]** `UIGridLayout CellSize scale resolves against the padded content
+box`, `UIGridLayout CellPadding scale resolves against the parent's size`.
+
+Alignment moves the grid as one block, not each row.
+**[verified]** `UIGridLayout alignment moves the grid as a block, not each row`.
+
+`StartCorner` is a corner of that block, not of the panel. Three 100 cells in a
+220 panel aligned `Left` and `Top` fill a 205 by 205 block at the top left:
+`TopRight` puts A at (105, 0) and B at (0, 0), `BottomLeft` puts A at (0, 105)
+and C at (0, 0), and `BottomRight` puts A at (105, 105), B at (0, 105) and C at
+(105, 0).
+**[verified]** `UIGridLayout StartCorner TopLeft`, `... TopRight`, `...
+BottomLeft`, `... BottomRight`.
+
+A child that a `UISizeConstraint` or `UIAspectRatioConstraint` makes smaller than
+its cell is centred in the cell, and the next cell does not move: `MaxSize` 60 by
+60 in a 100 cell sits at (20, 20), and an aspect ratio of 2 gives 100 by 50 at
+y 25.
+**[verified]** `UIGridLayout lets a UISizeConstraint shrink a child within its
+cell`, `UIGridLayout lets a UIAspectRatioConstraint reshape a child within its
+cell`.
 
 ## 11. UISizeConstraint
 
 `MinSize` and `MaxSize` clamp the size a child would otherwise take, including a
-size a layout or a flex item assigns.
+size a layout or a flex item assigns. Defaults, from the command bar: `MinSize`
+0, 0 and `MaxSize` inf, inf. Every claim below is **[verified]** against Roblox
+**0.741.19.7411056**.
 
-**[asserted]** The cases named `UISizeConstraint ...`: each bound on a child with
-no layout, a clamped list child moving its sibling, and a clamped flex child
-handing the rest of the space to its sibling. `UIFlexItem Grow stops at a
-UISizeConstraint MaxSize` and `UIFlexItem Shrink stops at a UISizeConstraint
-MinSize` are the same rule seen from the flex side.
+Without a layout, a bound resizes the child at its own `Position`.
+**[verified]** `UISizeConstraint MinSize grows a child past its Size`,
+`UISizeConstraint MaxSize shrinks a child below its Size`.
+
+A clamped list child advances the list by its clamped size.
+**[verified]** `UISizeConstraint clamps a list child and the list advances by the
+clamped size`.
+
+Under flex, a child stops at its bound. A flexing sibling takes up what it left;
+a sibling with no flex does not, so the space stays empty or the overflow stays.
+**[verified]** `UISizeConstraint MaxSize on a Grow child hands the rest to its
+Grow sibling` (A stops at 60, B grows to 140), `UISizeConstraint MinSize on a
+Shrink child hands the rest to its Shrink sibling` (A held at 140, B shrinks to
+60), `UIFlexItem Grow stops at a UISizeConstraint MaxSize`, `UIFlexItem Shrink
+stops at a UISizeConstraint MinSize`.
 
 ## What this document does not yet cover
 
@@ -454,9 +585,8 @@ Each of these is a section someone will have to write, and none can be written
 honestly without opening Studio first.
 
 - `UIPageLayout`, `UITableLayout`.
-- Sections 4, 10 and 11 beyond what their asserted cases state, until a Studio
-  run verifies them. `VerticalFlex` has no case of its own; it is assumed to
-  mirror `HorizontalFlex`.
+- Sections 4, 10 and 11 beyond what their cases state. `VerticalFlex` has no
+  case of its own; it is assumed to mirror `HorizontalFlex`.
 - `UIAspectRatioConstraint` outside a grid, `UITextSizeConstraint`.
 - Text wrapping and `TextScaled`; see section 7 for what is now covered and what
   is not.

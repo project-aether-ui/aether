@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout FillDirection Vertical fills down before across",
-	provenance = "asserted",
-	note = "Measurement G4. Three 100 cells in a 220 panel with FillDirection Vertical: A (0, 0), B "
-		.. "(0, 105), C (105, 0). Expected from the UIGridStyleLayout documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Three 100 cells in a 220 panel with FillDirection Vertical. The engine fills down "
+		.. "before across: A (0, 0), B (0, 105), C (105, 0).",
 	surface = { width = 220, height = 220 },
 
 	tree = {

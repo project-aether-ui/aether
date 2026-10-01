@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceBetween puts the free space between children",
-	provenance = "asserted",
-	note = "Measurement S17, SpaceBetween. Widths 20, 40 and 60 in 240: two gaps of 60, first and "
-		.. "last child on the edges. Expected from the CSS meaning the enum name borrows.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240. The engine leaves two gaps of 60, with the first and last "
+		.. "child on the edges.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

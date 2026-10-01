@@ -1,9 +1,10 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex None does not distribute",
-	provenance = "asserted",
-	note = "Measurement S17, None. Widths 20, 40 and 60 in 240 stay packed at the start. Expected "
-		.. "from the UIFlexAlignment documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "Widths 20, 40 and 60 in 240. The engine leaves them packed at the start.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

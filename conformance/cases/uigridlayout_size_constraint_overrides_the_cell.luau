@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout lets a UISizeConstraint shrink a child within its cell",
-	provenance = "asserted",
-	note = "Measurement G8, size constraint. A carries MaxSize 60 by 60 in a 100 cell: it becomes 60 "
-		.. "by 60 at the cell's corner, and B keeps its cell. Expected from the documentation's 'a "
-		.. "UIConstraint on the child overrides CellSize'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout", "UISizeConstraint" },
+	note = "A carries MaxSize 60 by 60 in a 100 cell. The engine makes it 60 by 60 and centres it "
+		.. "in its cell at (20, 20); B keeps its own cell.",
 	surface = { width = 220, height = 220 },
 
 	tree = {
@@ -44,7 +46,7 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 0, w = 60, h = 60 },
+		{ name = "A", x = 20, y = 20, w = 60, h = 60 },
 		{ name = "B", x = 105, y = 0, w = 100, h = 100 },
 	},
 }

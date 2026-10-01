@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem two Grow children split the free space equally",
-	provenance = "asserted",
-	note = "Measurement F2. A 40 and B 120, both Grow, in 200: an equal split of the 40 free gives "
-		.. "60 and 140; a split in proportion to width gives 50 and 150. Grow means a ratio of 1 "
-		.. "each, so the equal split is expected.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A 40 and B 120, both Grow, in 200. The engine splits the 40 free equally, giving 60 "
+		.. "and 140; a split in proportion to width would give 50 and 150.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

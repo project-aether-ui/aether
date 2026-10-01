@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Custom GrowRatio 1 and 2 splits free space one to two",
-	provenance = "asserted",
-	note = "Measurement F3. Two 40 wide children in 200 with GrowRatio 1 and 2: 40 and 80 of the 120 "
-		.. "free, giving 80 and 120. An equal split would give 100 each. Expected from the GrowRatio "
-		.. "documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "Two 40 wide children in 200 with GrowRatio 1 and 2. The engine splits the 120 free one "
+		.. "to two, giving 80 and 120; an equal split would give 100 each.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

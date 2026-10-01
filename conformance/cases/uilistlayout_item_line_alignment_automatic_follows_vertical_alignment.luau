@@ -1,10 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout ItemLineAlignment Automatic defers to VerticalAlignment",
-	provenance = "asserted",
-	note = "Measurement S22, Automatic. Heights 20, 30 and 40 in a 60 tall panel with "
-		.. "VerticalAlignment Bottom: the documentation says Automatic defers to the alignment "
-		.. "property, so each child sits on the bottom edge.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "Heights 20, 30 and 40 in a 60 tall panel with VerticalAlignment Bottom. Under "
+		.. "Automatic the engine puts each child on the bottom edge.",
 	surface = { width = 200, height = 60 },
 
 	tree = {

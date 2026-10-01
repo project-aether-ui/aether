@@ -1,10 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceBetween on a vertical list moves nothing",
-	provenance = "asserted",
-	note = "Measurement S20, SpaceBetween. On a vertical list without Wraps each row is alone on the "
-		.. "cross axis, so the guess is no effect: widths and x unchanged. The documentation is "
-		.. "silent here, so this expectation is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "On a vertical list without Wraps each row is alone on the cross axis. The engine "
+		.. "leaves widths and x unchanged.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

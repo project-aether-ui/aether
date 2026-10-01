@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout centres an overflowing run past the top edge",
-	provenance = "asserted",
-	note = "Measurement S9. 70 of rows in a 60 tall panel with VerticalAlignment Center: an "
-		.. "unclamped centre starts the run at -5, a clamped one at 0. The documentation is silent "
-		.. "here, so this expectation is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.MainAxisAlignment" },
+	note = "70 of rows in a 60 tall panel with VerticalAlignment Center. The engine starts the run "
+		.. "at y -5: the centre is not clamped to the top edge.",
 	surface = { width = 200, height = 60 },
 
 	tree = {

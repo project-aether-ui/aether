@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout CellSize scale resolves against the padded content box",
-	provenance = "asserted",
-	note = "Measurement G2. CellSize 0.5 scale in a 220 panel with UIPadding 10: the content box "
-		.. "gives 100 cells, two per row (C at y 110); the panel gives 110 cells, one per row (B at "
-		.. "y 120). The documentation is silent here, so this expectation is a guess for the Studio "
-		.. "run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "CellSize 0.5 scale in a 220 panel with UIPadding 10. The engine resolves it against "
+		.. "the content box: 100 cells, two per row (C at y 110).",
 	surface = { width = 220, height = 220 },
 
 	tree = {
