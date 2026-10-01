@@ -377,6 +377,34 @@ below it in a list.
 engine adds. What is established is the resolved height, which is what layout
 needs.
 
+**The 1.5 belongs to the face.** That case uses the default face, LegacyArial.
+A command-bar probe read one line as 1.5 x TextSize in LegacyArial and 1.0 x in
+Source Sans Pro and Builder Sans, at 14, 20 and 32.
+
+**[asserted]** `one line of LegacyArial is one and a half TextSize tall`,
+`one line of Source Sans Pro is one TextSize tall` and
+`one line of Builder Sans is one TextSize tall`, each against a ruler at three
+sizes.
+
+### Font face
+
+**[asserted]** `LegacyArial is Arimo at one and a half times the size`. The
+LegacyArial family file names Arimo's own files; what makes it Legacy is a
+scale of 1.5 on both axes. That scale is where the 1.5 line height comes from.
+
+**[asserted]** `the font face sets the width of a string` and
+`Builder Sans sets its own width`. The same string at the same size measures
+differently in each face. Asserted as ratios between faces, never as widths,
+for the reasons in the next section.
+
+Builder Sans has cases of its own, gated on `FontFace.BuilderSans`, because
+its licence does not allow redistribution. An implementation can honour every
+open face and still have no Builder Sans to draw.
+
+These cases set the family through the legacy `Font` enum (`Legacy`, `Arimo`,
+`SourceSans`, `BuilderSans`), which the engine resolves to the matching
+`FontFace`. The value encoding has no `Font` datatype yet.
+
 ### Measured width is not reproducible to the last percent
 
 The same case, on the same build and the same machine, reported a width ratio of
@@ -473,7 +501,36 @@ on the same axis. Each wants the other to decide, which is the same shape as the
 scale-under-AutomaticSize cycle in section 3 -- and that one turned out to have a
 specific answer nobody guessed, so this one probably does too.
 
+### Padding, RichText and LineHeight
+
+**[asserted]** `UIPadding adds to an auto-sized label's text extent`. A label
+grows to hold its text plus its own padding, so the padding insets the text
+instead of eating into it. The height is checked against a ruler; the width
+only as a minimum, since the width of the text belongs to the face.
+
+**[asserted]** `RichText measures the content, not the markup`. With RichText
+on, the tags are not measured. With it off, they are measured as text.
+
+**[asserted]** `LineHeight spaces lines and leaves one line alone`. One line is
+the same height at LineHeight 2 as at 1. Three lines grow by at least half;
+whether every line doubles or only the gaps after the first is not settled.
+
 ### What is still unspecified
+
+**What a rectangle cannot carry.** The runners compare positions and sizes, and
+ratios of them. `TextBounds` reaches a case only as `textHeight`, which
+off-engine is the size text is drawn at rather than the height of the block,
+so it cannot count lines. `TextFits` and `ContentText` cannot be named at all.
+These engine observations have no case yet:
+
+- A wrapped label drops the lines that do not fit its height, and `TextBounds`
+  counts only the lines drawn.
+- `TextTruncate` shortens the drawn string, and `TextBounds` shrinks with it
+  while `ContentText` keeps the whole string.
+- `ContentText` is the text with RichText markup removed.
+
+An auto-sized label never truncates or drops a line, so none of these shows in
+its size.
 
 ## 8. What reaches the display list
 

@@ -86,9 +86,9 @@ end
 --- An earlier version of this comment asserted a font still loading. That was an
 --- inference from the same two numbers and it was probably wrong.
 ---
---- Thirty frames rather than three is kept anyway: fonts genuinely do load
---- asynchronously in Roblox, half a second costs nothing, and it removes one
---- variable from any future measurement.
+--- Thirty frames rather than three is kept anyway: half a second costs nothing
+--- and it removes one variable from any future measurement. Waiting frames does
+--- NOT make a face load, though; `loadFaces` below is what does that.
 ---
 --- A CASE MAY ASK FOR MORE. Three frames is enough for a layout that resolves
 --- in one pass, and is NOT enough for one that iterates: a frame whose height
@@ -102,6 +102,60 @@ local function settle(needsText: boolean, override: number?): number
 		RunService.Heartbeat:Wait()
 	end
 	return frames
+end
+
+--- EVERY FACE A CASE USES IS LOADED BEFORE IT IS MEASURED.
+---
+--- Faces load asynchronously, and a label laid out before its face arrives is
+--- measured in a fallback face. That is not hypothetical: a command-bar probe
+--- read TextBounds 108 for RobotoMono and Merriweather, the same number
+--- SourceSansPro gives, while their glyphs on screen were 127 and 130 wide. A
+--- case pasted from such a run records the fallback's numbers as the standard.
+---
+--- `TextService:GetTextBoundsAsync` yields until the face it is asked about has
+--- loaded, so it is called once per face (family, weight, style) and its answer
+--- is discarded. A RichText label also needs its family's bold face.
+---
+--- Returns whether anything new was loaded, and the faces that FAILED. A case
+--- whose face failed is still reported, but marked so nobody pastes it.
+local TextService = game:GetService("TextService")
+local loadedFaces: { [string]: boolean } = {}
+
+local function loadFaces(root: Instance): (boolean, { string })
+	local loadedAny = false
+	local failed: { string } = {}
+	local all = root:GetDescendants()
+	table.insert(all, root)
+	for _, instance in ipairs(all) do
+		if not (instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox")) then
+			continue
+		end
+		local label = instance :: any
+		local face: Font = label.FontFace
+		local weights = { face.Weight }
+		if label.RichText then
+			table.insert(weights, Enum.FontWeight.Bold)
+		end
+		for _, weight in ipairs(weights) do
+			local key = `{face.Family} {weight.Name} {face.Style.Name}`
+			if loadedFaces[key] ~= nil then
+				continue
+			end
+			local params = Instance.new("GetTextBoundsParams")
+			params.Text = if label.Text ~= "" then label.Text else "H"
+			params.Font = Font.new(face.Family, weight, face.Style)
+			params.Size = label.TextSize
+			local ok = pcall(function()
+				TextService:GetTextBoundsAsync(params)
+			end)
+			loadedFaces[key] = ok
+			loadedAny = loadedAny or ok
+			if not ok then
+				table.insert(failed, key)
+			end
+		end
+	end
+	return loadedAny, failed
 end
 
 local function round(n: number): number
@@ -131,8 +185,22 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 	surface.BackgroundTransparency = 1
 	surface.Parent = screen
 
-	build(case.tree, surface)
-	local heldFrames = settle(measuresText(case.tree), case.settleFrames)
+	local needsText = measuresText(case.tree)
+	local tree = build(case.tree, surface)
+	local unloaded: { string } = {}
+	if needsText then
+		--- REBUILT once a face has loaded, so nothing is measured from a layout
+		--- that began in the fallback face. Relying on the engine to lay the
+		--- old tree out again when the face arrives would be one more thing a
+		--- reading could silently depend on.
+		local loadedAny
+		loadedAny, unloaded = loadFaces(tree)
+		if loadedAny then
+			tree:Destroy()
+			build(case.tree, surface)
+		end
+	end
+	local heldFrames = settle(needsText, case.settleFrames)
 
 	local origin = surface.AbsolutePosition
 	local byName: { [string]: GuiObject } = {}
@@ -238,6 +306,15 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 		if verdict == "OUTSIDE" then
 			mismatch = true
 		end
+	end
+
+	--- A FACE THAT NEVER LOADED makes every number above a reading of the
+	--- fallback face. The case is reported as disagreeing so it cannot pass
+	--- quietly, and the paste block says not to use it.
+	if #unloaded > 0 then
+		mismatch = true
+		lines[#lines + 1] =
+			`        -- NOT EVIDENCE, do not paste: face did not load ({table.concat(unloaded, ", ")})`
 	end
 
 	--- ORDER IS NOT OBSERVABLE HERE. Roblox exposes no display list and no
