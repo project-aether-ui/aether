@@ -24,7 +24,7 @@
 return {
 	name = "AutomaticSize with a Scale child under a smaller grandparent",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "ANSWERED: the engine produces 60, so the scale resolves against the space AVAILABLE to "
 		.. "the parent (80) and not against the surface (200). The rule in LAYOUT.md is confirmed "
 		.. "rather than assumed.",

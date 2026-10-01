@@ -43,7 +43,7 @@
 return {
 	name = "AutomaticSize with a Scale child and NO layout",
 	provenance = "roblox",
-	verifiedAgainst = "0.736.0.7361346",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "The engine resolves the scale against the offset-only content size (0.5 x 20 + 20), "
 		.. "not against the offered space. grow() now measures that size in a first sweep and "
 		.. "resolves against it in a second, so this case closed the last AutomaticSize gap.",
