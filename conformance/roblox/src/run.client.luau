@@ -121,13 +121,29 @@ end
 local TextService = game:GetService("TextService")
 local loadedFaces: { [string]: boolean } = {}
 
+--- Every field an `expect` entry may name. See conformance/README.md.
+local EXPECT_FIELDS: { [string]: boolean } = {
+	name = true,
+	x = true,
+	y = true,
+	w = true,
+	h = true,
+	textFits = true,
+	contentText = true,
+}
+
+--- The classes that have TextBounds, TextFits and ContentText.
+local function isText(instance: Instance): boolean
+	return instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox")
+end
+
 local function loadFaces(root: Instance): (boolean, { string })
 	local loadedAny = false
 	local failed: { string } = {}
 	local all = root:GetDescendants()
 	table.insert(all, root)
 	for _, instance in ipairs(all) do
-		if not (instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox")) then
+		if not isText(instance) then
 			continue
 		end
 		local label = instance :: any
@@ -222,30 +238,68 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 			continue
 		end
 
-		local pos = actual.AbsolutePosition - origin
-		local size = actual.AbsoluteSize
-		local got = { x = round(pos.X), y = round(pos.Y), w = round(size.X), h = round(size.Y) }
-
-		for _, field in ipairs({ "x", "y", "w", "h" }) do
-			local want = expected[field]
-			if want ~= nil and math.abs(want - got[field]) > 0.01 then
+		--- A FIELD THIS RUNNER DOES NOT READ IS REPORTED, NOT SKIPPED. Skipped,
+		--- it would agree by saying nothing, and a case would be promoted on an
+		--- assertion nobody checked.
+		for key in pairs(expected) do
+			if not EXPECT_FIELDS[key] then
+				lines[#lines + 1] = string.format("        -- %s: this runner reads no field '%s'", expected.name, tostring(key))
 				mismatch = true
 			end
 		end
 
+		local pos = actual.AbsolutePosition - origin
+		local size = actual.AbsoluteSize
+		local got = { x = round(pos.X), y = round(pos.Y), w = round(size.X), h = round(size.Y) }
+
+		local namesRect = false
+		for _, field in ipairs({ "x", "y", "w", "h" }) do
+			local want = expected[field]
+			if want ~= nil then
+				namesRect = true
+				if math.abs(want - got[field]) > 0.01 then
+					mismatch = true
+				end
+			end
+		end
+
+		--- TEXTFITS AND CONTENTTEXT, as the engine reports them after settling.
+		--- Only a text object has them, so naming them on anything else is a
+		--- mistake in the case and reported as one.
+		local namesText = expected.textFits ~= nil or expected.contentText ~= nil
+		local parts: { string } = {}
 		--- `string.format`, not interpolation. This line's whole job is to emit
 		--- literal braces, and an interpolated string reads `{` as the start of an
 		--- expression — "Double braces are not permitted within interpolated
 		--- strings". Escaping them would compile and would make the one line whose
 		--- output has to be copy-pasteable the hardest one in the file to read.
-		lines[#lines + 1] = string.format(
-			'\t\t{ name = "%s", x = %s, y = %s, w = %s, h = %s },',
-			expected.name,
-			tostring(got.x),
-			tostring(got.y),
-			tostring(got.w),
-			tostring(got.h)
-		)
+		if namesRect or not namesText then
+			table.insert(
+				parts,
+				string.format("x = %s, y = %s, w = %s, h = %s", tostring(got.x), tostring(got.y), tostring(got.w), tostring(got.h))
+			)
+		end
+		if namesText then
+			if not isText(actual) then
+				lines[#lines + 1] = `        -- {expected.name} is a {actual.ClassName}, which has no TextFits or ContentText`
+				mismatch = true
+				continue
+			end
+			local label = actual :: any
+			if expected.textFits ~= nil then
+				if label.TextFits ~= expected.textFits then
+					mismatch = true
+				end
+				table.insert(parts, `textFits = {tostring(label.TextFits)}`)
+			end
+			if expected.contentText ~= nil then
+				if label.ContentText ~= expected.contentText then
+					mismatch = true
+				end
+				table.insert(parts, string.format("contentText = %q", label.ContentText))
+			end
+		end
+		lines[#lines + 1] = string.format('\t\t{ name = "%s", %s },', expected.name, table.concat(parts, ", "))
 	end
 
 	--- RATIOS, which this runner did not understand until a case that asserted
@@ -262,27 +316,42 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 			mismatch = true
 			continue
 		end
-		local function field(g: GuiObject, f: string): number
+		local function field(g: GuiObject, f: string): number?
 			local pos = g.AbsolutePosition - origin
 			local size = g.AbsoluteSize
-			if f == "textHeight" then
-				--- `TextBounds.Y`, the height of the rendered block. Off-engine the
-				--- same field is the display list's `textSize`. They are
-				--- proportional rather than equal, so only ratios over this field
-				--- mean anything on both runners.
-				local label = g :: any
-				return if label.TextBounds then label.TextBounds.Y else 0
+			if f == "textHeight" or f == "textBoundsX" or f == "textBoundsY" then
+				--- `textHeight` is `TextBounds.Y` here and the display list's
+				--- `textSize` off-engine; only ratios over it mean anything on
+				--- both. `textBoundsX` and `textBoundsY` are TextBounds on every
+				--- runner, so they can count the lines actually drawn.
+				if not isText(g) then
+					return nil
+				end
+				local bounds = (g :: any).TextBounds
+				return if f == "textBoundsX" then bounds.X else bounds.Y
 			end
 			if f == "w" then return size.X elseif f == "h" then return size.Y
-			elseif f == "x" then return pos.X else return pos.Y end
+			elseif f == "x" then return pos.X elseif f == "y" then return pos.Y end
+			return nil
 		end
-		local denominator = field(to, r.field)
+		--- `toField` lets a ratio compare two different fields, for a claim
+		--- like "the drawn text is no wider than its own box".
+		local toField = r.toField or r.field
+		local numerator, denominator = field(of, r.field), field(to, toField)
+		if numerator == nil or denominator == nil then
+			lines[#lines + 1] = string.format(
+				"        -- ratio %s.%s / %s.%s: no such field on that node",
+				r.of, r.field, r.to, toField
+			)
+			mismatch = true
+			continue
+		end
 		if denominator == 0 then
 			lines[#lines + 1] = string.format("        -- ratio %s/%s: denominator is zero", r.of, r.to)
 			mismatch = true
 			continue
 		end
-		local actual = field(of, r.field) / denominator
+		local actual = numerator / denominator
 		local verdict, bound
 		if r.integral then
 			local nearest = math.floor(actual + 0.5)
@@ -291,17 +360,28 @@ for _, module in ipairs(casesFolder:GetChildren()) do
 				then "within"
 				else "OUTSIDE"
 			bound = `a whole multiple, nearest {nearest}`
-		elseif r.min then
-			verdict = if actual >= r.min then "within" else "OUTSIDE"
-			bound = string.format("at least %.3f", r.min)
-		else
+		elseif r.min or r.max then
+			--- `max` beside `min`, for "at most": a truncated string's bounds
+			--- are no wider than its box, whatever the face makes them.
+			local ok = (r.min == nil or actual >= r.min) and (r.max == nil or actual <= r.max)
+			verdict = if ok then "within" else "OUTSIDE"
+			bound = if r.min and r.max
+				then string.format("between %.3f and %.3f", r.min, r.max)
+				elseif r.min then string.format("at least %.3f", r.min)
+				else string.format("at most %.3f", r.max)
+		elseif r.expect then
 			local slack = r.tolerance or 0.02
 			verdict = if math.abs(actual - r.expect) <= slack then "within" else "OUTSIDE"
 			bound = string.format("expected %.3f +/- %.3f", r.expect, slack)
+		else
+			--- A RATIO WITH NO BOUND asserts nothing, and agreeing with it would
+			--- be the vacuity this runner has been caught in before.
+			verdict = "OUTSIDE"
+			bound = "no expect, min, max or integral"
 		end
 		ratioLines[#ratioLines + 1] = string.format(
 			"    %s.%s / %s.%s = %.4f  (%s, %s)",
-			r.of, r.field, r.to, r.field, actual, bound, verdict
+			r.of, r.field, r.to, toField, actual, bound, verdict
 		)
 		if verdict == "OUTSIDE" then
 			mismatch = true

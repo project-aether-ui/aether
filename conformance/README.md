@@ -39,6 +39,36 @@ return {
 Data rather than a builder function, so a runner in **any** language can consume
 it. The Luau runner is here; a Rust one will read the same cases.
 
+## What a case can assert
+
+| Key | Asserts |
+| :--- | :--- |
+| `expect` | Per named node: `x`, `y`, `w`, `h` exactly (to 0.01), `textFits` (a boolean) and `contentText` (a string) |
+| `ratios` | `of.field / to.toField` against `expect` and `tolerance`, a `min`, a `max`, both, or `integral` |
+| `order` | Paint order in the display list. Not observable in the engine |
+| `expectAbsent` | Nodes that must not reach the display list |
+
+A ratio's `field`, and its `toField` (which defaults to `field`), is one of
+`x`, `y`, `w`, `h`, `textHeight`, `textBoundsX` or `textBoundsY`.
+
+- `textBoundsX` and `textBoundsY` are the engine's `TextBounds`: the size of
+  the text actually drawn, which leaves out wrapped lines that do not fit and
+  the part of a string `TextTruncate` cut. Every runner reads the same
+  quantity, so a ratio to a one-line label counts the lines drawn.
+- `textHeight` is older and narrower. It is `TextBounds.Y` in the engine and
+  the size text is drawn at off-engine, so it only means the same thing on
+  both while a label is one line.
+- `toField` compares two fields, as in "the drawn text is no wider than its
+  own box": `{ of = "Label", to = "Label", field = "textBoundsX", toField = "w", max = 1.0 }`.
+- `textFits` and `contentText` are the engine's `TextFits` and `ContentText`,
+  and may only be named on a `TextLabel`, `TextButton` or `TextBox`.
+
+No text width is ever an absolute value; see [LAYOUT.md](LAYOUT.md) section 7.
+A runner must treat a field it does not read as a failure, never skip it.
+Skipping would let a case pass on an assertion nobody checked. Until a runner
+reads a field, the cases that name it are gated by `requires` and reported
+unsupported there.
+
 ## Provenance is the most important field
 
 | Value | Means | Worth |
