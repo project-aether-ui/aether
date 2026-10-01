@@ -263,6 +263,9 @@ absorbs the whole overflow.
 **[verified]** `UIFlexItem ItemLineAlignment Stretch overrides the list's
 Center`, but every child in it is 20 tall, so the line is 20 tall and neither
 value moves anything. The per item override is still unobserved.
+**[asserted]** `UIFlexItem ItemLineAlignment Stretch stretches one child in a
+centred line` gives the line children 20, 40 and 30 tall so the override can
+move the stretched one; it awaits a Studio pass.
 
 ## 5. Clipping
 
