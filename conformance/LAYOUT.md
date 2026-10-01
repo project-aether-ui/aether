@@ -515,22 +515,30 @@ on, the tags are not measured. With it off, they are measured as text.
 the same height at LineHeight 2 as at 1. Three lines grow by at least half;
 whether every line doubles or only the gaps after the first is not settled.
 
+### What is drawn, as against what is laid out
+
+An auto-sized label never truncates or drops a line, so neither shows in its
+size. These claims are read from the text itself: `textBoundsX` and
+`textBoundsY` (the engine's `TextBounds`), `textFits` and `contentText`. Lines
+are counted as a ratio to a one-line label, and widths only against the
+label's own box or another label, so no pixel value is asserted.
+
+**[asserted]** `a wrapped label drops the lines that do not fit`. A wrapped
+label of fixed height draws only the lines that fit whole. The rest are not
+drawn at all, `TextBounds` counts only the lines drawn, and `TextFits` is
+false. Auto-sized to the same width, every line is drawn.
+
+**[asserted]** `LineHeight 2 leaves one wrapped line where two fitted`.
+LineHeight changes how many lines fit, and the same rule then drops the rest.
+
+**[asserted]** `TextTruncate shortens the bounds and keeps the content`. The
+drawn prefix and ellipsis fit inside the box and `TextBounds` measures them;
+`TextFits` is false; `ContentText` is the whole string.
+
+**[asserted]** `ContentText strips RichText markup`. With RichText on, the
+markup is removed; with it off, the string is kept as written.
+
 ### What is still unspecified
-
-**What a rectangle cannot carry.** The runners compare positions and sizes, and
-ratios of them. `TextBounds` reaches a case only as `textHeight`, which
-off-engine is the size text is drawn at rather than the height of the block,
-so it cannot count lines. `TextFits` and `ContentText` cannot be named at all.
-These engine observations have no case yet:
-
-- A wrapped label drops the lines that do not fit its height, and `TextBounds`
-  counts only the lines drawn.
-- `TextTruncate` shortens the drawn string, and `TextBounds` shrinks with it
-  while `ContentText` keeps the whole string.
-- `ContentText` is the text with RichText markup removed.
-
-An auto-sized label never truncates or drops a line, so none of these shows in
-its size.
 
 ## 8. What reaches the display list
 
