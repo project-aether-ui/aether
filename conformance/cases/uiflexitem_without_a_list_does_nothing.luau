@@ -1,9 +1,10 @@
 --!strict
 return {
 	name = "UIFlexItem under a parent with no UIListLayout has no effect",
-	provenance = "asserted",
-	note = "Measurement F15, no layout. A Grow child of a plain panel keeps its own Position and "
-		.. "Size. Expected from the documentation's 'within a UIListLayout'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "A Grow child of a plain panel. The engine keeps its own Position and Size.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

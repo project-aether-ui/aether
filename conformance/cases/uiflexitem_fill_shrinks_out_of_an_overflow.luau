@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Fill shrinks out of an overflow",
-	provenance = "asserted",
-	note = "Measurement F8, over. A 150 (Fill) and B 100 (none) in 200: A absorbs the 50 overflow "
-		.. "and becomes 100. Expected from the documentation's Fill, which both grows and shrinks.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A 150 (Fill) and B 100 (none) in 200. The engine shrinks A by the whole 50 overflow, "
+		.. "to 100.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

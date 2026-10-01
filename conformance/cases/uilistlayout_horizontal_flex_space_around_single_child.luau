@@ -1,9 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceAround with a single child",
-	provenance = "asserted",
-	note = "Measurement S19, SpaceAround. One 60 wide child in 240 is centred at 90. Expected from "
-		.. "the CSS meaning.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "One 60 wide child in 240. The engine centres it at 90.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

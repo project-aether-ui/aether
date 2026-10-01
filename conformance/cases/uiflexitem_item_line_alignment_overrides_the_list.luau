@@ -1,10 +1,13 @@
 --!strict
 return {
 	name = "UIFlexItem ItemLineAlignment Stretch overrides the list's Center",
-	provenance = "asserted",
-	note = "Measurement F11. List ItemLineAlignment Center in a 60 tall panel, B carries Stretch: A "
-		.. "and C centre at y 20, B stretches to 60. Expected from the documentation's per item "
-		.. "override; the line is assumed to span the panel.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "List ItemLineAlignment Center, B carries Stretch, every child 20 tall in a 60 tall "
+		.. "panel. The engine leaves all three at y 0 and 20 tall: the line is as tall as its "
+		.. "tallest child, so neither Center nor Stretch has room to move anything, and this case "
+		.. "cannot show the override.",
 	surface = { width = 200, height = 60 },
 
 	tree = {
@@ -43,8 +46,8 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 20, w = 40, h = 20 },
-		{ name = "B", x = 40, y = 0, w = 40, h = 60 },
-		{ name = "C", x = 80, y = 20, w = 40, h = 20 },
+		{ name = "A", x = 0, y = 0, w = 40, h = 20 },
+		{ name = "B", x = 40, y = 0, w = 40, h = 20 },
+		{ name = "C", x = 80, y = 0, w = 40, h = 20 },
 	},
 }

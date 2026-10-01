@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout places a child with AnchorPoint as though it had none",
-	provenance = "asserted",
-	note = "Measurement S10. The first child has AnchorPoint (0.5, 0.5): ignored gives (0, 0), "
-		.. "applied on both axes gives (-30, -10), applied on the main axis only gives (0, -10). The "
-		.. "documentation is silent here, so this expectation is a guess for the Studio run to "
-		.. "overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.IgnoresAnchorPoint" },
+	note = "The first child has AnchorPoint (0.5, 0.5). The engine places it at (0, 0), ignoring "
+		.. "the anchor on both axes.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

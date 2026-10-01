@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex Fill grows every child by an equal share",
-	provenance = "asserted",
-	note = "Measurement S17, Fill. Widths 20, 40 and 60 in 240: an equal share of the 120 free gives "
-		.. "60, 80, 100; equal final widths would give 80 each; growth in proportion to width would "
-		.. "give 40, 80, 120. The documentation says siblings fill the space but not how it is "
-		.. "divided, so the equal share is a guess.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240. The engine grows each by an equal share of the 120 free: "
+		.. "60, 80, 100.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

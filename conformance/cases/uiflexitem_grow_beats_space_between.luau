@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow consumes the free space before HorizontalFlex SpaceBetween",
-	provenance = "asserted",
-	note = "Measurement F9, SpaceBetween. Three 40 wide children in 200, A Grow, list SpaceBetween: "
-		.. "if growth wins A is 120 and nothing is left to space (B 120, C 160); if spacing wins A "
-		.. "stays 40 and B sits at 80. The documentation is silent here, so this expectation is a "
-		.. "guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UIListLayout.Flex" },
+	note = "Three 40 wide children in 200, A Grow, list SpaceBetween. The engine grows A to 120 "
+		.. "first, leaving nothing to space (B 120, C 160).",
 	surface = { width = 200, height = 40 },
 
 	tree = {

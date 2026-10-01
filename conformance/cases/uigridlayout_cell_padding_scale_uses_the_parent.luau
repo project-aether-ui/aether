@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout CellPadding scale resolves against the parent's size",
-	provenance = "asserted",
-	note = "Measurement G3. CellPadding 0.1 scale, 50 cells, a 220 panel with UIPadding 10: the "
-		.. "parent gives a 22 gap (B at 82), the content box a 20 gap (B at 80). Expected from the "
-		.. "documentation's 'scale of the parent'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "CellPadding 0.1 scale, 50 cells, a 220 panel with UIPadding 10. The engine leaves a "
+		.. "gap of 20 (B at 80): the scale resolves against the 200 content box, not the panel.",
 	surface = { width = 220, height = 220 },
 
 	tree = {
@@ -43,7 +45,7 @@ return {
 
 	expect = {
 		{ name = "A", x = 10, y = 10, w = 50, h = 50 },
-		{ name = "B", x = 82, y = 10, w = 50, h = 50 },
-		{ name = "C", x = 154, y = 10, w = 50, h = 50 },
+		{ name = "B", x = 80, y = 10, w = 50, h = 50 },
+		{ name = "C", x = 150, y = 10, w = 50, h = 50 },
 	},
 }

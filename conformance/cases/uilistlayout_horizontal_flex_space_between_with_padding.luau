@@ -1,11 +1,13 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceBetween keeps Padding as a fixed gap",
-	provenance = "asserted",
-	note = "Measurement S18, SpaceBetween. Padding 6 as a minimum gap or ignored both give 0, 80, "
-		.. "180; adding it after distributing gives 0, 86, 192. Only that last reading is separated "
-		.. "here. The documentation is silent here, so this expectation is a guess for the Studio "
-		.. "run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240 with Padding 6. The engine gives 0, 80, 180, so Padding is "
+		.. "not added after distributing. Whether it is ignored or a minimum gap, this case cannot "
+		.. "tell.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

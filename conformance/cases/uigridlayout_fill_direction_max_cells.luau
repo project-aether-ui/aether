@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout FillDirectionMaxCells caps a row before the width does",
-	provenance = "asserted",
-	note = "Measurement G5. Five 50 cells in a 400 panel with FillDirectionMaxCells 2: two per row, "
-		.. "E alone on the third row. Expected from the UIGridLayout documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Five 50 cells in a 400 panel with FillDirectionMaxCells 2. The engine puts two per row "
+		.. "and E alone on the third row.",
 	surface = { width = 400, height = 400 },
 
 	tree = {

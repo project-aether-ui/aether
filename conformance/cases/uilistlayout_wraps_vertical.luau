@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout Wraps moves an overflowing child to a new column",
-	provenance = "asserted",
-	note = "Measurement S13, the mirror of S12. Heights 60, 80 and 40 in a 150 tall panel, Padding "
-		.. "5: C wraps to y 0. The gap between columns is a guess of Padding (x 35); 0 would give "
-		.. "30.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Wraps" },
+	note = "Heights 60, 80 and 40 in a 150 tall panel, Padding 5. The engine wraps C to y 0 and "
+		.. "spaces the columns by Padding (x 35).",
 	surface = { width = 60, height = 150 },
 
 	tree = {

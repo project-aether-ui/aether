@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex Fill stretches a vertical list's children across",
-	provenance = "asserted",
-	note = "Measurement S20, Fill. On a vertical list HorizontalFlex is the cross axis, and the "
-		.. "documentation says Fill makes siblings fill the horizontal space: every child becomes "
-		.. "200 wide.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "On a vertical list HorizontalFlex is the cross axis. The engine makes every child 200 "
+		.. "wide, the panel's width.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

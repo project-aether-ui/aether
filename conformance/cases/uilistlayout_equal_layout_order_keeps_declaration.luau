@@ -1,11 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout breaks an equal LayoutOrder by declaration order",
-	provenance = "asserted",
-	note = "Measurement S3. SortOrder is LayoutOrder and every child has LayoutOrder 0, declared C, "
-		.. "A, B, so a declaration tie-break puts C first and a Name tie-break puts A first. The "
-		.. "documentation is silent here, so this expectation is a guess for the Studio run to "
-		.. "overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "SortOrder LayoutOrder, every child at LayoutOrder 0, declared C, A, B. The engine "
+		.. "keeps declaration order (C first), not Name order.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

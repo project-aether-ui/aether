@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Shrink stops at a UISizeConstraint MinSize",
-	provenance = "asserted",
-	note = "Measurement F13. A 160 Shrink with MinSize 120 wide, B 100 none, in 200: A would shrink "
-		.. "to 100 but stops at 120, and B sits at 120. Expected from the UISizeConstraint "
-		.. "documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem", "UISizeConstraint" },
+	note = "A 160 Shrink with MinSize 120 wide, B 100 none, in 200. The engine stops A at 120 "
+		.. "instead of 100, and B sits at 120.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

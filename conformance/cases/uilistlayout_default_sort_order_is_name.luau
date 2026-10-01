@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout with SortOrder unset orders children by Name",
-	provenance = "asserted",
-	note = "Measurement S2, the geometric half of S1. SortOrder is left unset and children are "
-		.. "declared C, A, B with equal LayoutOrder, so a Name default puts A first and declaration "
-		.. "order puts C first. Expected from the reflection default of Name.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.SortOrder" },
+	note = "SortOrder unset, children declared C, A, B with equal LayoutOrder. The engine puts A "
+		.. "first: the default is Name.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

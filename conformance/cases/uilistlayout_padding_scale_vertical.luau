@@ -1,11 +1,13 @@
 --!strict
 return {
 	name = "UIListLayout Padding scale resolves against the parent's height",
-	provenance = "asserted",
-	note = "Measurement S6, vertical. Panel 120 tall with UIPadding 10 top and bottom, Padding "
-		.. "UDim(0.1, 4): a gap of 16 means scale of the panel, 14 means scale of the content box, 4 "
-		.. "means the scale is dropped. Expected from the documentation's 'percentage of the "
-		.. "parent's size'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.PaddingScale" },
+	note = "Panel 120 tall with UIPadding 10 top and bottom, Padding UDim(0.1, 4). The engine "
+		.. "leaves a gap of 14: the scale resolves against the 100 tall content box, not the "
+		.. "panel.",
 	surface = { width = 200, height = 120 },
 
 	tree = {
@@ -40,7 +42,7 @@ return {
 
 	expect = {
 		{ name = "A", x = 0, y = 10, w = 50, h = 20 },
-		{ name = "B", x = 0, y = 46, w = 50, h = 20 },
-		{ name = "C", x = 0, y = 82, w = 50, h = 20 },
+		{ name = "B", x = 0, y = 44, w = 50, h = 20 },
+		{ name = "C", x = 0, y = 78, w = 50, h = 20 },
 	},
 }

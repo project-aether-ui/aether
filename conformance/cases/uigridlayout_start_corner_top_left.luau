@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout StartCorner TopLeft",
-	provenance = "asserted",
-	note = "Measurement G6, TopLeft. Three 100 cells in a 220 panel, alignment Left and Top: the "
-		.. "identity: A (0, 0), B (105, 0), C (0, 105).",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "Three 100 cells in a 220 panel, alignment Left and Top. The engine places A (0, 0), B "
+		.. "(105, 0), C (0, 105).",
 	surface = { width = 220, height = 220 },
 
 	tree = {

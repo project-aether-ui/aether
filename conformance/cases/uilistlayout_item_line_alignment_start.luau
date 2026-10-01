@@ -1,10 +1,10 @@
 --!strict
 return {
 	name = "UIListLayout ItemLineAlignment Start on a single line",
-	provenance = "asserted",
-	note = "Measurement S22, Start. Heights 20, 30 and 40 in a 60 tall panel, no Wraps: all three at "
-		.. "y 0. The guess is that a single line spans the panel, as in CSS. The documentation does "
-		.. "not say how tall the one line is.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	note = "Heights 20, 30 and 40 in a 60 tall panel, no Wraps. The engine puts all three at y 0.",
 	surface = { width = 200, height = 60 },
 
 	tree = {

@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UISizeConstraint MinSize grows a child past its Size",
-	provenance = "asserted",
-	note = "Measurement C1. A 40 by 20 frame with MinSize 60 by 50 and no layout becomes 60 by 50 at "
-		.. "its own Position. Expected from the UISizeConstraint documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UISizeConstraint" },
+	note = "A 40 by 20 frame with MinSize 60 by 50 and no layout. The engine makes it 60 by 50 at "
+		.. "its own Position.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

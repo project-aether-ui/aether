@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Custom GrowRatio 0 and 1 gives all free space to the second",
-	provenance = "asserted",
-	note = "Measurement F4, zero and one. Two 40 wide children in 200 with GrowRatio 0 and 1: B "
-		.. "takes all 120 free and becomes 160. Expected from the GrowRatio documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "Two 40 wide children in 200 with GrowRatio 0 and 1. The engine gives B all 120 free, "
+		.. "so B is 160 and A stays 40.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UISizeConstraint MaxSize shrinks a child below its Size",
-	provenance = "asserted",
-	note = "Measurement C2. A 100 by 100 frame with MaxSize 50 by 60 and no layout becomes 50 by 60 "
-		.. "at its own Position. Expected from the UISizeConstraint documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UISizeConstraint" },
+	note = "A 100 by 100 frame with MaxSize 50 by 60 and no layout. The engine makes it 50 by 60 "
+		.. "at its own Position.",
 	surface = { width = 200, height = 200 },
 
 	tree = {

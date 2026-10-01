@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout lets a UIAspectRatioConstraint reshape a child within its cell",
-	provenance = "asserted",
-	note = "Measurement G8, aspect ratio. A carries a UIAspectRatioConstraint of 2 in a 100 cell: it "
-		.. "becomes 100 by 50 at the cell's corner, and B keeps its cell. Expected from the "
-		.. "documentation's 'a UIConstraint on the child overrides CellSize'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout", "UIAspectRatioConstraint" },
+	note = "A carries a UIAspectRatioConstraint of 2 in a 100 cell. The engine makes it 100 by 50 "
+		.. "and centres it vertically in its cell at y 25; B keeps its own cell.",
 	surface = { width = 220, height = 220 },
 
 	tree = {
@@ -38,7 +40,7 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 0, w = 100, h = 50 },
+		{ name = "A", x = 0, y = 25, w = 100, h = 50 },
 		{ name = "B", x = 105, y = 0, w = 100, h = 100 },
 	},
 }

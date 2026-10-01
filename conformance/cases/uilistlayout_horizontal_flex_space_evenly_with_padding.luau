@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceEvenly keeps Padding as a fixed gap",
-	provenance = "asserted",
-	note = "Measurement S18, SpaceEvenly. Padding 6 as a fixed gap leaves 108, four gaps of 27: A "
-		.. "27, B 80, C 153. Ignoring Padding gives 30, 80, 150. The documentation is silent here, "
-		.. "so this expectation is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240 with Padding 6. The engine gives A 30, B 80, C 150, four "
+		.. "gaps of 30, exactly as with no Padding: SpaceEvenly ignores Padding here.",
 	surface = { width = 240, height = 40 },
 
 	tree = {
@@ -31,8 +33,8 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 27, y = 0, w = 20, h = 20 },
+		{ name = "A", x = 30, y = 0, w = 20, h = 20 },
 		{ name = "B", x = 80, y = 0, w = 40, h = 20 },
-		{ name = "C", x = 153, y = 0, w = 60, h = 20 },
+		{ name = "C", x = 150, y = 0, w = 60, h = 20 },
 	},
 }

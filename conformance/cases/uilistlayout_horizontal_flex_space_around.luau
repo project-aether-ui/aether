@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceAround puts equal space around each child",
-	provenance = "asserted",
-	note = "Measurement S17, SpaceAround. Widths 20, 40 and 60 in 240: 40 of space per child, half "
-		.. "on each side. Expected from the CSS meaning the enum name borrows.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240. The engine gives each child 40 of space, half on each "
+		.. "side.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

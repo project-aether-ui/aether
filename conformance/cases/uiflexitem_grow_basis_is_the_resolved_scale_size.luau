@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIFlexItem Grow uses a scale-sized child's resolved size as its basis",
-	provenance = "asserted",
-	note = "Measurement F14. A is 0.25 of 200 (50) and B 40, both Grow: from those bases each gains "
-		.. "55 (A 105, B 95); a basis of 0 for the scale child would give A 80, B 120. Expected on "
-		.. "the reading that the basis is the resolved Size.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIFlexItem" },
+	note = "A is 0.25 of 200 (50) and B 40, both Grow. The engine grows each by 55 from its "
+		.. "resolved size (A 105, B 95); a basis of 0 for the scale child would give A 80, B 120.",
 	surface = { width = 200, height = 40 },
 
 	tree = {

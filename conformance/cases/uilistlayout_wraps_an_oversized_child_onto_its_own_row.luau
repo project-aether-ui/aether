@@ -1,11 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout Wraps gives a child wider than the panel its own row",
-	provenance = "asserted",
-	note = "Measurement S16. B is 200 wide in a 150 wide panel: the guess is that it takes its own "
-		.. "row unshrunk and C wraps below it; staying on the first row or shrinking to 150 are the "
-		.. "alternatives. The documentation is silent here, so this expectation is a guess for the "
-		.. "Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Wraps" },
+	note = "B is 200 wide in a 150 wide panel. The engine gives it its own row, unshrunk, and C "
+		.. "wraps below it.",
 	surface = { width = 150, height = 80 },
 
 	tree = {

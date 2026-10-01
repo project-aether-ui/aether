@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalAlignment Center centres a horizontal run",
-	provenance = "asserted",
-	note = "Measurement S8. Widths 60, 80 and 40 in a 200 wide panel: centring the run starts it at "
-		.. "10, ignoring the main axis leaves it at 0. Expected from UIGridStyleLayout's alignment "
-		.. "documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.MainAxisAlignment" },
+	note = "Widths 60, 80 and 40 in a 200 wide panel. The engine centres the run on the main axis, "
+		.. "starting it at 10.",
 	surface = { width = 200, height = 60 },
 
 	tree = {

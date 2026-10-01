@@ -1,9 +1,11 @@
 --!strict
 return {
 	name = "UIFlexItem under a UIGridLayout has no effect on the cell",
-	provenance = "asserted",
-	note = "Measurement F15, grid. A Grow child of a grid with 50 by 50 cells stays one cell. "
-		.. "Expected from the documentation's 'within a UIListLayout'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout" },
+	note = "A Grow child of a grid with 50 by 50 cells. The engine keeps it one cell.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

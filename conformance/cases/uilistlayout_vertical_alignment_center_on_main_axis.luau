@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout VerticalAlignment Center centres a vertical run",
-	provenance = "asserted",
-	note = "Measurement S7, Center. Rows 20, 30 and 20 in a 100 tall panel: centring the run starts "
-		.. "it at 15, ignoring the main axis leaves it at 0. Expected from UIGridStyleLayout's "
-		.. "alignment documentation.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.MainAxisAlignment" },
+	note = "Rows 20, 30 and 20 in a 100 tall panel. The engine centres the run on the main axis, "
+		.. "starting it at 15.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

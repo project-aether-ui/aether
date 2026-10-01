@@ -1,11 +1,13 @@
 --!strict
 return {
 	name = "UIListLayout ItemLineAlignment End on a single line",
-	provenance = "asserted",
-	note = "Measurement S22, End. Heights 20, 30 and 40 in a 60 tall panel, no Wraps: A 40, B 30, C "
-		.. "20 if the line is the panel's 60; 20, 10, 0 if the line is the tallest child. The guess "
-		.. "is that a single line spans the panel, as in CSS. The documentation does not say how "
-		.. "tall the one line is.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.ItemLineAlignment" },
+	note = "Heights 20, 30 and 40 in a 60 tall panel, no Wraps. The engine aligns each child to "
+		.. "the bottom of a line as tall as the tallest child (40), not the panel: A at y 20, B "
+		.. "10, C 0.",
 	surface = { width = 200, height = 60 },
 
 	tree = {
@@ -31,8 +33,8 @@ return {
 	},
 
 	expect = {
-		{ name = "A", x = 0, y = 40, w = 40, h = 20 },
-		{ name = "B", x = 40, y = 30, w = 40, h = 30 },
-		{ name = "C", x = 80, y = 20, w = 40, h = 40 },
+		{ name = "A", x = 0, y = 20, w = 40, h = 20 },
+		{ name = "B", x = 40, y = 10, w = 40, h = 30 },
+		{ name = "C", x = 80, y = 0, w = 40, h = 40 },
 	},
 }

@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIGridLayout with SortOrder unset orders cells by Name",
-	provenance = "asserted",
-	note = "Measurement G9, the grid's copy of S2. Children declared C, A, B with SortOrder unset: a "
-		.. "Name default puts A in the first cell, declaration order puts C there. Expected from the "
-		.. "reflection default of Name.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIGridLayout", "UIListLayout.SortOrder" },
+	note = "Children declared C, A, B with SortOrder unset. The engine puts A in the first cell: "
+		.. "the default is Name.",
 	surface = { width = 220, height = 220 },
 
 	tree = {

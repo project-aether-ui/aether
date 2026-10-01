@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout Wraps with HorizontalAlignment Center centres each row on its own width",
-	provenance = "asserted",
-	note = "Measurement S15. Rows of 140 and 40 in a 150 wide panel: centring each row puts C at 55, "
-		.. "centring the block as a whole puts C at 5. The documentation is silent here, so this "
-		.. "expectation is a guess for the Studio run to overwrite.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Wraps", "UIListLayout.MainAxisAlignment" },
+	note = "Rows of 140 and 40 in a 150 wide panel with HorizontalAlignment Center. The engine "
+		.. "centres each row on its own width, putting C at 55.",
 	surface = { width = 150, height = 60 },
 
 	tree = {

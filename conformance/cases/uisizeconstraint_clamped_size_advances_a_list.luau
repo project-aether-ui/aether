@@ -1,10 +1,12 @@
 --!strict
 return {
 	name = "UISizeConstraint clamps a list child and the list advances by the clamped size",
-	provenance = "asserted",
-	note = "Measurement C5. A 40 tall child capped at 20 in a vertical list: A is 20 tall and B "
-		.. "follows at y 20, not 40. Expected from the documentation's 'overwrites any size the "
-		.. "layout would apply'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UISizeConstraint" },
+	note = "A 40 tall child capped at 20 in a vertical list. The engine makes A 20 tall and B "
+		.. "follows at y 20.",
 	surface = { width = 200, height = 100 },
 
 	tree = {

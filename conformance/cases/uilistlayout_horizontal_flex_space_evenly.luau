@@ -1,9 +1,12 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex SpaceEvenly makes every gap equal, edges included",
-	provenance = "asserted",
-	note = "Measurement S17, SpaceEvenly. Widths 20, 40 and 60 in 240: four gaps of 30. Expected "
-		.. "from the CSS meaning the enum name borrows.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "Widths 20, 40 and 60 in 240. The engine leaves four equal gaps of 30, the edges "
+		.. "included.",
 	surface = { width = 240, height = 40 },
 
 	tree = {

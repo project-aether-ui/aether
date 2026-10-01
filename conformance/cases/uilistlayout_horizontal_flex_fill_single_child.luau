@@ -1,9 +1,11 @@
 --!strict
 return {
 	name = "UIListLayout HorizontalFlex Fill with a single child",
-	provenance = "asserted",
-	note = "Measurement S19, Fill. One 60 wide child in 240 grows to the full 240. Expected from the "
-		.. "documentation's 'fill'.",
+	provenance = "roblox",
+	--- The build these numbers came from. See conformance/README.md.
+	verifiedAgainst = "0.741.19.7411056",
+	requires = { "UIListLayout.Flex" },
+	note = "One 60 wide child in 240. The engine grows it to the full 240.",
 	surface = { width = 240, height = 40 },
 
 	tree = {
