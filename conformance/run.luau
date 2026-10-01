@@ -149,6 +149,9 @@ local function runCase(case: any): Result
 	--- times a line height. They are proportional, so a RATIO over them agrees
 	--- and an absolute value does not -- which is why `expect` never names this
 	--- field and only `ratios` may.
+	--- `textBoundsX` and `textBoundsY` are the bounds of the text actually
+	--- drawn, the engine's `TextBounds`. A display list node that does not
+	--- carry them reads nil, and the ratio fails rather than passing.
 	local function readField(node: any, field: string): number?
 		if field == "textHeight" then
 			return node.textSize
@@ -167,17 +170,21 @@ local function runCase(case: any): Result
 				note = case.note,
 			}
 		end
-		local denominator = readField(to, r.field)
-		if denominator == nil or denominator == 0 then
+		--- `toField` compares two different fields, as in "the drawn text is
+		--- no wider than its own box". Without it both sides read `field`.
+		local toField = r.toField or r.field
+		local numerator = readField(of, r.field)
+		local denominator = readField(to, toField)
+		if numerator == nil or denominator == nil or denominator == 0 then
 			return {
 				name = case.name,
 				provenance = case.provenance,
 				ok = false,
-				detail = `ratio {r.of}.{r.field} / {r.to}.{r.field}: the denominator is zero`,
+				detail = `ratio {r.of}.{r.field} / {r.to}.{toField}: a field is missing or the denominator is zero`,
 				note = case.note,
 			}
 		end
-		local actual = (readField(of, r.field) or 0) / denominator
+		local actual = numerator / denominator
 		--- `integral`, for a quantity that comes in whole units whose COUNT is
 		--- provider-specific. Wrapped height is a whole number of lines: which
 		--- number depends on where the shaper breaks, that it is whole does not.
@@ -202,20 +209,29 @@ local function runCase(case: any): Result
 		--- `min` rather than `expect`, for a claim of the form "much greater
 		--- than". Fitting a tolerance around an observed number would make the
 		--- case assert a font instead of asserting the rule.
-		if r.min then
-			if actual < r.min then
+		if r.min or r.max then
+			if (r.min and actual < r.min) or (r.max and actual > r.max) then
 				return {
 					name = case.name,
 					provenance = case.provenance,
 					ok = false,
 					detail = string.format(
-						"ratio %s.%s / %s.%s: expected at least %.3f, got %.3f",
-						r.of, r.field, r.to, r.field, r.min, actual
+						"ratio %s.%s / %s.%s: expected between %s and %s, got %.3f",
+						r.of, r.field, r.to, toField, tostring(r.min or "-inf"), tostring(r.max or "inf"), actual
 					),
 					note = case.note,
 				}
 			end
 			continue
+		end
+		if r.expect == nil then
+			return {
+				name = case.name,
+				provenance = case.provenance,
+				ok = false,
+				detail = `ratio {r.of}.{r.field} / {r.to}.{toField}: no expect, min, max or integral`,
+				note = case.note,
+			}
 		end
 		local slack = r.tolerance or 0.02
 		if math.abs(actual - r.expect) > slack then
