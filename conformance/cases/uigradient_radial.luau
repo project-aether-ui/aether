@@ -18,8 +18,7 @@
 ]]
 return {
 	name = "a radial UIGradient reaches the display list as radial",
-	provenance = "roblox",
-	verifiedAgainst = "0.741.19.7411056",
+	provenance = "asserted",
 	requires = { "UIGradient.Radial" },
 	note = "A radial UIGradient renders as a radial ramp centred on the container, rather than a linear "
 		.. "ramp or flat fill. Centre probes red (#ff0000) and corners probe blue (#0000ff).",
