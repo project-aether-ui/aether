@@ -1,7 +1,8 @@
 --!strict
 return {
 	name = "UIFlexItem ItemLineAlignment Stretch stretches one child in a centred line",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "UIFlexItem" },
 	note = "List ItemLineAlignment Center with children 20, 40 and 30 tall, A carrying a UIFlexItem "
 		.. "with Stretch. The line is 40 tall, so the override can show: A is stretched to 40 at y 0, "

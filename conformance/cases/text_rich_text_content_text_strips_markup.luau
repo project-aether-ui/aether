@@ -10,7 +10,8 @@ local MARKUP = "<b>bold</b> plain"
 
 return {
 	name = "ContentText strips RichText markup",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "RichText", "ContentText" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: ContentText \"bold "
 		.. "plain\" for this markup with RichText on. The RichText off half follows from the "

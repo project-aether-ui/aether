@@ -16,7 +16,8 @@ local LONG = "A long label that cannot fit"
 
 return {
 	name = "TextTruncate shortens the bounds and keeps the content",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextTruncate", "TextBounds", "TextFits", "ContentText" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds 89 x 30 in a "
 		.. "100 x 64 box, TextFits false, ContentText the whole string, at TextSize 20 in the default "

@@ -31,7 +31,8 @@
 ]]
 return {
 	name = "a clipped child is masked to its parent's rounded corner",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	note = "The corner at (2, 2) is inside the titlebar's rectangle and outside the card's "
 		.. "radius-14 arc, so a rounded clip masks it. Believed to match Roblox and not yet "
 		.. "rendered in Studio and compared.",

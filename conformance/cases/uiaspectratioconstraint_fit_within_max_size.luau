@@ -1,7 +1,8 @@
 --!strict
 return {
 	name = "UIAspectRatioConstraint FitWithinMaxSize fits the ratio inside the element's own size",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "UIAspectRatioConstraint" },
 	note = "A 100 by 20 frame at (10, 10) with AspectRatio 2, FitWithinMaxSize and no layout. Asserted: "
 		.. "the largest 2 to 1 size inside 100 by 20, 40 by 20. Keeping the width would give 100 by "

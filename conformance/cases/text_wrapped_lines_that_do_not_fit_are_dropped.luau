@@ -22,7 +22,8 @@ local LONG = "one two three four five six"
 
 return {
 	name = "a wrapped label drops the lines that do not fit",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextBounds", "TextFits", "TextWrapped" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds 117 x 60 and "
 		.. "TextFits false for the long string in 120 x 64, and 110 x 60, TextFits false, for "

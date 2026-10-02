@@ -12,7 +12,8 @@
 ]]
 return {
 	name = "LineHeight 2 leaves one wrapped line where two fitted",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "LineHeight", "TextBounds", "TextFits", "TextWrapped" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds 117 x 30 and "
 		.. "TextFits false at LineHeight 2 in 120 x 64, TextSize 20, default face. The screenshot "

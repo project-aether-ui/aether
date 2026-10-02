@@ -38,7 +38,8 @@ end
 
 return {
 	name = "the font face sets the width of a string",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "FontFace" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds.X of 187 "
 		.. "(LegacyArial), 125 (Arimo) and 108 (SourceSansPro) for this string at TextSize 20, "

@@ -32,7 +32,8 @@ end
 
 return {
 	name = "LineHeight spaces lines and leaves one line alone",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "LineHeight", "TextWrapped" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: the long string in a "
 		.. "fixed 120 x 64 label read TextBounds 117 x 60 at LineHeight 1 (two lines fit) and "

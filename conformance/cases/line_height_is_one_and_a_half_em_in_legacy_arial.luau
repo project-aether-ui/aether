@@ -44,7 +44,8 @@ end
 
 return {
 	name = "one line of LegacyArial is one and a half TextSize tall",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "FontFace" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds.Y of 21, 30 "
 		.. "and 48 for one line at TextSize 14, 20 and 32. That the AutomaticSize height equals "

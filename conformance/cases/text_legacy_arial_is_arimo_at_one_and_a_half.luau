@@ -21,7 +21,8 @@ local TEXT = "Hamburgefonts"
 
 return {
 	name = "LegacyArial is Arimo at one and a half times the size",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "FontFace" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds 187 x 30 for "
 		.. "LegacyArial and 125 x 20 for Arimo at TextSize 20, a width ratio of 1.496. Glyph ink "

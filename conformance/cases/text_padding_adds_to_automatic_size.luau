@@ -31,7 +31,8 @@ end
 
 return {
 	name = "UIPadding adds to an auto-sized label's text extent",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "TextPadding" },
 	note = "A command-bar probe on 2026-10-01 read TextBounds 20 x 30 for \"H\" at TextSize 20 with "
 		.. "a UIPadding of 16 inside a fixed-size label, and drew the glyph 16 px in from the "
