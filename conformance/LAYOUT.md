@@ -249,6 +249,16 @@ ignored when FlexMode is None`, `UIFlexItem Fill grows into free space`,
 consumes the free space before HorizontalFlex SpaceBetween`, `UIFlexItem Grow
 under HorizontalFlex Fill grows alongside its siblings`.
 
+A grown child that is AutomaticSize across the list is measured at the width it
+grew to, not at its basis, and its line is sized and aligned on that height. A
+column of six 50 by 20 tiles with a `MinSize` X of 120 is 60 tall at 120 and 40
+once grown to 150, so a wrapping list's first line is 40 and the next starts at
+50. Under `VerticalAlignment` `Center` the line is centred on the grown height.
+**[asserted]** `UIListLayout with Wraps measures a grown AutomaticSize child at
+its grown width`, `UIListLayout with Wraps centres a line on a grown
+AutomaticSize child`. The numbers are the engine's, from a command bar probe,
+and wait for the engine runner.
+
 Shrinking is not an equal share. In the two cases with more than one shrinking
 child, each child's loss is proportional to its width times its shrink ratio
 (1 for `Shrink`). Two cases do not establish that rule beyond them.
@@ -537,6 +547,12 @@ LineHeight changes how many lines fit, and the same rule then drops the rest.
 **[verified]** `TextTruncate shortens the bounds and keeps the content`. The
 drawn prefix and ellipsis fit inside the box and `TextBounds` measures them;
 `TextFits` is false; `ContentText` is the whole string.
+
+**[asserted]** `TextTruncate ends a wrapped cut in the ellipsis`. A wrapped
+label whose lower lines are dropped ends its last drawn line in the ellipsis,
+cut back so the line and the ellipsis fit the box, and `TextBounds` measures
+that line with its ellipsis. Seen in a command bar probe; the case compares the
+cut label to a reference label in the same face.
 
 **[verified]** `ContentText strips RichText markup`. With RichText on, the
 markup is removed; with it off, the string is kept as written.
