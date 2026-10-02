@@ -161,11 +161,14 @@ identical names keeps declaration order`.
 none`, on both axes.
 
 **Alignment.** Alignment applies on the main axis too, and a run longer than the
-panel is centred past its edge rather than clamped to it.
+panel is centred past its edge rather than clamped to it. The same holds for
+every alignment on both axes: an overflowing run ends at the right or bottom edge
+under Right or Bottom, and inside a `UIPadding` the content box is what it is
+aligned in.
 **[verified]** `UIListLayout VerticalAlignment Center centres a vertical run`,
 `... Bottom pushes a vertical run down`, `UIListLayout HorizontalAlignment Center
 centres a horizontal run`, `UIListLayout centres an overflowing run past the top
-edge`.
+edge`, `UIListLayout alignment moves an overflowing run on both axes`.
 
 **Padding.** The scale in `Padding` resolves against the content box inside any
 `UIPadding`, not the parent's full size: `UDim(0.1, 4)` in a 120 panel padded 10
