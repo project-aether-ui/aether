@@ -1,7 +1,8 @@
 --!strict
 return {
 	name = "UIAspectRatioConstraint ScaleWithParentSize with DominantAxis Height keeps the height",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "UIAspectRatioConstraint" },
 	note = "A 40 by 100 frame at (10, 10) with AspectRatio 2, ScaleWithParentSize and DominantAxis "
 		.. "Height. Asserted: the height stays 100 and the width follows the ratio, 200 by 100. "

@@ -1,7 +1,8 @@
 --!strict
 return {
 	name = "UIAspectRatioConstraint reshapes the size before AnchorPoint reads it",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "UIAspectRatioConstraint" },
 	note = "A 100 by 20 frame at (150, 100) with AnchorPoint (0.5, 0.5), AspectRatio 2 and "
 		.. "FitWithinMaxSize. Asserted: it becomes 40 by 20 and the anchor centres that on the "

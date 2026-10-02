@@ -32,7 +32,8 @@ end
 
 return {
 	name = "Builder Sans sets its own width",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "FontFace", "FontFace.BuilderSans" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds.X of 120 "
 		.. "(BuilderSans) and 108 (SourceSansPro) for this string at TextSize 20, giving 1.111. "

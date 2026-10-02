@@ -42,7 +42,8 @@ end
 
 return {
 	name = "one line of Builder Sans is one TextSize tall",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "FontFace", "FontFace.BuilderSans" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds.Y of 14, 20 "
 		.. "and 32 for one line at TextSize 14, 20 and 32. That the AutomaticSize height equals "

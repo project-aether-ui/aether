@@ -65,7 +65,7 @@ implementation that applies it earlier has nothing to multiply.
 **[verified]** `anchor point shifts an element by a fraction of its own size` --
 `(0.5, 0.5)` at position `(0.5, 0.5)` centres the element on the parent's centre.
 
-**[asserted]** `AnchorPoint offsets by the size AutomaticSize produced` -- and
+**[verified]** `AnchorPoint offsets by the size AutomaticSize produced` -- and
 "its own size" means the size after `AutomaticSize` has decided it, not the
 authored one. The ordering matters only when an element is both anchored and
 auto-sized, which is why Aether got it wrong for the life of the file: the anchor
@@ -263,7 +263,7 @@ absorbs the whole overflow.
 **[verified]** `UIFlexItem ItemLineAlignment Stretch overrides the list's
 Center`, but every child in it is 20 tall, so the line is 20 tall and neither
 value moves anything. The per item override is still unobserved.
-**[asserted]** `UIFlexItem ItemLineAlignment Stretch stretches one child in a
+**[verified]** `UIFlexItem ItemLineAlignment Stretch stretches one child in a
 centred line` gives the line children 20, 40 and 30 tall so the override can
 move the stretched one; it awaits a Studio pass.
 
@@ -381,18 +381,18 @@ needs.
 A command-bar probe read one line as 1.5 x TextSize in LegacyArial and 1.0 x in
 Source Sans Pro and Builder Sans, at 14, 20 and 32.
 
-**[asserted]** `one line of LegacyArial is one and a half TextSize tall`,
+**[verified]** `one line of LegacyArial is one and a half TextSize tall`,
 `one line of Source Sans Pro is one TextSize tall` and
 `one line of Builder Sans is one TextSize tall`, each against a ruler at three
 sizes.
 
 ### Font face
 
-**[asserted]** `LegacyArial is Arimo at one and a half times the size`. The
+**[verified]** `LegacyArial is Arimo at one and a half times the size`. The
 LegacyArial family file names Arimo's own files; what makes it Legacy is a
 scale of 1.5 on both axes. That scale is where the 1.5 line height comes from.
 
-**[asserted]** `the font face sets the width of a string` and
+**[verified]** `the font face sets the width of a string` and
 `Builder Sans sets its own width`. The same string at the same size measures
 differently in each face. Asserted as ratios between faces, never as widths,
 for the reasons in the next section.
@@ -453,12 +453,12 @@ cases below are gated behind `requires` and report as unsupported rather than
 failing. They can still be verified against the engine, which is the point of the
 gate: a case may know the right answer before anything implements it.
 
-**[asserted]** `TextWrapped grows the height past one line` -- a string several
+**[verified]** `TextWrapped grows the height past one line` -- a string several
 times its element's width occupies at least two lines. Asserted as a **minimum**,
 because where the breaks fall is provider-specific and the line count follows
 from it. An implementation ignoring `TextWrapped` reports exactly 1.0.
 
-**[asserted]** `TextWrapped off keeps a long string on one line` -- the negative
+**[verified]** `TextWrapped off keeps a long string on one line` -- the negative
 half, and the one that catches an implementation growing height for the wrong
 reason. Without it, something that measured height from the unwrapped width would
 pass the case above.
@@ -503,15 +503,15 @@ specific answer nobody guessed, so this one probably does too.
 
 ### Padding, RichText and LineHeight
 
-**[asserted]** `UIPadding adds to an auto-sized label's text extent`. A label
+**[verified]** `UIPadding adds to an auto-sized label's text extent`. A label
 grows to hold its text plus its own padding, so the padding insets the text
 instead of eating into it. The height is checked against a ruler; the width
 only as a minimum, since the width of the text belongs to the face.
 
-**[asserted]** `RichText measures the content, not the markup`. With RichText
+**[verified]** `RichText measures the content, not the markup`. With RichText
 on, the tags are not measured. With it off, they are measured as text.
 
-**[asserted]** `LineHeight spaces lines and leaves one line alone`. One line is
+**[verified]** `LineHeight spaces lines and leaves one line alone`. One line is
 the same height at LineHeight 2 as at 1. Three lines grow by at least half;
 whether every line doubles or only the gaps after the first is not settled.
 
@@ -523,19 +523,19 @@ size. These claims are read from the text itself: `textBoundsX` and
 are counted as a ratio to a one-line label, and widths only against the
 label's own box or another label, so no pixel value is asserted.
 
-**[asserted]** `a wrapped label drops the lines that do not fit`. A wrapped
+**[verified]** `a wrapped label drops the lines that do not fit`. A wrapped
 label of fixed height draws only the lines that fit whole. The rest are not
 drawn at all, `TextBounds` counts only the lines drawn, and `TextFits` is
 false. Auto-sized to the same width, every line is drawn.
 
-**[asserted]** `LineHeight 2 leaves one wrapped line where two fitted`.
+**[verified]** `LineHeight 2 leaves one wrapped line where two fitted`.
 LineHeight changes how many lines fit, and the same rule then drops the rest.
 
-**[asserted]** `TextTruncate shortens the bounds and keeps the content`. The
+**[verified]** `TextTruncate shortens the bounds and keeps the content`. The
 drawn prefix and ellipsis fit inside the box and `TextBounds` measures them;
 `TextFits` is false; `ContentText` is the whole string.
 
-**[asserted]** `ContentText strips RichText markup`. With RichText on, the
+**[verified]** `ContentText strips RichText markup`. With RichText on, the
 markup is removed; with it off, the string is kept as written.
 
 ### What is still unspecified

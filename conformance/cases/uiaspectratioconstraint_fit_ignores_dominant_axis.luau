@@ -1,7 +1,8 @@
 --!strict
 return {
 	name = "UIAspectRatioConstraint FitWithinMaxSize ignores DominantAxis",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "UIAspectRatioConstraint" },
 	note = "A 40 by 100 frame at (10, 10) with AspectRatio 2, FitWithinMaxSize and DominantAxis Height. "
 		.. "Asserted: DominantAxis counts only under ScaleWithParentSize, so the frame fits inside "

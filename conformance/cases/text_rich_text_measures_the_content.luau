@@ -34,7 +34,8 @@ end
 
 return {
 	name = "RichText measures the content, not the markup",
-	provenance = "asserted",
+	provenance = "roblox",
+	verifiedAgainst = "0.741.19.7411056",
 	requires = { "RichText" },
 	note = "From a command-bar probe on 2026-10-01, not yet from this runner: TextBounds.X of 116 for "
 		.. "this markup with RichText on, at TextSize 20 in the default face, and ContentText "
