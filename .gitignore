@@ -23,6 +23,7 @@ conformance/goldens/.diffs/
 .DS_Store
 Thumbs.db
 .vscode/
+.claude/
 
 # Private working notes. NOT ignored by anything in this repository until now --
 # only by a global gitignore on one machine, which is not a property the drafts

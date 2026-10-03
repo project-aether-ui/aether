@@ -1,93 +1,43 @@
+<div align="center">
+
 # Aether
 
-A headless UI framework for Luau. One component runs inside Roblox, on the
-desktop, and in CI, because layout, hit testing, pointer arbitration, focus and
-text editing are all resolved in Luau rather than by an engine.
+**A headless UI framework for Luau. One component runs across engines, desktop runtimes, and CI.**
 
-A host binds that abstract geometry to something concrete and paints it.
-`Host.detect()` selects by capability and never by configuration: the DataModel
-host when the environment supplies a DataModel this framework can drive, and the
-Luau test double otherwise.
+[![CI](https://github.com/project-aether-ui/aether/actions/workflows/ci.yml/badge.svg)](https://github.com/project-aether-ui/aether/actions/workflows/ci.yml)
+![Luau](https://img.shields.io/badge/Luau-strict-00a2ff)
+![pesde](https://img.shields.io/badge/pesde-package-6c5ce7)
+![Status](https://img.shields.io/badge/status-pre--alpha%200.0.1-orange)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## Running it
+![Aether primitives: pressable, checkbox, radio group and tabs](assets/live-interaction-top.png)
 
-```sh
-pesde install
+</div>
 
-lune run tests/run.luau                      # the suites
-lune run tests/gates/all_gates.luau --run    # the structural gates
-lune run conformance/run.luau                # against Roblox's own behaviour
-```
+---
 
-Rendering off-engine needs a host that owns the process and embeds Luau as a
-guest. That host is not in this repository (ADR-004) and is not published yet,
-so the desktop path is not something a reader can run from here today;
-`examples/counter/entry/desktop.luau` is the entry point such a host mounts.
+Most Luau UI libraries depend on game engine runtime internals for layout, input, and focus. Aether doesn't. **Layout, hit testing, pointer arbitration, focus, motion, and text editing all run in pure Luau**, allowing identical UI components to execute across multiple environments:
 
-## One component, three hosts
+- inside game engine viewports,
+- on the desktop through [Dew](https://github.com/dew-desktop/dew), a native Rust host,
+- headlessly in CI, where interactions and layout can be verified in automated pipelines without launching a graphics engine.
 
-[`examples/counter`](examples/counter) is the whole claim in one directory:
+A *host* binds Aether's abstract geometry to concrete rendering surfaces. `Host.detect()` resolves the active host by probing environment capabilities rather than relying on manual configuration.
 
-```
-src/Counter.luau            host-agnostic; asks Deps for create and source
-entry/roblox.client.luau    mounts into a ScreenGui, the engine drives
-entry/desktop.luau          installs the vocabulary, opens a Live.Session
-```
+## Highlights
 
-Both entry points are under twenty lines. That ratio is the point.
-
-| Host | What stands in for the engine |
-| :--- | :--- |
-| Roblox | the engine itself |
-| Headless | mock instances over vide's own reactive core |
-| Dew | `vello_cpu` or `vello_hybrid`, presenting to a window |
-
-The off-engine hosts are Rust-owned: Rust holds the process and embeds Luau as a
-guest. That Rust is THEIRS, not this repository's -- the rasteriser, the runtime
-and the window layer live in Dew (ADR-004), and this package ships `src/**` and
-nothing else. [docs/hosting_architecture.md](docs/hosting_architecture.md) has
-why, and what an off-engine host is required to supply.
-
-## Conformance
-
-[`conformance/`](conformance) runs the same cases against this implementation and
-against Roblox itself, so "matches the engine" is a measurement rather than a
-claim. Each case records which of the two verified it, and the suite reports
-being behind Roblox separately from being wrong.
-
-## Layout
-
-```
-src/            the framework; src/Icon is a workspace member
-packages/       workspace members that are not the framework
-conformance/    cases, and a runner for each implementation
-tests/          suites, and the structural gates under tests/gates
-```
-
-**No Rust.** `hosts/` held a three-crate Cargo workspace -- raster, runtime and
-window -- until ADR-004 measured what it was: Dew's rendering stack, in the
-framework's repository, reaching no Luau consumer. It lives in Dew now, and
-`tests/gates/verify_framework_boundaries.luau` fails on the commit that brings
-any of it back.
-
-## Status
-
-**0.0.1, pre-alpha.** The API is not stable and nothing is published to a
-registry. Consumers depend on this repository by commit:
-
-```toml
-[dependencies]
-Aether = { repo = "project-aether-ui/aether", rev = "<full-sha>" }
-```
-
-pesde synthesises `0.0.0-<sha>` for a git source, so the commit is the identity
-and the version above is a statement about maturity rather than a resolution key.
-
-## Contributing
-
-[CONTRIBUTING.md](CONTRIBUTING.md) for what has to pass and how layout changes
-are proven.
+- **Headless primitives.** Pressable, Checkbox, RadioGroup, Tabs, Slider, Dialog, Combobox, ContextMenu, Tooltip, TextInput, ScrollArea, TreeView, and VirtualList. Each primitive handles state and interaction behavior while leaving visual styling completely in your hands.
+- **Controlled and uncontrolled state models,** following the [Ark UI](https://ark-ui.com) / [Zag](https://zagjs.com) model: pass a getter to observe and drive state externally, or let the primitive manage state automatically.
+- **Pure Luau interaction engine.** `PointerRouter`, `KeysRouter`, `SelectionRouter`, `LayerManager`, `ScreenStack`, and `InputScope` resolve pointer arbitration, hit testing, focus traps, modal stacking, and layer hierarchies without host dependencies.
+- **Off-engine text editing.** Cursor position, selection range, character masking, and blinking carets are calculated directly in Luau, ensuring consistent text-editing mechanics across any environment.
+- **Reactive foundation.** Deep integration with [vide](https://github.com/centau/vide), featuring spring physics, presence/exit transitions, stagger effects, and floating-element positioning.
+- **Rigorous layout conformance.** A suite of 123 data-driven layout cases validates layout parity, asserting bounding boxes, text bounds, flex wrapping, and constraint solving.
+- **Enforced architecture boundaries.** Structural gates in CI continuously audit the codebase to ensure layer separation and eliminate unwanted platform coupling.
 
 ## License
 
 [MIT](LICENSE)
+
+---
+
+<sub>Aether is an independent project and is not affiliated with or endorsed by Roblox Corporation.</sub>
