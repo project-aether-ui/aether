@@ -290,8 +290,7 @@ local function TextInput(props: TextInputProps)
 		return s or 14
 	end
 
-	--- Caret blinking timer: 500ms visible, 500ms hidden while focused, the
-	--- same rate as Dew's native TextBox caret.
+	--- Caret blinking timer: 500ms visible, 500ms hidden while focused.
 	---
 	--- On the host's clock rather than `RunService`, which only the engine
 	--- offers: off engine the caret never blinked. `Host.Clock` is Heartbeat
