@@ -44,6 +44,31 @@ export type FieldSession = {
 	Parent: any?,
 }
 
+--- THE PROXY HOLDS THE REAL TEXT, SO IT MUST NEVER PAINT.
+---
+--- A masked TextInput draws bullets, but the proxy it focuses carries the
+--- characters themselves, and both Roblox and Dew paint a TextBox's `Text`.
+--- One function hides it on both hosts so they cannot drift apart: invisible
+--- and fully transparent, either of which would be enough. Dew's renderer
+--- skips a `Visible = false` subtree before solving it and still delivers
+--- `CaptureFocus` and keystrokes to it; the Roblox proxy was always invisible.
+--- Offscreen is not relied on, since `Focus` moves the Roblox proxy over the
+--- field.
+---
+--- COPY AND CUT. Aether has no clipboard path: `HandleKey` refuses Ctrl
+--- chords, and Dew's native TextBox has no copy, cut or paste. On Roblox the
+--- focused proxy is the engine's own TextBox, whose built in copy reads its
+--- real selection; Aether cannot intercept that, and `TextInputType.Password`
+--- is closed to developer scripts.
+local function hideProxy(box: any)
+	box.Size = UDim2.fromOffset(1, 1)
+	box.Position = UDim2.fromOffset(-1000, -1000)
+	box.BackgroundTransparency = 1
+	box.TextTransparency = 1
+	box.BorderSizePixel = 0
+	box.Visible = false
+end
+
 local activeSession: FieldSession? = nil
 local proxyTextBox: any = nil
 local proxyGui: any = nil
@@ -65,13 +90,8 @@ local function ensureProxy()
 
 			local box = Instance.new("TextBox")
 			box.Name = "ProxyInput"
-			box.Size = UDim2.fromOffset(1, 1)
-			box.Position = UDim2.fromOffset(-1000, -1000)
-			box.BackgroundTransparency = 1
-			box.TextTransparency = 1
-			box.BorderSizePixel = 0
+			hideProxy(box)
 			box.ClearTextOnFocus = false
-			box.Visible = false
 			box.Parent = gui
 			gui.Parent = playerGui
 
@@ -135,11 +155,7 @@ local function ensureProxy()
 		--- elsewhere in this codebase).
 		local box = Instance.new("TextBox")
 		box.Name = "Aether_VirtualInputProxy"
-		box.Size = UDim2.fromOffset(1, 1)
-		box.Position = UDim2.fromOffset(-1000, -1000)
-		box.BackgroundTransparency = 1
-		box.TextTransparency = 1
-		box.BorderSizePixel = 0
+		hideProxy(box)
 
 		proxyTextBox = box
 
@@ -479,6 +495,12 @@ function TextInputManager.GetSelection(): (number, number)
 		return 1, -1
 	end
 	return proxyTextBox.CursorPosition or 1, proxyTextBox.SelectionStart or -1
+end
+
+--- The proxy TextBox, or nil before any field has focused. Test seam, so a
+--- suite can pin that the instance holding the real text never paints.
+function TextInputManager._Proxy(): any
+	return proxyTextBox
 end
 
 --- Headless test helper to simulate typing into the proxy.
