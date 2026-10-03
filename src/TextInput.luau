@@ -20,7 +20,6 @@ local InputScope = require("./InputScope")
 local isRoblox = Deps.Host.Environment == "Roblox"
 local TextService = Deps.Host.Services.TextService
 local UserInputService = Deps.Host.Services.UserInputService
-local RunService = Deps.Host.Services.RunService
 
 --- ONE SOURCE OF TEXT METRICS (ms-52 M3).
 ---
@@ -48,7 +47,10 @@ local function measureTextWidth(text: string, font: any, textSize: number): numb
 			return sz.X
 		end
 	end
-	local width = Deps.Host.Text.Measure(text, textSize, nil)
+	--- In the label's own face. A host's default face is not the one the label
+	--- draws in: Dew's is LegacyArial, 1.5 times as wide as the Arimo a form
+	--- names, so a caret measured without the font ran ahead of the text.
+	local width = Deps.Host.Text.Measure(text, textSize, font)
 	return width
 end
 
@@ -288,22 +290,27 @@ local function TextInput(props: TextInputProps)
 		return s or 14
 	end
 
-	-- Caret blinking timer: 530ms toggle while focused
-	if RunService then
-		local timeAcc = 0
-		local conn = RunService.RenderStepped:Connect(function(dt)
+	--- Caret blinking timer: 530ms toggle while focused.
+	---
+	--- On the host's clock rather than `RunService`, which only the engine
+	--- offers: off engine the caret never blinked. `Host.Clock` is Heartbeat
+	--- in the engine and the host's own frames elsewhere.
+	local blinkElapsed = 0
+	local clock = (Deps.Host :: any).Clock
+	if clock and clock.OnFrame then
+		cleanup(clock.OnFrame(function(dt: number)
 			if isFocused() then
-				timeAcc += dt
-				if timeAcc >= 0.53 then
-					timeAcc = 0
+				blinkElapsed += dt
+				if blinkElapsed >= 0.53 then
+					blinkElapsed = 0
 					caretBlink(not caretBlink())
 				end
 			end
-		end)
-		cleanup(conn)
+		end))
 	end
 
 	local function resetCaretBlink()
+		blinkElapsed = 0
 		caretBlink(true)
 	end
 
