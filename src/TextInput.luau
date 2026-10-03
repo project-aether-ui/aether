@@ -52,19 +52,72 @@ local function measureTextWidth(text: string, font: any, textSize: number): numb
 	return width
 end
 
+--- THE GLYPH A MASKED FIELD DRAWS IN PLACE OF EACH CHARACTER (U+2022).
+---
+--- Measured in Studio: eight of them at Arial 20 are 56 px, the same as eight
+--- asterisks, so the engine's faces carry it.
+local BULLET = "\u{2022}"
+
+--- Is the byte at `i` the first byte of a UTF-8 codepoint?
+local function startsCodepoint(text: string, i: number): boolean
+	local b = string.byte(text, i)
+	return b < 0x80 or b >= 0xC0
+end
+
+--- How many codepoints begin before byte index `byteIndex`.
+---
+--- Counts lead bytes rather than calling `utf8.len`, which returns nil for a
+--- malformed string or a prefix cut in the middle of a codepoint.
+local function codepointsBefore(text: string, byteIndex: number): number
+	local n = 0
+	for i = 1, math.min(#text, byteIndex - 1) do
+		if startsCodepoint(text, i) then
+			n += 1
+		end
+	end
+	return n
+end
+
+--- The masked form of `text`: one bullet per codepoint, never per byte.
+local function maskText(text: string): string
+	return string.rep(BULLET, codepointsBefore(text, #text + 1))
+end
+
+--- The string actually drawn for everything before byte index `byteIndex`.
+---
+--- Cursor and selection indices stay byte offsets into the real text, as the
+--- proxy reports them. Only what is MEASURED changes when masked, so the caret
+--- lands between bullets rather than where the real glyphs would have been.
+local function drawnPrefix(text: string, byteIndex: number, masked: boolean): string
+	if masked then
+		return string.rep(BULLET, codepointsBefore(text, byteIndex))
+	end
+	return string.sub(text, 1, math.min(#text, byteIndex - 1))
+end
+
 --- Maps local X pixel offset (relative to text start) to character boundary index.
 --- Accurately resolves left-of-center vs right-of-center clicks.
-local function mapLocalXToCharIndex(localX: number, text: string, font: any, textSize: number): number
+---
+--- Steps by codepoint, so the result is a byte index that never splits a
+--- multi-byte character, and measures what is drawn, so a masked field maps a
+--- click against its bullets.
+local function mapLocalXToCharIndex(localX: number, text: string, font: any, textSize: number, masked: boolean): number
 	if localX <= 0 or text == "" then return 1 end
 	local totalLen = #text
 	local prevW = 0
-	for i = 1, totalLen do
-		local nextW = measureTextWidth(string.sub(text, 1, i), font, textSize)
+	local i = 1
+	while i <= totalLen do
+		local nextI = i + 1
+		while nextI <= totalLen and not startsCodepoint(text, nextI) do
+			nextI += 1
+		end
+		local nextW = measureTextWidth(drawnPrefix(text, nextI, masked), font, textSize)
 		local mid = (prevW + nextW) / 2
 		if localX < mid then
 			return i
 		end
 		prevW = nextW
+		i = nextI
 	end
 	return totalLen + 1
 end
@@ -100,6 +153,12 @@ export type TextInputProps = {
 	IsReadOnly: (boolean | () -> boolean)?,
 	Disabled: (boolean | () -> boolean)?,
 	ClearTextOnFocus: (boolean | () -> boolean)?,
+	--- Draw one U+2022 per character in place of the text, for a password.
+	--- Reactive, so a "show password" toggle can flip it while the field is
+	--- focused. The caret, selection and click mapping follow the bullets, the
+	--- placeholder is never masked, and `Value`, `OnChanged` and `OnCommitted`
+	--- still carry the real text. Defaults to false.
+	Masked: (boolean | () -> boolean)?,
 	MultiLine: boolean?,
 	Font: any?,
 	TextSize: (number | () -> number)?,
@@ -148,6 +207,11 @@ export type TextInputProps = {
 --- 5. Sub-pixel Character Boundary: Left-of-center / Right-of-center click resolution.
 --- 6. Mouse Drag Selection: Maps mouse coordinates to character indices and syncs with proxy.
 --- 7. Themeable: Completely unstyled by default, exposing full styling hooks to components.
+--- 8. Masking: `Masked = true` draws bullets in place of the text, for a password.
+---    The real text lives only in the buffer and in the hidden proxy TextBox,
+---    which TextInputManager keeps from painting on every host. Aether itself
+---    has no copy or cut; see TextInputManager's note on masking for what the
+---    engine's own proxy can still do on Roblox.
 local function TextInput(props: TextInputProps)
 	local isHovered = source(false)
 	local isFocused = source(false)
@@ -193,6 +257,14 @@ local function TextInput(props: TextInputProps)
 			return if type(props.ClearTextOnFocus) == "function" then props.ClearTextOnFocus() else props.ClearTextOnFocus
 		end
 		return false
+	end
+
+	local isMaskedVal = function(): boolean
+		local m = props.Masked
+		if type(m) == "function" then
+			return m() == true
+		end
+		return m == true
 	end
 
 	local currentExternalText = function()
@@ -326,8 +398,7 @@ local function TextInput(props: TextInputProps)
 		local t = localBuffer()
 		local cPos = cursorPosition()
 		if cPos <= 1 or t == "" then return 0 end
-		local sub = string.sub(t, 1, math.min(#t, cPos - 1))
-		return measureTextWidth(sub, getActiveFont(), getActiveTextSize())
+		return measureTextWidth(drawnPrefix(t, cPos, isMaskedVal()), getActiveFont(), getActiveTextSize())
 	end
 
 	-- Selection highlight quad bounds calculation
@@ -347,8 +418,9 @@ local function TextInput(props: TextInputProps)
 		local minIdx = math.max(1, math.min(sStart, cPos))
 		local maxIdx = math.max(1, math.max(sStart, cPos))
 
-		local startX = if minIdx <= 1 then 0 else measureTextWidth(string.sub(t, 1, minIdx - 1), getActiveFont(), getActiveTextSize())
-		local endX = if maxIdx <= 1 then 0 else measureTextWidth(string.sub(t, 1, math.min(#t, maxIdx - 1)), getActiveFont(), getActiveTextSize())
+		local masked = isMaskedVal()
+		local startX = if minIdx <= 1 then 0 else measureTextWidth(drawnPrefix(t, minIdx, masked), getActiveFont(), getActiveTextSize())
+		local endX = if maxIdx <= 1 then 0 else measureTextWidth(drawnPrefix(t, maxIdx, masked), getActiveFont(), getActiveTextSize())
 		return startX, math.max(0, endX - startX)
 	end
 
@@ -360,6 +432,7 @@ local function TextInput(props: TextInputProps)
 		IsReadOnly = true,
 		Disabled = true,
 		ClearTextOnFocus = true,
+		Masked = true,
 		MultiLine = true,
 		Font = true,
 		TextSize = true,
@@ -425,7 +498,7 @@ local function TextInput(props: TextInputProps)
 				local ptrX, _ = InputScope.GetPointerPosition()
 				clickX = math.max(0, ptrX - displayLabelRef.AbsolutePosition.X)
 			end
-			local targetChar = mapLocalXToCharIndex(clickX, currentExternalText(), getActiveFont(), getActiveTextSize())
+			local targetChar = mapLocalXToCharIndex(clickX, currentExternalText(), getActiveFont(), getActiveTextSize(), isMaskedVal())
 
 			if not isFocused() then
 				startEditing(targetChar)
@@ -462,10 +535,15 @@ local function TextInput(props: TextInputProps)
 						local labelX = if displayLabelRef then displayLabelRef.AbsolutePosition.X else ref.AbsolutePosition.X
 						local localX = math.max(0, input.Position.X - labelX)
 						local curText = displayText()
-						local charIdx = mapLocalXToCharIndex(localX, curText, getActiveFont(), getActiveTextSize())
+						local charIdx = mapLocalXToCharIndex(localX, curText, getActiveFont(), getActiveTextSize(), isMaskedVal())
 
 						if isDoubleClick and curText ~= "" then
-							local wStart, wEnd = findWordBoundaries(curText, charIdx)
+							--- A masked field selects everything: word boundaries
+							--- would reveal where the real text has spaces.
+							local wStart, wEnd = 1, #curText + 1
+							if not isMaskedVal() then
+								wStart, wEnd = findWordBoundaries(curText, charIdx)
+							end
 							if not isFocused() then
 								startEditing(wEnd, wStart)
 							else
@@ -498,7 +576,7 @@ local function TextInput(props: TextInputProps)
 					if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 						local labelX = if displayLabelRef then displayLabelRef.AbsolutePosition.X else ref.AbsolutePosition.X
 						local localX = math.max(0, input.Position.X - labelX)
-						local charIdx = mapLocalXToCharIndex(localX, displayText(), getActiveFont(), getActiveTextSize())
+						local charIdx = mapLocalXToCharIndex(localX, displayText(), getActiveFont(), getActiveTextSize(), isMaskedVal())
 						cursorPosition(charIdx)
 						selectionStart(dragAnchorIndex)
 						resetCaretBlink()
@@ -566,7 +644,8 @@ local function TextInput(props: TextInputProps)
 					end
 					return ""
 				end
-				return displayText()
+				local t = displayText()
+				return if isMaskedVal() then maskText(t) else t
 			end,
 			TextColor3 = function()
 				if showPlaceholder() then
