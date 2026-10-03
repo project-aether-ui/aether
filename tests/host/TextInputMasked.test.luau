@@ -34,7 +34,7 @@ local function width(text: string): number
 	if textService then
 		return textService:GetTextSize(text, TEXT_SIZE, Enum.Font.SourceSans, Vector2.new(10000, 10000)).X
 	end
-	local w = Deps.Host.Text.Measure(text, TEXT_SIZE, nil)
+	local w = Deps.Host.Text.Measure(text, TEXT_SIZE, Enum.Font.SourceSans)
 	return w
 end
 
